@@ -7,36 +7,36 @@ from .nodes import prepare_prompt
 from .state import ReplyState
 
 
-def build_reply_graph():
+def build_graph():
 
-    builder = StateGraph(ReplyState)
+    graph = StateGraph(ReplyState)
 
-    builder.add_node(
+    graph.add_node(
         "prepare_prompt",
         prepare_prompt,
     )
 
-    builder.add_node(
+    graph.add_node(
         "generate_reply",
         generate_reply,
     )
 
-    builder.add_edge(
+    graph.add_edge(
         START,
         "prepare_prompt",
     )
 
-    builder.add_edge(
+    graph.add_edge(
         "prepare_prompt",
         "generate_reply",
     )
 
-    builder.add_edge(
+    graph.add_edge(
         "generate_reply",
         END,
     )
 
-    return builder.compile()
+    return graph.compile()
 
 
-reply_graph = build_reply_graph()
+reply_graph = build_graph()
