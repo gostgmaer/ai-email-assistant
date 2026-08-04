@@ -60,7 +60,7 @@ export class ComposeService {
       userId,
       dto.messageId,
     );
-    const account = original.thread.folder.account;
+    const account = original.thread.account;
 
     const fullAccount = await this.emailAccountService.getOwnedAccountOrThrow(
       userId,
@@ -108,6 +108,7 @@ export class ComposeService {
 
     const thread = await this.prisma.emailThread.create({
       data: {
+        accountId: account.id,
         folderId: folder.id,
         providerThreadId: `local-draft-${randomUUID()}`,
         subject: dto.subject,
@@ -244,12 +245,13 @@ export class ComposeService {
 
     const thread = await this.prisma.emailThread.upsert({
       where: {
-        folderId_providerThreadId: {
-          folderId: folder.id,
+        accountId_providerThreadId: {
+          accountId,
           providerThreadId: result.providerThreadId,
         },
       },
       create: {
+        accountId,
         folderId: folder.id,
         providerThreadId: result.providerThreadId,
         subject: content.subject,

@@ -14,6 +14,33 @@ import {
 
 const API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
+// Gmail rejects too many simultaneous requests per user with a 429
+// ("Too many concurrent requests for user"); cap how many message
+// detail fetches are in flight at once.
+const MESSAGE_FETCH_CONCURRENCY = 5;
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await fn(items[index]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, worker),
+  );
+
+  return results;
+}
+
 const SYSTEM_LABEL_TYPE: Record<string, NormalizedFolder['type']> = {
   INBOX: 'INBOX',
   SENT: 'SENT',
@@ -86,8 +113,10 @@ export class GmailClient implements MailProviderClient {
       `/messages?${params.toString()}`,
     );
 
-    const messages = await Promise.all(
-      (list.messages ?? []).map((ref) => this.getMessage(ref.id)),
+    const messages = await mapWithConcurrency(
+      list.messages ?? [],
+      MESSAGE_FETCH_CONCURRENCY,
+      (ref) => this.getMessage(ref.id),
     );
 
     return { messages, nextPageToken: list.nextPageToken };

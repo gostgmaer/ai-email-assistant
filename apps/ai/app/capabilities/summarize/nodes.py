@@ -1,3 +1,6 @@
+import json
+import re
+
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import SystemMessage
 
@@ -5,6 +8,8 @@ from app.core.llm import llm_manager
 from app.core.prompts import prompt_manager
 
 from .state import SummarizeState
+
+_CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
 
 
 def load_prompt(state: SummarizeState) -> SummarizeState:
@@ -60,21 +65,23 @@ def extract_summary(state: SummarizeState) -> SummarizeState:
     content = response.content
 
     if isinstance(content, str):
-        summary = content
+        raw = content
 
     elif isinstance(content, list):
-        summary = "\n".join(
+        raw = "\n".join(
             part.get("text", "")
             for part in content
             if isinstance(part, dict)
         )
 
     else:
-        summary = str(content)
+        raw = str(content)
+
+    summary, key_points = _parse_summary(raw)
 
     state["summary"] = summary
 
-    state["key_points"] = []
+    state["key_points"] = key_points
 
     state["provider"] = llm_manager.provider
 
@@ -89,3 +96,30 @@ def extract_summary(state: SummarizeState) -> SummarizeState:
     }
 
     return state
+
+
+def _parse_summary(raw: str) -> tuple[str, list[str]]:
+    """Parse the model's JSON response into (summary, key_points).
+
+    The prompt asks for raw JSON, but models often wrap it in a
+    ```json fenced block; strip that before parsing. Falls back to
+    treating the whole response as the summary if it isn't valid JSON.
+    """
+
+    text = _CODE_FENCE_RE.sub("", raw).strip()
+
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return raw.strip(), []
+
+    if not isinstance(data, dict):
+        return raw.strip(), []
+
+    summary = data.get("summary")
+    key_points = data.get("key_points")
+
+    return (
+        summary if isinstance(summary, str) else raw.strip(),
+        key_points if isinstance(key_points, list) else [],
+    )

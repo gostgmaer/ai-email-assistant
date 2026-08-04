@@ -1144,6 +1144,7 @@ export type MailFolderScalarFieldEnum = (typeof MailFolderScalarFieldEnum)[keyof
 
 export const EmailThreadScalarFieldEnum = {
   id: 'id',
+  accountId: 'accountId',
   folderId: 'folderId',
   providerThreadId: 'providerThreadId',
   subject: 'subject',

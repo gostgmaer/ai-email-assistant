@@ -20,10 +20,13 @@ export class InboxService {
     const limit = query.limit ?? 20;
 
     const where = {
+      account: {
+        id: query.accountId,
+        userId,
+        deletedAt: null,
+      },
       folder: {
         type: query.folderType ?? 'INBOX',
-        accountId: query.accountId,
-        account: { userId, deletedAt: null },
       },
       ...(query.q
         ? {
@@ -74,13 +77,10 @@ export class InboxService {
     const thread = await this.prisma.emailThread.findUnique({
       where: { id: threadId },
       include: {
-        folder: {
-          include: {
-            account: {
-              select: { id: true, provider: true, email: true, userId: true },
-            },
-          },
+        account: {
+          select: { id: true, provider: true, email: true, userId: true },
         },
+        folder: true,
         messages: { orderBy: { receivedAt: 'asc' } },
       },
     });
@@ -89,7 +89,7 @@ export class InboxService {
       throw new NotFoundException('Thread not found');
     }
 
-    if (thread.folder.account.userId !== userId) {
+    if (thread.account.userId !== userId) {
       throw new ForbiddenException('You do not have access to this thread');
     }
 
@@ -102,11 +102,8 @@ export class InboxService {
       include: {
         thread: {
           include: {
-            folder: {
-              include: {
-                account: { select: { id: true, provider: true, userId: true } },
-              },
-            },
+            account: { select: { id: true, provider: true, userId: true } },
+            folder: true,
           },
         },
       },
@@ -116,7 +113,7 @@ export class InboxService {
       throw new NotFoundException('Message not found');
     }
 
-    if (message.thread.folder.account.userId !== userId) {
+    if (message.thread.account.userId !== userId) {
       throw new ForbiddenException('You do not have access to this message');
     }
 
@@ -131,7 +128,7 @@ export class InboxService {
       data: { isRead: true },
     });
 
-    const account = message.thread.folder.account;
+    const account = message.thread.account;
     const client = await this.mailProviderFactory.createClient(
       await this.prisma.emailAccount.findUniqueOrThrow({
         where: { id: account.id },

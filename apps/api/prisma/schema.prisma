@@ -109,6 +109,7 @@ model EmailAccount {
   credential EmailCredential?
 
   folders MailFolder[]
+  threads EmailThread[]
 
   @@unique([provider, email])
   @@index([userId])
@@ -155,6 +156,16 @@ model MailFolder {
 model EmailThread {
   id String @id @default(uuid())
 
+  // The account this conversation belongs to. Provider thread IDs are
+  // stable across folders/labels (e.g. Gmail keeps the same thread ID
+  // for a message whether it's under INBOX or SENT), so thread identity
+  // is scoped per-account, not per-folder.
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // The folder this thread is primarily displayed under. Set once when
+  // the thread is first created and left unchanged afterwards, so a
+  // reply doesn't move an Inbox conversation into "Sent".
   folderId String
   folder   MailFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
@@ -171,7 +182,7 @@ model EmailThread {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([folderId, providerThreadId])
+  @@unique([accountId, providerThreadId])
   @@index([folderId])
 }
 

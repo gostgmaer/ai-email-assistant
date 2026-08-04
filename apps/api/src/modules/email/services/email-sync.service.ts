@@ -41,7 +41,18 @@ export class EmailSyncService {
       const client = await this.mailProviderFactory.createClient(account);
       const folders = await this.syncFolders(accountId, client);
 
-      for (const folder of folders) {
+      // A thread's folderId is only set when the thread row is first
+      // created (see persistMessage); syncing INBOX/SENT first ensures
+      // new threads anchor to a meaningful folder instead of whichever
+      // label the provider happened to list first.
+      const folderPriority: Partial<Record<MailFolderModel['type'], number>> =
+        { INBOX: 0, SENT: 1 };
+      const orderedFolders = [...folders].sort(
+        (a, b) =>
+          (folderPriority[a.type] ?? 99) - (folderPriority[b.type] ?? 99),
+      );
+
+      for (const folder of orderedFolders) {
         await this.syncFolderMessages(folder, client, mode);
       }
 
@@ -125,7 +136,7 @@ export class EmailSyncService {
     const result = await client.listMessages(folder.providerFolderId, options);
 
     for (const message of result.messages) {
-      await this.persistMessage(folder.id, message);
+      await this.persistMessage(folder.accountId, folder.id, message);
     }
 
     if (result.cursor && result.cursor !== folder.syncCursor) {
@@ -137,17 +148,19 @@ export class EmailSyncService {
   }
 
   private async persistMessage(
+    accountId: string,
     folderId: string,
     message: NormalizedMessage,
   ): Promise<void> {
     const thread = await this.prisma.emailThread.upsert({
       where: {
-        folderId_providerThreadId: {
-          folderId,
+        accountId_providerThreadId: {
+          accountId,
           providerThreadId: message.providerThreadId,
         },
       },
       create: {
+        accountId,
         folderId,
         providerThreadId: message.providerThreadId,
         subject: message.subject,
