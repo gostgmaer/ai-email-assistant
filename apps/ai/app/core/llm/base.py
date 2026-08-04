@@ -16,6 +16,4 @@ class BaseLLMProvider(ABC):
     def chat_model(self) -> BaseChatModel:
         ...
 
-    @abstractmethod
-    def embeddings(self) -> Embeddings:
-        ...
+    
