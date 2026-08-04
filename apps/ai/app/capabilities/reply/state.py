@@ -1,4 +1,7 @@
 from typing import TypedDict
+from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessage
+from typing import NotRequired
 
 
 class EmailMessage(TypedDict):
@@ -14,19 +17,25 @@ class TokenUsage(TypedDict):
     total_tokens: int
 
 
+
+
 class ReplyState(TypedDict):
-    # ===== Input =====
+    # Input
     subject: str
     thread: list[EmailMessage]
-    instruction: str | None
     tone: str
     language: str
+    instruction: NotRequired[str]
 
-    # ===== Runtime =====
-    prompt: str
-    draft: str
+    # Runtime
+    system_prompt: NotRequired[str]
+    messages: NotRequired[list[BaseMessage]]
+    response: NotRequired[AIMessage]
 
-    # ===== Metadata =====
-    provider: str
-    model: str
-    usage: TokenUsage
+    # Output
+    draft: NotRequired[str]
+
+    # Metadata
+    provider: NotRequired[str]
+    model: NotRequired[str]
+    usage: NotRequired[TokenUsage]
