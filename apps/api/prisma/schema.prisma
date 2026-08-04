@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EmailProvider {
+  GOOGLE
+  MICROSOFT
+  IMAP
+}
+
+enum MailFolderType {
+  INBOX
+  SENT
+  DRAFTS
+  TRASH
+  SPAM
+  ARCHIVE
+  CUSTOM
+}
+
+model User {
+  id          String  @id @default(uuid())
+  displayName String?
+  avatar      String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  emailAccounts EmailAccount[]
+
+  @@index([createdAt])
+}
+
+model EmailAccount {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider EmailProvider
+
+  email       String
+  displayName String?
+
+  isPrimary   Boolean @default(false)
+  syncEnabled Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  credential EmailCredential?
+
+  folders MailFolder[]
+
+  @@unique([provider, email])
+  @@index([userId])
+}
+
+model EmailCredential {
+  id String @id @default(uuid())
+
+  accountId String       @unique
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MailFolder {
+  id String @id @default(uuid())
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  providerFolderId String?
+
+  name String
+
+  type MailFolderType
+
+  threads EmailThread[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, providerFolderId])
+  @@index([accountId])
+}
+
+model EmailThread {
+  id String @id @default(uuid())
+
+  folderId String
+  folder   MailFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  providerThreadId String
+
+  subject String?
+
+  snippet String?
+
+  lastMessageAt DateTime?
+
+  messages EmailMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([folderId, providerThreadId])
+  @@index([folderId])
+}
+
+model EmailMessage {
+  id String @id @default(uuid())
+
+  threadId String
+  thread   EmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  providerMessageId String
+
+  from Json
+
+  to Json
+
+  cc Json?
+
+  bcc Json?
+
+  subject String?
+
+  bodyText String?
+
+  bodyHtml String?
+
+  receivedAt DateTime
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([threadId, providerMessageId])
+  @@index([threadId])
+}

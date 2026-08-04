@@ -21,3 +21,6 @@ __pycache__
 *.log
 
 .prisma
+/apps/api/.agents
+/apps/api/.claude
+/apps/api/.windsurf
