@@ -1,5 +1,5 @@
 from app.core.llm import llm_manager
-from apps.ai.app.core.workflow.executor import llm_executor
+from app.core.workflow.executor import llm_executor
 from app.core.workflow.message_builder import MessageBuilder
 from app.core.workflow.prompt_loader import prompt_loader
 from app.core.workflow.response_parser import ResponseParser

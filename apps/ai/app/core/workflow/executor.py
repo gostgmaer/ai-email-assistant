@@ -9,6 +9,32 @@ from .config import WorkflowConfig
 from .types import WorkflowOutputType
 
 
+class LLMExecutor:
+    """Thin executor used directly by per-capability nodes."""
+
+    def invoke(self, messages: list[BaseMessage]) -> Any:
+        return llm_manager.get_model().invoke(messages)
+
+    def invoke_structured(
+        self,
+        *,
+        messages: list[BaseMessage],
+        schema: type[BaseModel],
+    ) -> Any:
+        return llm_manager.get_model().with_structured_output(schema).invoke(messages)
+
+    @property
+    def provider(self) -> str:
+        return llm_manager.provider
+
+    @property
+    def model(self) -> str:
+        return llm_manager.model
+
+
+llm_executor = LLMExecutor()
+
+
 class WorkflowExecutor:
     """Central workflow executor."""
 

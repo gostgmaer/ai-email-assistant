@@ -2,8 +2,8 @@ from pydantic import BaseModel
 from pydantic import EmailStr
 
 from app.capabilities.classify.schemas import ClassificationSchema
+from app.capabilities.classify.schemas import TokenUsageSchema
 from app.capabilities.extract.schemas import ExtractionSchema
-from app.capabilities.reply.schemas import TokenUsageSchema
 
 
 class EmailMessageSchema(BaseModel):
