@@ -32,5 +32,7 @@ def extract_response(state: ReplyState):
 
     state["draft"] = ResponseParser.text(response)
     state["usage"] = ResponseParser.usage(response)
+    state["provider"] = llm_executor.provider
+    state["model"] = llm_executor.model
 
     return state

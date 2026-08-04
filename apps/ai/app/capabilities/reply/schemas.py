@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class EmailMessageSchema(BaseModel):
-    role: str = Field(..., examples=["user"])
+    role: str = Field("user", examples=["user"])
     name: str = Field(..., examples=["John"])
     email: EmailStr
     content: str

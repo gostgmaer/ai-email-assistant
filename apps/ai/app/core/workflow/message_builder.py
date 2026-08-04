@@ -36,6 +36,10 @@ Instruction:
 
         return messages
 
+    # Aliases used by per-capability nodes.py files.
+    reply = email_thread
+    summarize = email_thread
+
     @staticmethod
     def email_draft(
         *,
@@ -60,3 +64,5 @@ Email:
 {draft}
 """.strip()),
         ]
+
+    rewrite = email_draft
