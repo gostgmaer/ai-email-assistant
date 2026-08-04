@@ -1,21 +1,91 @@
 import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { EmailMessageDto } from '../dto';
+
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
 export interface SummarizeResponse {
   summary: string;
+  keyPoints: string[];
+  provider: string;
+  model: string;
+  usage: TokenUsage;
 }
 
 export interface GenerateReplyResponse {
   reply: string;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
 }
 
 export interface RewriteResponse {
   text: string;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
+export interface ClassificationResult {
+  category: string;
+  priority: string;
+  sentiment: string;
+  spam: boolean;
 }
 
 export interface ClassifyResponse {
-  category: string;
-  confidence?: number;
+  classification: ClassificationResult;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
+interface RawUsage {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+}
+
+function mapUsage(usage: RawUsage): TokenUsage {
+  return {
+    inputTokens: usage.input_tokens,
+    outputTokens: usage.output_tokens,
+    totalTokens: usage.total_tokens,
+  };
+}
+
+interface RawSummarizeResponse {
+  summary: string;
+  key_points: string[];
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
+interface RawReplyResponse {
+  draft: string;
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
+interface RawRewriteResponse {
+  rewritten_draft: string;
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
+interface RawClassifyResponse {
+  classification: ClassificationResult;
+  provider: string;
+  model: string;
+  usage: RawUsage;
 }
 
 @Injectable()
@@ -24,29 +94,75 @@ export class AiClientService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  async summarize(text: string): Promise<SummarizeResponse> {
-    return this.post<SummarizeResponse>('/v1/email/summarize', { text });
+  async summarize(
+    subject: string,
+    thread: EmailMessageDto[],
+  ): Promise<SummarizeResponse> {
+    const res = await this.post<RawSummarizeResponse>('/email/summarize', {
+      subject,
+      thread,
+    });
+
+    return {
+      summary: res.summary,
+      keyPoints: res.key_points,
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
   }
 
   async generateReply(
-    threadContext: string,
-    instructions?: string,
+    subject: string,
+    thread: EmailMessageDto[],
+    instruction?: string,
   ): Promise<GenerateReplyResponse> {
-    return this.post<GenerateReplyResponse>('/v1/email/reply', {
-      threadContext,
-      instructions,
+    const res = await this.post<RawReplyResponse>('/email/reply', {
+      subject,
+      thread,
+      instruction,
     });
+
+    return {
+      reply: res.draft,
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
   }
 
-  async rewrite(text: string, instructions?: string): Promise<RewriteResponse> {
-    return this.post<RewriteResponse>('/v1/email/rewrite', {
-      text,
-      instructions,
+  async rewrite(
+    draft: string,
+    instruction?: string,
+  ): Promise<RewriteResponse> {
+    const res = await this.post<RawRewriteResponse>('/email/rewrite', {
+      draft,
+      instruction,
     });
+
+    return {
+      text: res.rewritten_draft,
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
   }
 
-  async classify(text: string): Promise<ClassifyResponse> {
-    return this.post<ClassifyResponse>('/v1/email/classify', { text });
+  async classify(
+    subject: string,
+    thread: EmailMessageDto[],
+  ): Promise<ClassifyResponse> {
+    const res = await this.post<RawClassifyResponse>('/email/classify', {
+      subject,
+      thread,
+    });
+
+    return {
+      classification: res.classification,
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
   }
 
   private async post<T>(

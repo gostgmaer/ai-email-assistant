@@ -1,16 +1,33 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsOptional,
+  IsString,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+
+import { EmailMessageDto } from './email-message.dto';
 
 export class GenerateReplyDto {
-  @ApiProperty({ description: 'The thread/message content to reply to' })
+  @ApiProperty({ description: 'Subject of the email thread' })
   @IsString()
   @MinLength(1)
-  threadContext!: string;
+  subject!: string;
+
+  @ApiProperty({ type: [EmailMessageDto] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => EmailMessageDto)
+  thread!: EmailMessageDto[];
 
   @ApiPropertyOptional({
     description: 'Extra instructions, e.g. tone or key points',
   })
   @IsOptional()
   @IsString()
-  instructions?: string;
+  instruction?: string;
 }

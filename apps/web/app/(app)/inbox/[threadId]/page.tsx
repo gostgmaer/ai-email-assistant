@@ -10,7 +10,7 @@ import { ReplyBox } from "@/components/inbox/ReplyBox";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner, Spinner } from "@/components/ui/Spinner";
-import { summarize } from "@/lib/services/ai.service";
+import { summarize, toAiThreadMessage } from "@/lib/services/ai.service";
 import { getThread, markMessageRead } from "@/lib/services/email.service";
 import { formatDateTime, participantListLabel } from "@/lib/utils/format";
 
@@ -55,10 +55,10 @@ export default function ThreadPage() {
     setSummaryLoading(true);
     setSummaryError(null);
     try {
-      const text = thread.messages
-        .map((message) => `${participantListLabel(message.from)}: ${message.bodyText ?? ""}`)
-        .join("\n\n");
-      const result = await summarize(text.slice(0, 8000));
+      const result = await summarize(
+        thread.subject ?? "",
+        thread.messages.map(toAiThreadMessage),
+      );
       setSummary(result.summary);
     } catch (err) {
       setSummaryError(err instanceof Error ? err.message : "Failed to summarize");
@@ -138,7 +138,14 @@ export default function ThreadPage() {
         ))}
       </div>
 
-      {lastMessage && <ReplyBox threadId={thread.id} lastMessage={lastMessage} />}
+      {lastMessage && (
+        <ReplyBox
+          threadId={thread.id}
+          subject={thread.subject ?? ""}
+          messages={thread.messages}
+          lastMessage={lastMessage}
+        />
+      )}
     </div>
   );
 }

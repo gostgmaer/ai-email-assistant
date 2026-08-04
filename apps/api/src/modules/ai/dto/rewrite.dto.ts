@@ -5,12 +5,12 @@ export class RewriteDto {
   @ApiProperty({ description: 'Draft text to rewrite' })
   @IsString()
   @MinLength(1)
-  text!: string;
+  draft!: string;
 
   @ApiPropertyOptional({
     description: 'Rewrite instructions, e.g. "more formal"',
   })
   @IsOptional()
   @IsString()
-  instructions?: string;
+  instruction?: string;
 }

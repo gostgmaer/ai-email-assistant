@@ -1,9 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsString,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+
+import { EmailMessageDto } from './email-message.dto';
 
 export class ClassifyDto {
-  @ApiProperty({ description: 'Email text to classify' })
+  @ApiProperty({ description: 'Subject of the email thread' })
   @IsString()
   @MinLength(1)
-  text!: string;
+  subject!: string;
+
+  @ApiProperty({ type: [EmailMessageDto] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => EmailMessageDto)
+  thread!: EmailMessageDto[];
 }

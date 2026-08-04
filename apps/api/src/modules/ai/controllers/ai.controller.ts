@@ -30,7 +30,7 @@ export class AiController {
     description: 'The AI service failed or is unreachable',
   })
   async summarize(@Body() dto: SummarizeDto) {
-    return this.aiClientService.summarize(dto.text);
+    return this.aiClientService.summarize(dto.subject, dto.thread);
   }
 
   @Post('reply')
@@ -44,8 +44,9 @@ export class AiController {
   })
   async reply(@Body() dto: GenerateReplyDto) {
     return this.aiClientService.generateReply(
-      dto.threadContext,
-      dto.instructions,
+      dto.subject,
+      dto.thread,
+      dto.instruction,
     );
   }
 
@@ -57,7 +58,7 @@ export class AiController {
     description: 'The AI service failed or is unreachable',
   })
   async rewrite(@Body() dto: RewriteDto) {
-    return this.aiClientService.rewrite(dto.text, dto.instructions);
+    return this.aiClientService.rewrite(dto.draft, dto.instruction);
   }
 
   @Post('classify')
@@ -68,6 +69,6 @@ export class AiController {
     description: 'The AI service failed or is unreachable',
   })
   async classify(@Body() dto: ClassifyDto) {
-    return this.aiClientService.classify(dto.text);
+    return this.aiClientService.classify(dto.subject, dto.thread);
   }
 }

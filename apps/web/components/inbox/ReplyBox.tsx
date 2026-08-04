@@ -5,14 +5,18 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { EmailMessage } from "@/lib/api/types";
-import { generateReply, rewrite } from "@/lib/services/ai.service";
+import { generateReply, rewrite, toAiThreadMessage } from "@/lib/services/ai.service";
 import { replyToMessage } from "@/lib/services/email.service";
 
 export function ReplyBox({
   threadId,
+  subject,
+  messages,
   lastMessage,
 }: {
   threadId: string;
+  subject: string;
+  messages: EmailMessage[];
   lastMessage: EmailMessage;
 }) {
   const [body, setBody] = useState("");
@@ -38,8 +42,10 @@ export function ReplyBox({
     setAiLoading("reply");
     setAiError(null);
     try {
-      const context = lastMessage.bodyText || lastMessage.subject || "";
-      const { reply } = await generateReply(context);
+      const { reply } = await generateReply(
+        subject,
+        messages.map(toAiThreadMessage),
+      );
       setBody(reply);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "AI reply failed");
