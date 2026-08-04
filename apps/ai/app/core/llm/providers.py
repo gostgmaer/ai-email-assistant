@@ -1,3 +1,5 @@
+import warnings
+
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
@@ -7,6 +9,13 @@ from langchain_openai import ChatOpenAI
 from app.config.settings import settings
 
 from .base import BaseLLMProvider
+
+warnings.filterwarnings(
+    "ignore",
+    message=r".*uses fixed sampling defaults.*",
+    category=UserWarning,
+    module="langchain_google_genai.*",
+)
 
 
 class GoogleProvider(BaseLLMProvider):
