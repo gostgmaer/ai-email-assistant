@@ -2,7 +2,9 @@ import { z } from 'zod';
 
 export const envSchema = z.object({
   // App
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
   PORT: z.coerce.number().default(3000),
 
   // Database
@@ -15,24 +17,30 @@ export const envSchema = z.object({
 
   // JWT
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
+
+  // Frontend (OAuth redirect target)
+  FRONTEND_URL: z.string().default('http://localhost:3000'),
 
   // Google
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_CALLBACK_URL: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  GOOGLE_CALLBACK_URL: z.string().min(1),
 
   // Microsoft
-  MICROSOFT_CLIENT_ID: z.string().optional(),
-  MICROSOFT_CLIENT_SECRET: z.string().optional(),
-  MICROSOFT_CALLBACK_URL: z.string().optional(),
+  MICROSOFT_CLIENT_ID: z.string().min(1),
+  MICROSOFT_CLIENT_SECRET: z.string().min(1),
+  MICROSOFT_CALLBACK_URL: z.string().min(1),
 
   // AI
   AI_SERVICE_URL: z.url(),
   AI_SERVICE_API_KEY: z.string().optional(),
 
   // Logger
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  LOG_LEVEL: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+    .default('info'),
 });
 
 export type Env = z.infer<typeof envSchema>;
