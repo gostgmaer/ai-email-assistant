@@ -7,6 +7,7 @@ import { HealthModule } from './modules/health/health.module';
 import { AppLoggerModule } from './infrastructure/logger/logger.module';
 import { RedisModule } from './infrastructure/redis';
 import { QueueModule } from './infrastructure/queue';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { QueueModule } from './infrastructure/queue';
     RedisModule,
     QueueModule,
     HealthModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
