@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from app.api.routes.email import router as email_router
 from app.api.routes.health import router as health_router
 from app.config.settings import settings
-
+import app.core.workflow.workflows
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

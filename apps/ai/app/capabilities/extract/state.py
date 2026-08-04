@@ -1,6 +1,8 @@
-from typing import NotRequired, TypedDict
+from typing import NotRequired
+from typing import TypedDict
 
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage
+from langchain_core.messages import BaseMessage
 
 
 class EmailMessage(TypedDict):
@@ -15,7 +17,18 @@ class TokenUsage(TypedDict):
     total_tokens: int
 
 
-class SummarizeState(TypedDict):
+class ExtractionResult(TypedDict):
+    people: list[str]
+    emails: list[str]
+    phones: list[str]
+    companies: list[str]
+    dates: list[str]
+    urls: list[str]
+    tasks: list[str]
+    meeting_requests: list[str]
+
+
+class ExtractState(TypedDict):
     # Input
     subject: str
     thread: list[EmailMessage]
@@ -26,8 +39,7 @@ class SummarizeState(TypedDict):
     response: NotRequired[AIMessage]
 
     # Output
-    summary: NotRequired[str]
-    key_points: NotRequired[list[str]]
+    extraction: NotRequired[ExtractionResult]
 
     # Metadata
     provider: NotRequired[str]

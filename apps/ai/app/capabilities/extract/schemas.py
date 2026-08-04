@@ -8,11 +8,15 @@ class EmailMessageSchema(BaseModel):
     content: str
 
 
-class ClassificationSchema(BaseModel):
-    category: str
-    priority: str
-    sentiment: str
-    spam: bool
+class ExtractionSchema(BaseModel):
+    people: list[str]
+    emails: list[str]
+    phones: list[str]
+    companies: list[str]
+    dates: list[str]
+    urls: list[str]
+    tasks: list[str]
+    meeting_requests: list[str]
 
 
 class TokenUsageSchema(BaseModel):
@@ -21,13 +25,13 @@ class TokenUsageSchema(BaseModel):
     total_tokens: int
 
 
-class ClassifyRequest(BaseModel):
+class ExtractRequest(BaseModel):
     subject: str
     thread: list[EmailMessageSchema]
 
 
-class ClassifyResponse(BaseModel):
-    classification: ClassificationSchema
+class ExtractResponse(BaseModel):
+    extraction: ExtractionSchema
     provider: str
     model: str
     usage: TokenUsageSchema
