@@ -58,6 +58,15 @@ export class EmailController {
     return this.inboxService.getThread(user.sub, id);
   }
 
+  @Get('messages/:id')
+  @ApiOperation({
+    summary: 'Get a single message (e.g. to load a draft for editing)',
+  })
+  @ApiResponse({ status: 200, description: 'The message' })
+  async getMessage(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.inboxService.getMessageOwned(user.sub, id);
+  }
+
   @Post('messages/:id/read')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Mark a message as read' })

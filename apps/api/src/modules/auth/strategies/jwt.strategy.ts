@@ -9,7 +9,13 @@ import { JwtPayload } from '../interfaces/jwt-payload.interface';
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // Query param fallback lets full-page browser navigations (e.g. the
+      // Gmail/Outlook "connect mailbox" redirect flow) authenticate too,
+      // since a plain navigation can't set an Authorization header.
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        ExtractJwt.fromUrlQueryParameter('token'),
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
