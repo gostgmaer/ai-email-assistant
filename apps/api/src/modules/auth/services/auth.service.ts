@@ -35,10 +35,6 @@ export class AuthService {
     await this.tokenService.revokeRefreshToken(refreshToken);
   }
 
-  async getProfile(userId: string): Promise<UserModel> {
-    return this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
-  }
-
   private async findOrCreateUser(profile: OAuthProfile): Promise<UserModel> {
     const providerIdField =
       profile.provider === 'GOOGLE' ? 'googleId' : 'microsoftId';

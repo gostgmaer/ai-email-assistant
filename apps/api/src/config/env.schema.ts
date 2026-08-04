@@ -20,6 +20,11 @@ export const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
 
+  // Encryption (AES-256-GCM key for provider credentials at rest, 32 bytes hex-encoded)
+  ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/, {
+    message: 'ENCRYPTION_KEY must be a 64-character hex string (32 bytes)',
+  }),
+
   // Frontend (OAuth redirect target)
   FRONTEND_URL: z.string().default('http://localhost:3000'),
 
@@ -27,11 +32,13 @@ export const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   GOOGLE_CALLBACK_URL: z.string().min(1),
+  GOOGLE_MAIL_CALLBACK_URL: z.string().min(1),
 
   // Microsoft
   MICROSOFT_CLIENT_ID: z.string().min(1),
   MICROSOFT_CLIENT_SECRET: z.string().min(1),
   MICROSOFT_CALLBACK_URL: z.string().min(1),
+  MICROSOFT_MAIL_CALLBACK_URL: z.string().min(1),
 
   // AI
   AI_SERVICE_URL: z.url(),

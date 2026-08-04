@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  Notification: 'Notification',
   RefreshToken: 'RefreshToken',
   EmailAccount: 'EmailAccount',
   EmailCredential: 'EmailCredential',
@@ -91,6 +92,19 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const NotificationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  title: 'title',
+  body: 'body',
+  metadata: 'metadata',
+  isRead: 'isRead',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
 export const RefreshTokenScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -111,6 +125,10 @@ export const EmailAccountScalarFieldEnum = {
   displayName: 'displayName',
   isPrimary: 'isPrimary',
   syncEnabled: 'syncEnabled',
+  imapConfig: 'imapConfig',
+  syncStatus: 'syncStatus',
+  lastSyncedAt: 'lastSyncedAt',
+  lastSyncError: 'lastSyncError',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -138,6 +156,7 @@ export const MailFolderScalarFieldEnum = {
   providerFolderId: 'providerFolderId',
   name: 'name',
   type: 'type',
+  syncCursor: 'syncCursor',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -187,19 +206,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
   JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

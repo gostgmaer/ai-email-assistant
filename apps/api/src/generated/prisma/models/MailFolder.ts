@@ -30,6 +30,7 @@ export type MailFolderMinAggregateOutputType = {
   providerFolderId: string | null
   name: string | null
   type: $Enums.MailFolderType | null
+  syncCursor: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -40,6 +41,7 @@ export type MailFolderMaxAggregateOutputType = {
   providerFolderId: string | null
   name: string | null
   type: $Enums.MailFolderType | null
+  syncCursor: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,6 +52,7 @@ export type MailFolderCountAggregateOutputType = {
   providerFolderId: number
   name: number
   type: number
+  syncCursor: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -62,6 +65,7 @@ export type MailFolderMinAggregateInputType = {
   providerFolderId?: true
   name?: true
   type?: true
+  syncCursor?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -72,6 +76,7 @@ export type MailFolderMaxAggregateInputType = {
   providerFolderId?: true
   name?: true
   type?: true
+  syncCursor?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +87,7 @@ export type MailFolderCountAggregateInputType = {
   providerFolderId?: true
   name?: true
   type?: true
+  syncCursor?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -165,6 +171,7 @@ export type MailFolderGroupByOutputType = {
   providerFolderId: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor: string | null
   createdAt: Date
   updatedAt: Date
   _count: MailFolderCountAggregateOutputType | null
@@ -196,6 +203,7 @@ export type MailFolderWhereInput = {
   providerFolderId?: Prisma.StringNullableFilter<"MailFolder"> | string | null
   name?: Prisma.StringFilter<"MailFolder"> | string
   type?: Prisma.EnumMailFolderTypeFilter<"MailFolder"> | $Enums.MailFolderType
+  syncCursor?: Prisma.StringNullableFilter<"MailFolder"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MailFolder"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MailFolder"> | Date | string
   account?: Prisma.XOR<Prisma.EmailAccountScalarRelationFilter, Prisma.EmailAccountWhereInput>
@@ -208,6 +216,7 @@ export type MailFolderOrderByWithRelationInput = {
   providerFolderId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  syncCursor?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   account?: Prisma.EmailAccountOrderByWithRelationInput
@@ -224,6 +233,7 @@ export type MailFolderWhereUniqueInput = Prisma.AtLeast<{
   providerFolderId?: Prisma.StringNullableFilter<"MailFolder"> | string | null
   name?: Prisma.StringFilter<"MailFolder"> | string
   type?: Prisma.EnumMailFolderTypeFilter<"MailFolder"> | $Enums.MailFolderType
+  syncCursor?: Prisma.StringNullableFilter<"MailFolder"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MailFolder"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MailFolder"> | Date | string
   account?: Prisma.XOR<Prisma.EmailAccountScalarRelationFilter, Prisma.EmailAccountWhereInput>
@@ -236,6 +246,7 @@ export type MailFolderOrderByWithAggregationInput = {
   providerFolderId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  syncCursor?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.MailFolderCountOrderByAggregateInput
@@ -252,6 +263,7 @@ export type MailFolderScalarWhereWithAggregatesInput = {
   providerFolderId?: Prisma.StringNullableWithAggregatesFilter<"MailFolder"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"MailFolder"> | string
   type?: Prisma.EnumMailFolderTypeWithAggregatesFilter<"MailFolder"> | $Enums.MailFolderType
+  syncCursor?: Prisma.StringNullableWithAggregatesFilter<"MailFolder"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MailFolder"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"MailFolder"> | Date | string
 }
@@ -261,6 +273,7 @@ export type MailFolderCreateInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   account: Prisma.EmailAccountCreateNestedOneWithoutFoldersInput
@@ -273,6 +286,7 @@ export type MailFolderUncheckedCreateInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutFolderInput
@@ -283,6 +297,7 @@ export type MailFolderUpdateInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   account?: Prisma.EmailAccountUpdateOneRequiredWithoutFoldersNestedInput
@@ -295,6 +310,7 @@ export type MailFolderUncheckedUpdateInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutFolderNestedInput
@@ -306,6 +322,7 @@ export type MailFolderCreateManyInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -315,6 +332,7 @@ export type MailFolderUpdateManyMutationInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -325,6 +343,7 @@ export type MailFolderUncheckedUpdateManyInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -350,6 +369,7 @@ export type MailFolderCountOrderByAggregateInput = {
   providerFolderId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  syncCursor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -360,6 +380,7 @@ export type MailFolderMaxOrderByAggregateInput = {
   providerFolderId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  syncCursor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -370,6 +391,7 @@ export type MailFolderMinOrderByAggregateInput = {
   providerFolderId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  syncCursor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -444,6 +466,7 @@ export type MailFolderCreateWithoutAccountInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   threads?: Prisma.EmailThreadCreateNestedManyWithoutFolderInput
@@ -454,6 +477,7 @@ export type MailFolderUncheckedCreateWithoutAccountInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutFolderInput
@@ -494,6 +518,7 @@ export type MailFolderScalarWhereInput = {
   providerFolderId?: Prisma.StringNullableFilter<"MailFolder"> | string | null
   name?: Prisma.StringFilter<"MailFolder"> | string
   type?: Prisma.EnumMailFolderTypeFilter<"MailFolder"> | $Enums.MailFolderType
+  syncCursor?: Prisma.StringNullableFilter<"MailFolder"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MailFolder"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MailFolder"> | Date | string
 }
@@ -503,6 +528,7 @@ export type MailFolderCreateWithoutThreadsInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   account: Prisma.EmailAccountCreateNestedOneWithoutFoldersInput
@@ -514,6 +540,7 @@ export type MailFolderUncheckedCreateWithoutThreadsInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -539,6 +566,7 @@ export type MailFolderUpdateWithoutThreadsInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   account?: Prisma.EmailAccountUpdateOneRequiredWithoutFoldersNestedInput
@@ -550,6 +578,7 @@ export type MailFolderUncheckedUpdateWithoutThreadsInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -559,6 +588,7 @@ export type MailFolderCreateManyAccountInput = {
   providerFolderId?: string | null
   name: string
   type: $Enums.MailFolderType
+  syncCursor?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -568,6 +598,7 @@ export type MailFolderUpdateWithoutAccountInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   threads?: Prisma.EmailThreadUpdateManyWithoutFolderNestedInput
@@ -578,6 +609,7 @@ export type MailFolderUncheckedUpdateWithoutAccountInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutFolderNestedInput
@@ -588,6 +620,7 @@ export type MailFolderUncheckedUpdateManyWithoutAccountInput = {
   providerFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumMailFolderTypeFieldUpdateOperationsInput | $Enums.MailFolderType
+  syncCursor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -629,6 +662,7 @@ export type MailFolderSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   providerFolderId?: boolean
   name?: boolean
   type?: boolean
+  syncCursor?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
@@ -642,6 +676,7 @@ export type MailFolderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   providerFolderId?: boolean
   name?: boolean
   type?: boolean
+  syncCursor?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
@@ -653,6 +688,7 @@ export type MailFolderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   providerFolderId?: boolean
   name?: boolean
   type?: boolean
+  syncCursor?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
@@ -664,11 +700,12 @@ export type MailFolderSelectScalar = {
   providerFolderId?: boolean
   name?: boolean
   type?: boolean
+  syncCursor?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type MailFolderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "accountId" | "providerFolderId" | "name" | "type" | "createdAt" | "updatedAt", ExtArgs["result"]["mailFolder"]>
+export type MailFolderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "accountId" | "providerFolderId" | "name" | "type" | "syncCursor" | "createdAt" | "updatedAt", ExtArgs["result"]["mailFolder"]>
 export type MailFolderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
   threads?: boolean | Prisma.MailFolder$threadsArgs<ExtArgs>
@@ -693,6 +730,10 @@ export type $MailFolderPayload<ExtArgs extends runtime.Types.Extensions.Internal
     providerFolderId: string | null
     name: string
     type: $Enums.MailFolderType
+    /**
+     * * Opaque provider cursor (Gmail historyId, Graph delta token, IMAP UID) for incremental sync.
+     */
+    syncCursor: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["mailFolder"]>
@@ -1125,6 +1166,7 @@ export interface MailFolderFieldRefs {
   readonly providerFolderId: Prisma.FieldRef<"MailFolder", 'String'>
   readonly name: Prisma.FieldRef<"MailFolder", 'String'>
   readonly type: Prisma.FieldRef<"MailFolder", 'MailFolderType'>
+  readonly syncCursor: Prisma.FieldRef<"MailFolder", 'String'>
   readonly createdAt: Prisma.FieldRef<"MailFolder", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"MailFolder", 'DateTime'>
 }

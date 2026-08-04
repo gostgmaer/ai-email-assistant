@@ -10,20 +10,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
 import { GoogleAuthGuard, MicrosoftAuthGuard } from '../../oauth';
 import { OAuthValidationResult } from '../../oauth/interfaces';
-import { CurrentUser } from '../decorators/current-user.decorator';
 import { RefreshTokenDto } from '../dto';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthService } from '../services/auth.service';
 
 @ApiTags('auth')
@@ -97,16 +89,6 @@ export class AuthController {
   @ApiResponse({ status: 204, description: 'Refresh token revoked' })
   async logout(@Body() dto: RefreshTokenDto): Promise<void> {
     await this.authService.logout(dto.refreshToken);
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get the current authenticated user' })
-  @ApiResponse({ status: 200, description: 'The current user' })
-  @ApiResponse({ status: 401, description: 'Missing or invalid access token' })
-  async me(@CurrentUser() user: JwtPayload) {
-    return this.authService.getProfile(user.sub);
   }
 
   private async handleOAuthCallback(

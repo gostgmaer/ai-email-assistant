@@ -7,7 +7,14 @@ import { HealthModule } from './modules/health/health.module';
 import { AppLoggerModule } from './infrastructure/logger/logger.module';
 import { RedisModule } from './infrastructure/redis';
 import { QueueModule } from './infrastructure/queue';
+import { EncryptionModule } from './infrastructure/encryption';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users';
+import { EmailAccountModule } from './modules/email-account';
+import { EmailModule } from './modules/email';
+import { AiModule } from './modules/ai';
+import { JobsModule } from './modules/jobs';
+import { NotificationModule } from './modules/notification';
 
 @Module({
   imports: [
@@ -22,8 +29,15 @@ import { AuthModule } from './modules/auth/auth.module';
     PrismaModule,
     RedisModule,
     QueueModule,
+    EncryptionModule,
     HealthModule,
     AuthModule,
+    UsersModule,
+    EmailAccountModule,
+    EmailModule,
+    AiModule,
+    JobsModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}

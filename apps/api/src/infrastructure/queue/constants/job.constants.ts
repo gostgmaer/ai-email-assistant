@@ -2,6 +2,8 @@ export const EmailSyncJobs = {
   InitialSync: 'initial-sync',
   IncrementalSync: 'incremental-sync',
   SyncFolders: 'sync-folders',
+  /** Repeatable fan-out job: enqueues an IncrementalSync for every active account. */
+  BackgroundScan: 'background-scan',
 } as const;
 
 export const AIJobs = {

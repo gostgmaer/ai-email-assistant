@@ -23,6 +23,12 @@ enum MailFolderType {
   CUSTOM
 }
 
+enum SyncStatus {
+  IDLE
+  SYNCING
+  ERROR
+}
+
 model User {
   id          String  @id @default(uuid())
   email       String  @unique
@@ -38,8 +44,26 @@ model User {
 
   emailAccounts EmailAccount[]
   refreshTokens RefreshToken[]
+  notifications Notification[]
 
   @@index([createdAt])
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title    String
+  body     String
+  metadata Json?
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model RefreshToken {
@@ -70,6 +94,13 @@ model EmailAccount {
 
   isPrimary   Boolean @default(false)
   syncEnabled Boolean @default(true)
+
+  // IMAP-only connection settings (host/port/secure/username); null for GOOGLE/MICROSOFT
+  imapConfig Json?
+
+  syncStatus   SyncStatus @default(IDLE)
+  lastSyncedAt DateTime?
+  lastSyncError String?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -108,6 +139,9 @@ model MailFolder {
   name String
 
   type MailFolderType
+
+  /** Opaque provider cursor (Gmail historyId, Graph delta token, IMAP UID) for incremental sync. */
+  syncCursor String?
 
   threads EmailThread[]
 

@@ -18,7 +18,7 @@ export const loggerConfig: Params = {
           }
         : undefined,
 
-    genReqId: (req) => (req.headers['x-request-id'] as string) ?? randomUUID(),
+    genReqId: (req) => req.headers['x-request-id'] ?? randomUUID(),
 
     autoLogging: true,
 

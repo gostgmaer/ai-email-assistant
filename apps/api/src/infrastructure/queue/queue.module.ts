@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 
 import { QueueNames } from './constants/queue.constants';
+import { QueueService } from './queue.service';
 
 @Global()
 @Module({
@@ -46,6 +47,8 @@ import { QueueNames } from './constants/queue.constants';
     ),
   ],
 
-  exports: [BullModule],
+  providers: [QueueService],
+
+  exports: [BullModule, QueueService],
 })
 export class QueueModule {}

@@ -29,3 +29,12 @@ export const MailFolderType = {
 } as const
 
 export type MailFolderType = (typeof MailFolderType)[keyof typeof MailFolderType]
+
+
+export const SyncStatus = {
+  IDLE: 'IDLE',
+  SYNCING: 'SYNCING',
+  ERROR: 'ERROR'
+} as const
+
+export type SyncStatus = (typeof SyncStatus)[keyof typeof SyncStatus]
