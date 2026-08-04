@@ -10,7 +10,7 @@ from app.config.settings import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    print(f"🚀 Starting {settings.app_name}")
+    print(f"Starting {settings.app_name}")
 
     # TODO:
     # - Initialize LLM Manager
@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
-    print("👋 Shutting down AI Platform")
+    print("Shutting down AI Platform")
 
 
 app = FastAPI(

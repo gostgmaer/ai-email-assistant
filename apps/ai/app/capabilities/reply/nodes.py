@@ -2,7 +2,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import SystemMessage
 
-from app.core.llm import llm_manager
+from app.core.llm import extract_text, llm_manager
 from app.core.prompts import prompt_manager
 
 from .state import ReplyState
@@ -64,7 +64,7 @@ def extract_response(state: ReplyState) -> ReplyState:
 
     response: AIMessage = state["response"]
 
-    state["draft"] = response.content
+    state["draft"] = extract_text(response.content)
 
     state["provider"] = llm_manager.provider
 
