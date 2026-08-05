@@ -72,6 +72,8 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const { body, skipAuth, headers, ...rest } = options;
 
+  const isFormData = body instanceof FormData;
+
   const doFetch = async (): Promise<Response> => {
     const accessToken = getAccessToken();
 
@@ -82,13 +84,16 @@ export async function apiFetch<T>(
       // auth checks on repeat navigations. TanStack Query is our cache layer.
       cache: "no-store",
       headers: {
-        "Content-Type": "application/json",
+        // FormData bodies (file uploads) must NOT set Content-Type — fetch
+        // needs to generate its own multipart boundary.
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(accessToken && !skipAuth
           ? { Authorization: `Bearer ${accessToken}` }
           : {}),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body:
+        body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
     });
   };
 

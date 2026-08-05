@@ -60,7 +60,9 @@ export const ModelName = {
   MailFolder: 'MailFolder',
   EmailThread: 'EmailThread',
   EmailMessage: 'EmailMessage',
-  ContactMemory: 'ContactMemory'
+  ContactMemory: 'ContactMemory',
+  Document: 'Document',
+  DocumentChunk: 'DocumentChunk'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -234,6 +236,30 @@ export const ContactMemoryScalarFieldEnum = {
 } as const
 
 export type ContactMemoryScalarFieldEnum = (typeof ContactMemoryScalarFieldEnum)[keyof typeof ContactMemoryScalarFieldEnum]
+
+
+export const DocumentScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  filename: 'filename',
+  contentType: 'contentType',
+  provider: 'provider',
+  model: 'model',
+  createdAt: 'createdAt'
+} as const
+
+export type DocumentScalarFieldEnum = (typeof DocumentScalarFieldEnum)[keyof typeof DocumentScalarFieldEnum]
+
+
+export const DocumentChunkScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  chunkIndex: 'chunkIndex',
+  content: 'content',
+  createdAt: 'createdAt'
+} as const
+
+export type DocumentChunkScalarFieldEnum = (typeof DocumentChunkScalarFieldEnum)[keyof typeof DocumentChunkScalarFieldEnum]
 
 
 export const SortOrder = {

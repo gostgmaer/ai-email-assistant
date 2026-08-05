@@ -1,4 +1,9 @@
-import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  Logger,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { EmailMessageDto } from '../dto';
@@ -111,6 +116,17 @@ interface RawContactMemoryResponse {
   usage: RawUsage;
 }
 
+export interface ProcessedDocumentChunk {
+  content: string;
+  embedding: number[];
+}
+
+export interface ProcessDocumentResponse {
+  chunks: ProcessedDocumentChunk[];
+  provider: string;
+  model: string;
+}
+
 @Injectable()
 export class AiClientService {
   private readonly logger = new Logger(AiClientService.name);
@@ -203,6 +219,24 @@ export class AiClientService {
     };
   }
 
+  async processDocument(
+    buffer: Buffer,
+    filename: string,
+    contentType: string,
+  ): Promise<ProcessDocumentResponse> {
+    const formData = new FormData();
+    formData.append(
+      'file',
+      new Blob([new Uint8Array(buffer)], { type: contentType }),
+      filename,
+    );
+
+    return this.postMultipart<ProcessDocumentResponse>(
+      '/documents/process',
+      formData,
+    );
+  }
+
   private async post<T>(
     path: string,
     body: Record<string, unknown>,
@@ -226,6 +260,50 @@ export class AiClientService {
         `AI service request to ${path} failed: ${String(error)}`,
       );
       throw new BadGatewayException('AI service is unreachable');
+    }
+
+    if (!response.ok) {
+      const text = await response.text();
+      this.logger.warn(
+        `AI service error (${response.status}) at ${path}: ${text}`,
+      );
+      throw new BadGatewayException(`AI service error (${response.status})`);
+    }
+
+    return (await response.json()) as T;
+  }
+
+  private async postMultipart<T>(path: string, formData: FormData): Promise<T> {
+    const baseUrl = this.configService.getOrThrow<string>('AI_SERVICE_URL');
+    const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
+
+    let response: Response;
+
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        method: 'POST',
+        headers: {
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
+        body: formData,
+      });
+    } catch (error) {
+      this.logger.error(
+        `AI service request to ${path} failed: ${String(error)}`,
+      );
+      throw new BadGatewayException('AI service is unreachable');
+    }
+
+    // The document-processing endpoint uses 422 specifically to mean
+    // "unsupported file type" — surface that distinctly instead of the
+    // generic 502 so the frontend can show the AI service's own message.
+    if (response.status === 422) {
+      const body = (await response.json().catch(() => null)) as {
+        detail?: string;
+      } | null;
+      throw new UnprocessableEntityException(
+        body?.detail ?? 'Unsupported document',
+      );
     }
 
     if (!response.ok) {
