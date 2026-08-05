@@ -11,6 +11,7 @@ import {
   NormalizedParticipant,
   SendResult,
 } from '../interfaces';
+import { isBulkMail } from './bulk-mail.util';
 
 const API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
@@ -48,6 +49,13 @@ const SYSTEM_LABEL_TYPE: Record<string, NormalizedFolder['type']> = {
   TRASH: 'TRASH',
   SPAM: 'SPAM',
 };
+
+// Gmail's CATEGORY_* labels (Promotions/Social/Updates/Forums/Personal) are
+// tags layered onto messages that are usually already in INBOX — they are
+// not separate mailboxes. Treating them as syncable folders re-fetches the
+// same messages once per category a message happens to carry, which is
+// what was driving 429 rate limits.
+const CATEGORY_LABEL_PREFIX = 'CATEGORY_';
 
 interface GmailLabel {
   id: string;
@@ -89,6 +97,7 @@ export class GmailClient implements MailProviderClient {
 
     return data.labels
       .filter((label) => label.type === 'system' || label.type === 'user')
+      .filter((label) => !label.id.startsWith(CATEGORY_LABEL_PREFIX))
       .map((label) => ({
         providerFolderId: label.id,
         name: label.name,
@@ -160,12 +169,13 @@ export class GmailClient implements MailProviderClient {
       headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
 
     const { text, html } = this.extractBody(message.payload);
+    const from = this.parseAddressList(header('From'));
 
     return {
       providerMessageId: message.id,
       providerThreadId: message.threadId,
       subject: header('Subject'),
-      from: this.parseAddressList(header('From')),
+      from,
       to: this.parseAddressList(header('To')),
       cc: this.parseAddressList(header('Cc')),
       bcc: this.parseAddressList(header('Bcc')),
@@ -176,6 +186,15 @@ export class GmailClient implements MailProviderClient {
         ? new Date(Number(message.internalDate))
         : new Date(),
       isRead: !(message.labelIds ?? []).includes('UNREAD'),
+      isBulkMail: isBulkMail(
+        {
+          listUnsubscribe: header('List-Unsubscribe'),
+          listId: header('List-Id'),
+          precedence: header('Precedence'),
+          autoSubmitted: header('Auto-Submitted'),
+        },
+        from[0]?.address,
+      ),
     };
   }
 

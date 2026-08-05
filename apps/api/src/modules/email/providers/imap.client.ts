@@ -14,6 +14,7 @@ import {
   NormalizedParticipant,
   SendResult,
 } from '../interfaces';
+import { isBulkMail } from './bulk-mail.util';
 
 const SPECIAL_USE_TYPE: Record<string, NormalizedFolder['type']> = {
   '\\Inbox': 'INBOX',
@@ -207,6 +208,11 @@ export class ImapClient implements MailProviderClient {
       : undefined;
 
     const messageId = message.envelope?.messageId ?? `<uid-${message.uid}>`;
+    const header = (name: string) =>
+      this.headerString(parsed?.headers.get(name.toLowerCase()));
+    const from = (message.envelope?.from ?? []).map((a) =>
+      this.fromImapAddress(a),
+    );
 
     return {
       providerMessageId: messageId,
@@ -214,7 +220,7 @@ export class ImapClient implements MailProviderClient {
       // the root message's Message-ID, which we use as the thread key.
       providerThreadId: message.envelope?.inReplyTo ?? messageId,
       subject: message.envelope?.subject,
-      from: (message.envelope?.from ?? []).map((a) => this.fromImapAddress(a)),
+      from,
       to: (message.envelope?.to ?? []).map((a) => this.fromImapAddress(a)),
       cc: (message.envelope?.cc ?? []).map((a) => this.fromImapAddress(a)),
       bcc: (message.envelope?.bcc ?? []).map((a) => this.fromImapAddress(a)),
@@ -225,7 +231,28 @@ export class ImapClient implements MailProviderClient {
         ? new Date(message.internalDate)
         : new Date(),
       isRead: message.flags ? message.flags.has('\\Seen') : false,
+      isBulkMail: isBulkMail(
+        {
+          listUnsubscribe: header('list-unsubscribe'),
+          listId: header('list-id'),
+          precedence: header('precedence'),
+          autoSubmitted: header('auto-submitted'),
+        },
+        from[0]?.address,
+      ),
     };
+  }
+
+  private headerString(value: unknown): string | undefined {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    return undefined;
   }
 
   private fromImapAddress(address: {

@@ -160,6 +160,19 @@ export class EmailSyncService {
   ): Promise<void> {
     const accountId = account.id;
 
+    const isInbound = !message.from.some(
+      (sender) => sender.address.toLowerCase() === account.email.toLowerCase(),
+    );
+
+    // Newsletters/notifications/automated mail (detected from
+    // List-Unsubscribe/List-Id/Precedence/Auto-Submitted headers, or a
+    // noreply-style sender) never enter the app at all — no thread, no
+    // message, nothing to show in the inbox. Only applies to inbound mail;
+    // never skip the user's own sent/draft copies.
+    if (isInbound && message.isBulkMail) {
+      return;
+    }
+
     const thread = await this.prisma.emailThread.upsert({
       where: {
         accountId_providerThreadId: {
@@ -217,12 +230,10 @@ export class EmailSyncService {
       },
     });
 
-    const isInbound = !message.from.some(
-      (sender) => sender.address.toLowerCase() === account.email.toLowerCase(),
-    );
-
     // Only run the AI pipeline for genuinely new, inbound messages — never
-    // for updates (re-syncs) or the SENT-folder copy of our own outbound mail.
+    // for updates (re-syncs) or the SENT-folder copy of our own outbound
+    // mail. Bulk mail is already filtered out above, before it's ever
+    // persisted.
     if (!existing && isInbound) {
       await this.queueService.enqueueAiProcessing(saved.id);
     }

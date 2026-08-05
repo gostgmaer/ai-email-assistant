@@ -10,8 +10,27 @@ import {
   NormalizedParticipant,
   SendResult,
 } from '../interfaces';
+import { isBulkMail } from './bulk-mail.util';
 
 const API_BASE = 'https://graph.microsoft.com/v1.0/me';
+
+// Graph omits internetMessageHeaders unless explicitly selected, and
+// selecting any field restricts the response to only the selected ones —
+// so every field normalizeMessage() reads must be listed here.
+const MESSAGE_SELECT_FIELDS = [
+  'id',
+  'conversationId',
+  'subject',
+  'from',
+  'toRecipients',
+  'ccRecipients',
+  'bccRecipients',
+  'bodyPreview',
+  'body',
+  'receivedDateTime',
+  'isRead',
+  'internetMessageHeaders',
+].join(',');
 
 const WELL_KNOWN_FOLDER_TYPE: Record<string, NormalizedFolder['type']> = {
   inbox: 'INBOX',
@@ -43,6 +62,7 @@ interface GraphMessage {
   body?: { contentType: 'text' | 'html'; content: string };
   receivedDateTime?: string;
   isRead?: boolean;
+  internetMessageHeaders?: { name: string; value: string }[];
 }
 
 interface GraphListResponse<T> {
@@ -73,6 +93,7 @@ export class MicrosoftGraphClient implements MailProviderClient {
     const params = new URLSearchParams({
       $top: String(options.limit ?? 25),
       $orderby: 'receivedDateTime desc',
+      $select: MESSAGE_SELECT_FIELDS,
     });
 
     if (options.pageToken) {
@@ -96,7 +117,7 @@ export class MicrosoftGraphClient implements MailProviderClient {
 
   async getMessage(providerMessageId: string): Promise<NormalizedMessage> {
     const message = await this.request<GraphMessage>(
-      `/messages/${providerMessageId}`,
+      `/messages/${providerMessageId}?$select=${MESSAGE_SELECT_FIELDS}`,
     );
 
     return this.normalizeMessage(message);
@@ -147,6 +168,10 @@ export class MicrosoftGraphClient implements MailProviderClient {
   }
 
   private normalizeMessage(message: GraphMessage): NormalizedMessage {
+    const headers = message.internetMessageHeaders ?? [];
+    const header = (name: string) =>
+      headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
+
     return {
       providerMessageId: message.id,
       providerThreadId: message.conversationId,
@@ -164,6 +189,15 @@ export class MicrosoftGraphClient implements MailProviderClient {
         ? new Date(message.receivedDateTime)
         : new Date(),
       isRead: message.isRead ?? true,
+      isBulkMail: isBulkMail(
+        {
+          listUnsubscribe: header('List-Unsubscribe'),
+          listId: header('List-Id'),
+          precedence: header('Precedence'),
+          autoSubmitted: header('Auto-Submitted'),
+        },
+        message.from?.emailAddress.address,
+      ),
     };
   }
 

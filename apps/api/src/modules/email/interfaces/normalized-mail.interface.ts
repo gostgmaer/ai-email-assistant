@@ -24,6 +24,11 @@ export interface NormalizedMessage {
   snippet?: string;
   receivedAt: Date;
   isRead: boolean;
+  /** True for newsletters, social notifications, and automated /
+   * transactional mail, detected via List-Unsubscribe/List-Id/Precedence/
+   * Auto-Submitted headers. Used to skip the AI pipeline, not to hide the
+   * message from sync. */
+  isBulkMail: boolean;
 }
 
 export interface ListMessagesOptions {
