@@ -43,5 +43,10 @@ class EmbeddingManager:
 
         return self.get_client().embed_query(text)
 
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        """Embed multiple pieces of text in one call."""
+
+        return self.get_client().embed_documents(texts)
+
 
 embedding_manager = EmbeddingManager()
