@@ -10,7 +10,9 @@ export class MailerService {
 
   constructor(private readonly configService: ConfigService) {
     const host = this.configService.get<string>('SMTP_HOST');
-    this.from = this.configService.getOrThrow<string>('MAIL_FROM');
+    this.from =
+      this.configService.get<string>('MAIL_FROM') ??
+      'AI Email Assistant <no-reply@localhost>';
 
     this.transporter = host
       ? nodemailer.createTransport({

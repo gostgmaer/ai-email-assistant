@@ -21,10 +21,12 @@ export class QueueService {
   ) {}
 
   async enqueueInitialSync(accountId: string): Promise<void> {
+    // See enqueueAiProcessing: BullMQ rejects a custom jobId containing a
+    // colon unless it splits into exactly 3 parts, so use a dash here.
     await this.emailSyncQueue.add(
       EmailSyncJobs.InitialSync,
       { accountId },
-      { jobId: `${EmailSyncJobs.InitialSync}:${accountId}` },
+      { jobId: `${EmailSyncJobs.InitialSync}-${accountId}` },
     );
   }
 
@@ -37,10 +39,13 @@ export class QueueService {
   }
 
   async enqueueAiProcessing(messageId: string): Promise<void> {
+    // BullMQ only allows a colon in a custom jobId when it splits into
+    // exactly 3 parts (legacy repeatable-job format) — use a dash instead
+    // to avoid tripping that check.
     await this.aiQueue.add(
       AIJobs.ProcessMessage,
       { messageId },
-      { jobId: `${AIJobs.ProcessMessage}:${messageId}` },
+      { jobId: `${AIJobs.ProcessMessage}-${messageId}` },
     );
   }
 
@@ -48,7 +53,7 @@ export class QueueService {
     await this.emailSyncQueue.add(
       EmailSyncJobs.SyncFolders,
       { accountId },
-      { jobId: `${EmailSyncJobs.SyncFolders}:${accountId}` },
+      { jobId: `${EmailSyncJobs.SyncFolders}-${accountId}` },
     );
   }
 
