@@ -17,10 +17,21 @@ export interface DocumentChunkView {
   id: string;
   chunkIndex: number;
   content: string;
+  metadata: Record<string, unknown>;
 }
 
 export interface DocumentDetail extends DocumentSummary {
   chunks: DocumentChunkView[];
+}
+
+export interface DocumentChunkMatch {
+  id: string;
+  documentId: string;
+  filename: string;
+  chunkIndex: number;
+  content: string;
+  metadata: Record<string, unknown>;
+  distance: number;
 }
 
 @Injectable()
@@ -53,8 +64,8 @@ export class DocumentsService {
     for (const [index, chunk] of result.chunks.entries()) {
       const vector = toVectorLiteral(chunk.embedding);
       await this.prisma.$executeRaw`
-        INSERT INTO "DocumentChunk" ("id", "documentId", "chunkIndex", "content", "embedding", "createdAt")
-        VALUES (gen_random_uuid(), ${document.id}, ${index}, ${chunk.content}, ${vector}::vector, now())
+        INSERT INTO "DocumentChunk" ("id", "documentId", "chunkIndex", "content", "metadata", "embedding", "createdAt")
+        VALUES (gen_random_uuid(), ${document.id}, ${index}, ${chunk.content}, ${JSON.stringify(chunk.metadata)}::jsonb, ${vector}::vector, now())
       `;
     }
 
@@ -97,7 +108,7 @@ export class DocumentsService {
     }
 
     const chunks = await this.prisma.$queryRaw<DocumentChunkView[]>`
-      SELECT "id", "chunkIndex", "content" FROM "DocumentChunk"
+      SELECT "id", "chunkIndex", "content", "metadata" FROM "DocumentChunk"
       WHERE "documentId" = ${id}
       ORDER BY "chunkIndex" ASC
     `;
@@ -112,6 +123,30 @@ export class DocumentsService {
       chunkCount: chunks.length,
       chunks,
     };
+  }
+
+  // Joins through Document to scope by userId — DocumentChunk has no
+  // userId column of its own, so this join is the entire isolation
+  // boundary for cross-user chunk search. Never query DocumentChunk by
+  // embedding similarity without it.
+  async search(
+    userId: string,
+    query: string,
+    limit = 5,
+  ): Promise<DocumentChunkMatch[]> {
+    const { embedding } = await this.aiClientService.embedQuery(query);
+    const vector = toVectorLiteral(embedding);
+
+    return this.prisma.$queryRaw<DocumentChunkMatch[]>`
+      SELECT dc."id", dc."chunkIndex", dc."content", dc."metadata",
+             d."id" AS "documentId", d."filename",
+             (dc.embedding <=> ${vector}::vector) AS distance
+      FROM "DocumentChunk" dc
+      JOIN "Document" d ON d."id" = dc."documentId"
+      WHERE d."userId" = ${userId} AND dc.embedding IS NOT NULL
+      ORDER BY dc.embedding <=> ${vector}::vector
+      LIMIT ${limit}
+    `;
   }
 }
 

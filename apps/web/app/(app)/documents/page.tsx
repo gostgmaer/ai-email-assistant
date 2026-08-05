@@ -8,12 +8,17 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ApiError } from "@/lib/api/client";
-import { listDocuments, uploadDocument } from "@/lib/services/documents.service";
+import {
+  listDocuments,
+  searchDocuments,
+  uploadDocument,
+} from "@/lib/services/documents.service";
 
 export default function DocumentsPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const {
     data: documents,
@@ -34,8 +39,12 @@ export default function DocumentsPage() {
     },
   });
 
+  const searchMutation = useMutation({
+    mutationFn: searchDocuments,
+  });
+
   return (
-    <div className="mx-auto w-full max-w-2xl flex-1 space-y-8 p-4">
+    <div className="mx-auto w-full  flex-1 space-y-8 p-4">
       <div>
         <h1 className="text-lg font-semibold text-zinc-900">Documents</h1>
         <p className="text-sm text-zinc-500">
@@ -74,6 +83,67 @@ export default function DocumentsPage() {
             Process document
           </Button>
         </form>
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-zinc-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-zinc-900">Search</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) searchMutation.mutate(searchQuery.trim());
+          }}
+          className="flex gap-2"
+        >
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Ask something covered by your documents…"
+            className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm"
+          />
+          <Button
+            type="submit"
+            disabled={!searchQuery.trim()}
+            loading={searchMutation.isPending}
+          >
+            Search
+          </Button>
+        </form>
+        {searchMutation.isError && (
+          <p className="text-xs text-red-600">
+            {searchMutation.error instanceof ApiError
+              ? searchMutation.error.message
+              : "Could not search documents"}
+          </p>
+        )}
+        {searchMutation.isSuccess && searchMutation.data.length === 0 && (
+          <p className="text-sm text-zinc-500">No matching chunks found.</p>
+        )}
+        {searchMutation.isSuccess && searchMutation.data.length > 0 && (
+          <ul className="space-y-2">
+            {searchMutation.data.map((match) => (
+              <li
+                key={match.id}
+                className="rounded-md border border-zinc-200 p-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/documents/${match.documentId}`}
+                    className="text-xs font-medium text-indigo-600 hover:underline"
+                  >
+                    {match.filename}
+                  </Link>
+                  <span className="text-xs text-zinc-400">
+                    chunk {match.chunkIndex + 1} · distance{" "}
+                    {match.distance.toFixed(3)}
+                  </span>
+                </div>
+                <p className="mt-1 line-clamp-3 text-sm text-zinc-700">
+                  {match.content}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {isLoading && <FullPageSpinner />}

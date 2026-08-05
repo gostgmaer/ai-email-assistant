@@ -58,7 +58,7 @@ export default function SecurityPage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-2xl flex-1 space-y-8 p-4">
+    <div className="mx-auto w-full  flex-1 space-y-8 p-4">
       <div>
         <h1 className="text-lg font-semibold text-zinc-900">Security</h1>
         <p className="text-sm text-zinc-500">

@@ -169,7 +169,7 @@ function ComposeContent() {
   const onSubmit = (values: ComposeFormValues) => sendMutation.mutate(values);
 
   return (
-    <div className="mx-auto w-full max-w-2xl flex-1 p-4">
+    <div className="mx-auto w-full  flex-1 p-4">
       <h1 className="mb-4 text-lg font-semibold text-zinc-900">
         {draftId ? "Edit draft" : "New message"}
       </h1>

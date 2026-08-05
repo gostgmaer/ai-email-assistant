@@ -55,6 +55,7 @@ export type DocumentChunkCountAggregateOutputType = {
   documentId: number
   chunkIndex: number
   content: number
+  metadata: number
   createdAt: number
   _all: number
 }
@@ -89,6 +90,7 @@ export type DocumentChunkCountAggregateInputType = {
   documentId?: true
   chunkIndex?: true
   content?: true
+  metadata?: true
   createdAt?: true
   _all?: true
 }
@@ -184,6 +186,7 @@ export type DocumentChunkGroupByOutputType = {
   documentId: string
   chunkIndex: number
   content: string
+  metadata: runtime.JsonValue
   createdAt: Date
   _count: DocumentChunkCountAggregateOutputType | null
   _avg: DocumentChunkAvgAggregateOutputType | null
@@ -215,6 +218,7 @@ export type DocumentChunkWhereInput = {
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntFilter<"DocumentChunk"> | number
   content?: Prisma.StringFilter<"DocumentChunk"> | string
+  metadata?: Prisma.JsonFilter<"DocumentChunk">
   createdAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
   document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
 }
@@ -224,6 +228,7 @@ export type DocumentChunkOrderByWithRelationInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   document?: Prisma.DocumentOrderByWithRelationInput
 }
@@ -237,6 +242,7 @@ export type DocumentChunkWhereUniqueInput = Prisma.AtLeast<{
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntFilter<"DocumentChunk"> | number
   content?: Prisma.StringFilter<"DocumentChunk"> | string
+  metadata?: Prisma.JsonFilter<"DocumentChunk">
   createdAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
   document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
 }, "id" | "documentId_chunkIndex">
@@ -246,6 +252,7 @@ export type DocumentChunkOrderByWithAggregationInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.DocumentChunkCountOrderByAggregateInput
   _avg?: Prisma.DocumentChunkAvgOrderByAggregateInput
@@ -262,6 +269,7 @@ export type DocumentChunkScalarWhereWithAggregatesInput = {
   documentId?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntWithAggregatesFilter<"DocumentChunk"> | number
   content?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
+  metadata?: Prisma.JsonWithAggregatesFilter<"DocumentChunk">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DocumentChunk"> | Date | string
 }
 
@@ -269,6 +277,7 @@ export type DocumentChunkCreateInput = {
   id?: string
   chunkIndex: number
   content: string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   document: Prisma.DocumentCreateNestedOneWithoutChunksInput
 }
@@ -278,6 +287,7 @@ export type DocumentChunkUncheckedCreateInput = {
   documentId: string
   chunkIndex: number
   content: string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -285,6 +295,7 @@ export type DocumentChunkUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   document?: Prisma.DocumentUpdateOneRequiredWithoutChunksNestedInput
 }
@@ -294,6 +305,7 @@ export type DocumentChunkUncheckedUpdateInput = {
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -302,6 +314,7 @@ export type DocumentChunkCreateManyInput = {
   documentId: string
   chunkIndex: number
   content: string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -309,6 +322,7 @@ export type DocumentChunkUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -317,6 +331,7 @@ export type DocumentChunkUncheckedUpdateManyInput = {
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -340,6 +355,7 @@ export type DocumentChunkCountOrderByAggregateInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -421,6 +437,7 @@ export type DocumentChunkCreateWithoutDocumentInput = {
   id?: string
   chunkIndex: number
   content: string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -428,6 +445,7 @@ export type DocumentChunkUncheckedCreateWithoutDocumentInput = {
   id?: string
   chunkIndex: number
   content: string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -465,6 +483,7 @@ export type DocumentChunkScalarWhereInput = {
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntFilter<"DocumentChunk"> | number
   content?: Prisma.StringFilter<"DocumentChunk"> | string
+  metadata?: Prisma.JsonFilter<"DocumentChunk">
   createdAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
 }
 
@@ -472,6 +491,7 @@ export type DocumentChunkCreateManyDocumentInput = {
   id?: string
   chunkIndex: number
   content: string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
 
@@ -479,6 +499,7 @@ export type DocumentChunkUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -486,6 +507,7 @@ export type DocumentChunkUncheckedUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -493,6 +515,7 @@ export type DocumentChunkUncheckedUpdateManyWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -503,6 +526,7 @@ export type DocumentChunkSelect<ExtArgs extends runtime.Types.Extensions.Interna
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  metadata?: boolean
   createdAt?: boolean
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentChunk"]>
@@ -512,6 +536,7 @@ export type DocumentChunkSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  metadata?: boolean
   createdAt?: boolean
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentChunk"]>
@@ -521,6 +546,7 @@ export type DocumentChunkSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  metadata?: boolean
   createdAt?: boolean
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentChunk"]>
@@ -530,10 +556,11 @@ export type DocumentChunkSelectScalar = {
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  metadata?: boolean
   createdAt?: boolean
 }
 
-export type DocumentChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "chunkIndex" | "content" | "createdAt", ExtArgs["result"]["documentChunk"]>
+export type DocumentChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "chunkIndex" | "content" | "metadata" | "createdAt", ExtArgs["result"]["documentChunk"]>
 export type DocumentChunkInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
 }
@@ -554,6 +581,13 @@ export type $DocumentChunkPayload<ExtArgs extends runtime.Types.Extensions.Inter
     documentId: string
     chunkIndex: number
     content: string
+    /**
+     * Structure-derived context from the ai service's chunking strategy for
+     * this document type — e.g. { source, heading, section } for Markdown,
+     * { source, page } for PDF. Always has "source"; other keys are
+     * type-dependent and may be absent.
+     */
+    metadata: runtime.JsonValue
     createdAt: Date
   }, ExtArgs["result"]["documentChunk"]>
   composites: {}
@@ -983,6 +1017,7 @@ export interface DocumentChunkFieldRefs {
   readonly documentId: Prisma.FieldRef<"DocumentChunk", 'String'>
   readonly chunkIndex: Prisma.FieldRef<"DocumentChunk", 'Int'>
   readonly content: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly metadata: Prisma.FieldRef<"DocumentChunk", 'Json'>
   readonly createdAt: Prisma.FieldRef<"DocumentChunk", 'DateTime'>
 }
     

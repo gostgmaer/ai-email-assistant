@@ -14,10 +14,21 @@ export interface DocumentChunk {
   id: string;
   chunkIndex: number;
   content: string;
+  metadata: Record<string, unknown>;
 }
 
 export interface DocumentDetail extends DocumentSummary {
   chunks: DocumentChunk[];
+}
+
+export interface DocumentChunkMatch {
+  id: string;
+  documentId: string;
+  filename: string;
+  chunkIndex: number;
+  content: string;
+  metadata: Record<string, unknown>;
+  distance: number;
 }
 
 export async function uploadDocument(file: File): Promise<DocumentSummary> {
@@ -36,4 +47,10 @@ export async function listDocuments(): Promise<DocumentSummary[]> {
 
 export async function getDocument(id: string): Promise<DocumentDetail> {
   return apiFetch(`/documents/${id}`);
+}
+
+export async function searchDocuments(
+  query: string,
+): Promise<DocumentChunkMatch[]> {
+  return apiFetch(`/documents/search?q=${encodeURIComponent(query)}`);
 }

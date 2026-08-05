@@ -1,6 +1,10 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
-from app.capabilities.document_processing.schemas import ProcessDocumentResponse
+from app.capabilities.document_processing.schemas import (
+    EmbedQueryRequest,
+    EmbedQueryResponse,
+    ProcessDocumentResponse,
+)
 from app.capabilities.document_processing.service import process_document
 from app.core.llm.embeddings import embedding_manager
 
@@ -32,6 +36,22 @@ async def process_document_route(
 
     return ProcessDocumentResponse(
         chunks=chunks,
+        provider=embedding_manager.provider,
+        model=embedding_manager.model,
+    )
+
+
+@router.post(
+    "/embed",
+    response_model=EmbedQueryResponse,
+)
+async def embed_query_route(payload: EmbedQueryRequest) -> EmbedQueryResponse:
+    """Embed a free-text query for similarity search against stored document chunks."""
+
+    embedding = embedding_manager.embed(payload.text)
+
+    return EmbedQueryResponse(
+        embedding=embedding,
         provider=embedding_manager.provider,
         model=embedding_manager.model,
     )

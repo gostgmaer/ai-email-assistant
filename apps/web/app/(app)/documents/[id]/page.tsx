@@ -35,7 +35,8 @@ export default function DocumentDetailPage() {
   if (!document) return null;
 
   return (
-    <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 p-4">
+    
+    <div className="mx-auto w-full  flex-1 space-y-6 p-4">
       <div>
         <Link href="/documents" className="text-sm text-indigo-600 hover:underline">
           &larr; Documents
@@ -53,19 +54,35 @@ export default function DocumentDetailPage() {
         <h2 className="text-sm font-semibold text-zinc-900">
           Chunks ({document.chunks.length})
         </h2>
-        {document.chunks.map((chunk) => (
-          <div
-            key={chunk.id}
-            className="space-y-1 rounded-lg border border-zinc-200 bg-white p-4"
-          >
-            <p className="text-xs font-medium text-zinc-500">
-              Chunk {chunk.chunkIndex + 1}
-            </p>
-            <p className="whitespace-pre-wrap text-sm text-zinc-700">
-              {chunk.content}
-            </p>
-          </div>
-        ))}
+        {document.chunks.map((chunk) => {
+          const badgeEntries = Object.entries(chunk.metadata).filter(
+            ([key, value]) => key !== "source" && value,
+          );
+
+          return (
+            <div
+              key={chunk.id}
+              className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-medium text-zinc-500">
+                  Chunk {chunk.chunkIndex + 1}
+                </p>
+                {badgeEntries.map(([key, value]) => (
+                  <span
+                    key={key}
+                    className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600"
+                  >
+                    {key}: {String(value)}
+                  </span>
+                ))}
+              </div>
+              <p className="whitespace-pre-wrap text-sm text-zinc-700">
+                {chunk.content}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

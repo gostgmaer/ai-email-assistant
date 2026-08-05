@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -18,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CurrentUser, JwtAuthGuard, JwtPayload } from '../../auth';
+import { SearchDocumentsDto } from '../dto';
 import { DocumentsService } from '../services/documents.service';
 
 @ApiTags('documents')
@@ -55,6 +57,22 @@ export class DocumentsController {
   @ApiResponse({ status: 200, description: "The user's processed documents" })
   async list(@CurrentUser() user: JwtPayload) {
     return this.documentsService.listForUser(user.sub);
+  }
+
+  @Get('search')
+  @ApiOperation({
+    summary: "Semantic search across the user's document chunks",
+  })
+  @ApiResponse({ status: 200, description: 'Chunks ranked by relevance' })
+  @ApiResponse({
+    status: 502,
+    description: 'The AI service failed or is unreachable',
+  })
+  async search(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: SearchDocumentsDto,
+  ) {
+    return this.documentsService.search(user.sub, query.q, query.limit);
   }
 
   @Get(':id')

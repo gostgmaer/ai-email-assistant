@@ -119,10 +119,17 @@ interface RawContactMemoryResponse {
 export interface ProcessedDocumentChunk {
   content: string;
   embedding: number[];
+  metadata: Record<string, unknown>;
 }
 
 export interface ProcessDocumentResponse {
   chunks: ProcessedDocumentChunk[];
+  provider: string;
+  model: string;
+}
+
+export interface EmbedQueryResponse {
+  embedding: number[];
   provider: string;
   model: string;
 }
@@ -235,6 +242,10 @@ export class AiClientService {
       '/documents/process',
       formData,
     );
+  }
+
+  async embedQuery(text: string): Promise<EmbedQueryResponse> {
+    return this.post<EmbedQueryResponse>('/documents/embed', { text });
   }
 
   private async post<T>(
