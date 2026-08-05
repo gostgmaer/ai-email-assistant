@@ -1,9 +1,13 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
 import { AIJobs, QueueNames } from '../../../infrastructure/queue';
+import {
+  DocumentChunkMatch,
+  DocumentsService,
+} from '../../documents/services/documents.service';
 import { isAutomatedAddress } from '../../email/providers/bulk-mail.util';
 import { NormalizedParticipant } from '../../email/interfaces';
 import { ComposeService } from '../../email/services/compose.service';
@@ -30,6 +34,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly aiClientService: AiClientService,
     private readonly contactMemoryService: ContactMemoryService,
     private readonly composeService: ComposeService,
+    @Inject(forwardRef(() => DocumentsService))
+    private readonly documentsService: DocumentsService,
   ) {
     super();
   }
@@ -111,10 +117,19 @@ export class AiProcessingProcessor extends WorkerHost {
       3,
     );
 
+    // Best-effort: ground the reply in the user's own uploaded documents
+    // (resumes, product docs, policies, etc.) — each user only ever
+    // searches their own documents (DocumentsService.search scopes by
+    // userId). A failure here (e.g. no documents yet) shouldn't block the
+    // reply the way a contact-memory or classify failure would.
+    const documentMatches = await this.documentsService
+      .search(account.userId, message.bodyText ?? subject, 3)
+      .catch(() => []);
+
     const reply = await this.aiClientService.generateReply(
       subject,
       thread,
-      buildContextInstruction(related, contactMemory),
+      buildContextInstruction(related, contactMemory, documentMatches),
     );
 
     const isSafeToAutoSend =
@@ -173,19 +188,32 @@ function toEmailMessageDto(message: {
 function buildContextInstruction(
   related: ContactMemoryMatch[],
   current: ContactMemoryResponse,
+  documentMatches: DocumentChunkMatch[],
 ): string | undefined {
+  const sections: string[] = [];
+
   const priorContacts = related.filter(
     (match) => match.facts.summary !== current.facts.summary,
   );
 
-  if (priorContacts.length === 0) {
-    return undefined;
+  if (priorContacts.length > 0) {
+    const lines = priorContacts.map(
+      (match) =>
+        `- ${match.senderName ?? match.senderEmail}: ${match.facts.summary}`,
+    );
+    sections.push(
+      `Known context about people involved in this conversation:\n${lines.join('\n')}`,
+    );
   }
 
-  const lines = priorContacts.map(
-    (match) =>
-      `- ${match.senderName ?? match.senderEmail}: ${match.facts.summary}`,
-  );
+  if (documentMatches.length > 0) {
+    const lines = documentMatches.map(
+      (match) => `- (from "${match.filename}"): ${match.content}`,
+    );
+    sections.push(
+      `Relevant information from the user's own uploaded documents — use this to answer specifics, but don't imply the recipient has access to these documents:\n${lines.join('\n\n')}`,
+    );
+  }
 
-  return `Known context about people involved in this conversation:\n${lines.join('\n')}`;
+  return sections.length > 0 ? sections.join('\n\n') : undefined;
 }

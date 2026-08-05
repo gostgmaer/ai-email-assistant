@@ -1,6 +1,11 @@
 import { createHash } from 'crypto';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 
 import { AiClientService } from '../../ai';
 import { PrismaService } from '../../../database';
@@ -43,6 +48,7 @@ export interface DocumentChunkMatch {
 export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => AiClientService))
     private readonly aiClientService: AiClientService,
   ) {}
 
