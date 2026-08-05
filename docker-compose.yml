@@ -59,6 +59,66 @@ services:
       postgres:
         condition: service_healthy
 
+  ai:
+    build:
+      context: ./apps/ai
+      dockerfile: Dockerfile
+    container_name: ai-email-ai
+
+    restart: unless-stopped
+
+    env_file:
+      - apps/ai/.env
+
+    ports:
+      - "8000:8000"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: ai-email-api
+
+    restart: unless-stopped
+
+    env_file:
+      - apps/api/.env
+
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_email?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_SERVICE_URL: http://ai:8000
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai:
+        condition: service_started
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+
+    container_name: ai-email-web
+
+    restart: unless-stopped
+
+    ports:
+      - "3001:3000"
+
+    depends_on:
+      api:
+        condition: service_started
+
 volumes:
   postgres_data:
   redis_data:

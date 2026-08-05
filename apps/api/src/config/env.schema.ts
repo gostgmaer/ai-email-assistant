@@ -44,6 +44,16 @@ export const envSchema = z.object({
   AI_SERVICE_URL: z.url(),
   AI_SERVICE_API_KEY: z.string().optional(),
 
+  // Mailer (transactional emails: verification, password reset, email change).
+  // All optional — when SMTP_HOST is unset, MailerService logs links to the
+  // console instead of sending, so auth flows still work in local dev.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_SECURE: z.coerce.boolean().default(false),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  MAIL_FROM: z.string().default('AI Email Assistant <no-reply@localhost>'),
+
   // Logger
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])

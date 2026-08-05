@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { href: "/inbox", label: "Inbox" },
   { href: "/compose", label: "Compose" },
   { href: "/settings/email-accounts", label: "Accounts" },
+  { href: "/settings/profile", label: "Profile" },
+  { href: "/settings/security", label: "Security" },
 ];
 
 export function Sidebar() {

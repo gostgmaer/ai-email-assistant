@@ -1,30 +1,154 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
+import { toPublicUser } from '../../../common/utils/public-user';
 import { GoogleAuthGuard, MicrosoftAuthGuard } from '../../oauth';
 import { OAuthValidationResult } from '../../oauth/interfaces';
-import { RefreshTokenDto } from '../dto';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+} from '../dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthService } from '../services/auth.service';
+import { DeviceMetadata, TokenService } from '../services/token.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly tokenService: TokenService,
     private readonly configService: ConfigService,
   ) {}
+
+  @Post('register')
+  @ApiOperation({ summary: 'Register with email and password' })
+  @ApiResponse({ status: 201, description: 'The created user and token pair' })
+  @ApiResponse({ status: 409, description: 'Email already registered' })
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() dto: RegisterDto, @Req() req: Request) {
+    const { user, tokens } = await this.authService.register(
+      dto,
+      this.extractDevice(req),
+    );
+
+    return { user: toPublicUser(user), ...tokens };
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: 'Log in with email and password' })
+  @ApiResponse({ status: 200, description: 'The user and token pair' })
+  @ApiResponse({ status: 401, description: 'Invalid email or password' })
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
+    const { user, tokens } = await this.authService.loginWithPassword(
+      dto.email,
+      dto.password,
+      this.extractDevice(req),
+    );
+
+    return { user: toPublicUser(user), ...tokens };
+  }
+
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verify an email address with a token' })
+  @ApiResponse({ status: 204, description: 'Email verified' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<void> {
+    await this.authService.verifyEmail(dto.token);
+  }
+
+  @Post('resend-verification')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Resend the email verification link' })
+  @ApiResponse({
+    status: 204,
+    description: 'Verification email sent (if unverified)',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resendVerification(@CurrentUser() user: JwtPayload): Promise<void> {
+    await this.authService.resendVerificationEmail(user.sub);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request a password reset email' })
+  @ApiResponse({
+    status: 204,
+    description: 'Reset email sent if the account exists',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
+    await this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset a password using a reset token' })
+  @ApiResponse({ status: 204, description: 'Password reset' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'List active sessions (refresh tokens) for the current user',
+  })
+  @ApiResponse({ status: 200, description: 'The active sessions' })
+  async listSessions(@CurrentUser() user: JwtPayload, @Req() req: Request) {
+    const currentToken = this.extractBearerRefreshHint(req);
+    return this.tokenService.listActiveSessions(user.sub, currentToken);
+  }
+
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Revoke a single session' })
+  @ApiResponse({ status: 204, description: 'Session revoked' })
+  async revokeSession(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.tokenService.revokeSessionById(user.sub, id);
+  }
+
+  @Post('sessions/revoke-all')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Revoke every session for the current user' })
+  @ApiResponse({ status: 204, description: 'All sessions revoked' })
+  async revokeAllSessions(@CurrentUser() user: JwtPayload): Promise<void> {
+    await this.tokenService.revokeAllSessions(user.sub);
+  }
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
@@ -79,8 +203,8 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'New access/refresh token pair' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  async refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refresh(dto.refreshToken);
+  async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request) {
+    return this.authService.refresh(dto.refreshToken, this.extractDevice(req));
   }
 
   @Post('logout')
@@ -97,7 +221,10 @@ export class AuthController {
   ): Promise<void> {
     const { profile } = req.user as OAuthValidationResult;
 
-    const { tokens } = await this.authService.loginWithOAuth(profile);
+    const { tokens } = await this.authService.loginWithOAuth(
+      profile,
+      this.extractDevice(req),
+    );
 
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const redirectUrl = new URL('/auth/callback', frontendUrl);
@@ -105,5 +232,19 @@ export class AuthController {
     redirectUrl.searchParams.set('refreshToken', tokens.refreshToken);
 
     res.redirect(redirectUrl.toString());
+  }
+
+  private extractDevice(req: Request): DeviceMetadata {
+    return {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip,
+    };
+  }
+
+  /** Sessions are listed via the access token; the client optionally passes
+   * its own refresh token as a query param so we can flag it as "current". */
+  private extractBearerRefreshHint(req: Request): string | undefined {
+    const value = req.query.refreshToken;
+    return typeof value === 'string' ? value : undefined;
   }
 }

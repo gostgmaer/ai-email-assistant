@@ -29,11 +29,21 @@ enum SyncStatus {
   ERROR
 }
 
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  EMAIL_CHANGE
+}
+
 model User {
   id          String  @id @default(uuid())
   email       String  @unique
   displayName String?
   avatar      String?
+
+  // Null for OAuth-only users (Google/Microsoft) who never set a password.
+  passwordHash    String?
+  emailVerifiedAt DateTime?
 
   googleId    String? @unique
   microsoftId String? @unique
@@ -42,11 +52,33 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  emailAccounts EmailAccount[]
-  refreshTokens RefreshToken[]
-  notifications Notification[]
+  emailAccounts      EmailAccount[]
+  refreshTokens      RefreshToken[]
+  notifications      Notification[]
+  verificationTokens VerificationToken[]
 
   @@index([createdAt])
+}
+
+model VerificationToken {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type VerificationTokenType
+
+  tokenHash String @unique
+
+  /** Only set for EMAIL_CHANGE: the address being switched to. */
+  newEmail String?
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, type])
 }
 
 model Notification {
@@ -75,6 +107,11 @@ model RefreshToken {
   tokenHash String    @unique
   expiresAt DateTime
   revokedAt DateTime?
+
+  // Captured at issuance for the "active sessions" list.
+  userAgent   String?
+  ipAddress   String?
+  deviceLabel String?
 
   createdAt DateTime @default(now())
 

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -15,8 +16,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { toPublicUser } from '../../../common/utils/public-user';
 import { CurrentUser, JwtAuthGuard, JwtPayload } from '../../auth';
-import { UpdateProfileDto } from '../dto';
+import {
+  ChangeEmailDto,
+  ChangePasswordDto,
+  ConfirmEmailChangeDto,
+  UpdateProfileDto,
+} from '../dto';
 import { UsersService } from '../services/users.service';
 
 @ApiTags('users')
@@ -30,7 +37,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get the current user profile' })
   @ApiResponse({ status: 200, description: 'The current user' })
   async getProfile(@CurrentUser() user: JwtPayload) {
-    return this.usersService.findById(user.sub);
+    return toPublicUser(await this.usersService.findById(user.sub));
   }
 
   @Patch('me')
@@ -40,7 +47,7 @@ export class UsersController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateProfileDto,
   ) {
-    return this.usersService.updateProfile(user.sub, dto);
+    return toPublicUser(await this.usersService.updateProfile(user.sub, dto));
   }
 
   @Delete('me')
@@ -51,5 +58,42 @@ export class UsersController {
   @ApiResponse({ status: 204, description: 'Account deleted' })
   async deleteAccount(@CurrentUser() user: JwtPayload): Promise<void> {
     await this.usersService.softDelete(user.sub);
+  }
+
+  @Patch('me/password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Change (or set) the current user password' })
+  @ApiResponse({ status: 204, description: 'Password changed' })
+  async changePassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    await this.usersService.changePassword(user.sub, dto);
+  }
+
+  @Post('me/email')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'Request an email change; sends a confirmation link to the new address',
+  })
+  @ApiResponse({ status: 204, description: 'Confirmation email sent' })
+  async requestEmailChange(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ChangeEmailDto,
+  ): Promise<void> {
+    await this.usersService.requestEmailChange(user.sub, dto);
+  }
+
+  @Post('me/email/confirm')
+  @ApiOperation({ summary: 'Confirm a pending email change' })
+  @ApiResponse({ status: 200, description: 'The updated user' })
+  async confirmEmailChange(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ConfirmEmailChangeDto,
+  ) {
+    return toPublicUser(
+      await this.usersService.confirmEmailChange(user.sub, dto.token),
+    );
   }
 }

@@ -38,3 +38,12 @@ export const SyncStatus = {
 } as const
 
 export type SyncStatus = (typeof SyncStatus)[keyof typeof SyncStatus]
+
+
+export const VerificationTokenType = {
+  EMAIL_VERIFICATION: 'EMAIL_VERIFICATION',
+  PASSWORD_RESET: 'PASSWORD_RESET',
+  EMAIL_CHANGE: 'EMAIL_CHANGE'
+} as const
+
+export type VerificationTokenType = (typeof VerificationTokenType)[keyof typeof VerificationTokenType]

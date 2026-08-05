@@ -14,6 +14,7 @@ export interface User {
   email: string;
   displayName: string | null;
   avatar: string | null;
+  emailVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

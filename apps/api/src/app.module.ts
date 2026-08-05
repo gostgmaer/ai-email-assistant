@@ -8,6 +8,7 @@ import { AppLoggerModule } from './infrastructure/logger/logger.module';
 import { RedisModule } from './infrastructure/redis';
 import { QueueModule } from './infrastructure/queue';
 import { EncryptionModule } from './infrastructure/encryption';
+import { MailerModule } from './infrastructure/mailer';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users';
 import { EmailAccountModule } from './modules/email-account';
@@ -30,6 +31,7 @@ import { NotificationModule } from './modules/notification';
     RedisModule,
     QueueModule,
     EncryptionModule,
+    MailerModule,
     HealthModule,
     AuthModule,
     UsersModule,
