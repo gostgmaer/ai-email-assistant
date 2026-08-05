@@ -214,6 +214,12 @@ export class EmailAccountService {
       isPrimary?: boolean;
       syncEnabled?: boolean;
       autoSendCategories?: string[];
+      filterMarketing?: boolean;
+      filterOtp?: boolean;
+      filterPasswordReset?: boolean;
+      filterBilling?: boolean;
+      filterShipping?: boolean;
+      filterCalendar?: boolean;
     },
   ): Promise<EmailAccountModel> {
     await this.getOwnedAccountOrThrow(userId, accountId);

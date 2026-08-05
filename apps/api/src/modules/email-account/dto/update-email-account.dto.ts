@@ -33,4 +33,48 @@ export class UpdateEmailAccountDto {
   @IsArray()
   @IsString({ each: true })
   autoSendCategories?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Exclude marketing/promotional mail from sync (default true).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  filterMarketing?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Exclude OTP/verification-code mail from sync (default true).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  filterOtp?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Exclude password-reset mail from sync (default true).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  filterPasswordReset?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Exclude billing/invoice/receipt/statement mail from sync (default true).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  filterBilling?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Exclude shipping/order-tracking mail from sync (default true).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  filterShipping?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Exclude calendar-invite mail from sync (default true).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  filterCalendar?: boolean;
 }

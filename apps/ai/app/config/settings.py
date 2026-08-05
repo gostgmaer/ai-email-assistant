@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # ============================================================
 
     llm_provider: str = "google"
-    llm_model: str = "gemini-3.5-flash-lite"
+    llm_model: str = "gemini-3.1-flash-lite"
 
     embedding_provider: str = "google"
     embedding_model: str = "gemini-embedding-001"

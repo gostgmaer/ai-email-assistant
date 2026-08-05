@@ -14,7 +14,7 @@ import {
   NormalizedParticipant,
   SendResult,
 } from '../interfaces';
-import { isBulkMail } from './bulk-mail.util';
+import { detectBulkMailSignals } from './bulk-mail.util';
 
 const SPECIAL_USE_TYPE: Record<string, NormalizedFolder['type']> = {
   '\\Inbox': 'INBOX',
@@ -236,7 +236,7 @@ export class ImapClient implements MailProviderClient {
         : new Date(),
       isRead: message.flags ? message.flags.has('\\Seen') : false,
       inReplyTo: message.envelope?.inReplyTo,
-      isBulkMail: isBulkMail(
+      bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('list-unsubscribe'),
           listId: header('list-id'),

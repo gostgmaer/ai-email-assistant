@@ -9,4 +9,4 @@ SUPPORTED_PROVIDERS = (
 
 DEFAULT_PROVIDER = "google"
 
-DEFAULT_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_MODEL = "gemini-3.1-flash-lite"

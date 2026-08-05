@@ -11,7 +11,7 @@ import {
   NormalizedParticipant,
   SendResult,
 } from '../interfaces';
-import { isBulkMail } from './bulk-mail.util';
+import { detectBulkMailSignals } from './bulk-mail.util';
 
 const API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
@@ -192,7 +192,7 @@ export class GmailClient implements MailProviderClient {
         : new Date(),
       isRead: !(message.labelIds ?? []).includes('UNREAD'),
       inReplyTo: header('In-Reply-To'),
-      isBulkMail: isBulkMail(
+      bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('List-Unsubscribe'),
           listId: header('List-Id'),

@@ -130,6 +130,12 @@ function EmailAccountsContent() {
                 data: { autoSendCategories },
               })
             }
+            onUpdateFilters={(filters) =>
+              updateMutation.mutate({
+                id: account.id,
+                data: filters,
+              })
+            }
             onSyncNow={() => syncMutation.mutate(account.id)}
             onDisconnect={() => {
               if (window.confirm(`Disconnect ${account.email}?`)) {

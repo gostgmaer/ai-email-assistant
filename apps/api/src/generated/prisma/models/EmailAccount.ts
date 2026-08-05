@@ -32,6 +32,12 @@ export type EmailAccountMinAggregateOutputType = {
   displayName: string | null
   isPrimary: boolean | null
   syncEnabled: boolean | null
+  filterMarketing: boolean | null
+  filterOtp: boolean | null
+  filterPasswordReset: boolean | null
+  filterBilling: boolean | null
+  filterShipping: boolean | null
+  filterCalendar: boolean | null
   syncStatus: $Enums.SyncStatus | null
   lastSyncedAt: Date | null
   lastSyncError: string | null
@@ -48,6 +54,12 @@ export type EmailAccountMaxAggregateOutputType = {
   displayName: string | null
   isPrimary: boolean | null
   syncEnabled: boolean | null
+  filterMarketing: boolean | null
+  filterOtp: boolean | null
+  filterPasswordReset: boolean | null
+  filterBilling: boolean | null
+  filterShipping: boolean | null
+  filterCalendar: boolean | null
   syncStatus: $Enums.SyncStatus | null
   lastSyncedAt: Date | null
   lastSyncError: string | null
@@ -65,6 +77,12 @@ export type EmailAccountCountAggregateOutputType = {
   isPrimary: number
   syncEnabled: number
   autoSendCategories: number
+  filterMarketing: number
+  filterOtp: number
+  filterPasswordReset: number
+  filterBilling: number
+  filterShipping: number
+  filterCalendar: number
   imapConfig: number
   syncStatus: number
   lastSyncedAt: number
@@ -84,6 +102,12 @@ export type EmailAccountMinAggregateInputType = {
   displayName?: true
   isPrimary?: true
   syncEnabled?: true
+  filterMarketing?: true
+  filterOtp?: true
+  filterPasswordReset?: true
+  filterBilling?: true
+  filterShipping?: true
+  filterCalendar?: true
   syncStatus?: true
   lastSyncedAt?: true
   lastSyncError?: true
@@ -100,6 +124,12 @@ export type EmailAccountMaxAggregateInputType = {
   displayName?: true
   isPrimary?: true
   syncEnabled?: true
+  filterMarketing?: true
+  filterOtp?: true
+  filterPasswordReset?: true
+  filterBilling?: true
+  filterShipping?: true
+  filterCalendar?: true
   syncStatus?: true
   lastSyncedAt?: true
   lastSyncError?: true
@@ -117,6 +147,12 @@ export type EmailAccountCountAggregateInputType = {
   isPrimary?: true
   syncEnabled?: true
   autoSendCategories?: true
+  filterMarketing?: true
+  filterOtp?: true
+  filterPasswordReset?: true
+  filterBilling?: true
+  filterShipping?: true
+  filterCalendar?: true
   imapConfig?: true
   syncStatus?: true
   lastSyncedAt?: true
@@ -208,6 +244,12 @@ export type EmailAccountGroupByOutputType = {
   isPrimary: boolean
   syncEnabled: boolean
   autoSendCategories: string[]
+  filterMarketing: boolean
+  filterOtp: boolean
+  filterPasswordReset: boolean
+  filterBilling: boolean
+  filterShipping: boolean
+  filterCalendar: boolean
   imapConfig: runtime.JsonValue | null
   syncStatus: $Enums.SyncStatus
   lastSyncedAt: Date | null
@@ -247,6 +289,12 @@ export type EmailAccountWhereInput = {
   isPrimary?: Prisma.BoolFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  filterMarketing?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterOtp?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterPasswordReset?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterBilling?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterShipping?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterCalendar?: Prisma.BoolFilter<"EmailAccount"> | boolean
   imapConfig?: Prisma.JsonNullableFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableFilter<"EmailAccount"> | Date | string | null
@@ -269,6 +317,12 @@ export type EmailAccountOrderByWithRelationInput = {
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
   autoSendCategories?: Prisma.SortOrder
+  filterMarketing?: Prisma.SortOrder
+  filterOtp?: Prisma.SortOrder
+  filterPasswordReset?: Prisma.SortOrder
+  filterBilling?: Prisma.SortOrder
+  filterShipping?: Prisma.SortOrder
+  filterCalendar?: Prisma.SortOrder
   imapConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -295,6 +349,12 @@ export type EmailAccountWhereUniqueInput = Prisma.AtLeast<{
   isPrimary?: Prisma.BoolFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  filterMarketing?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterOtp?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterPasswordReset?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterBilling?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterShipping?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterCalendar?: Prisma.BoolFilter<"EmailAccount"> | boolean
   imapConfig?: Prisma.JsonNullableFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableFilter<"EmailAccount"> | Date | string | null
@@ -317,6 +377,12 @@ export type EmailAccountOrderByWithAggregationInput = {
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
   autoSendCategories?: Prisma.SortOrder
+  filterMarketing?: Prisma.SortOrder
+  filterOtp?: Prisma.SortOrder
+  filterPasswordReset?: Prisma.SortOrder
+  filterBilling?: Prisma.SortOrder
+  filterShipping?: Prisma.SortOrder
+  filterCalendar?: Prisma.SortOrder
   imapConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -341,6 +407,12 @@ export type EmailAccountScalarWhereWithAggregatesInput = {
   isPrimary?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  filterMarketing?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
+  filterOtp?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
+  filterPasswordReset?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
+  filterBilling?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
+  filterShipping?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
+  filterCalendar?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   imapConfig?: Prisma.JsonNullableWithAggregatesFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusWithAggregatesFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EmailAccount"> | Date | string | null
@@ -358,6 +430,12 @@ export type EmailAccountCreateInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -380,6 +458,12 @@ export type EmailAccountUncheckedCreateInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -400,6 +484,12 @@ export type EmailAccountUpdateInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -422,6 +512,12 @@ export type EmailAccountUncheckedUpdateInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -443,6 +539,12 @@ export type EmailAccountCreateManyInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -460,6 +562,12 @@ export type EmailAccountUpdateManyMutationInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -478,6 +586,12 @@ export type EmailAccountUncheckedUpdateManyInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -519,6 +633,12 @@ export type EmailAccountCountOrderByAggregateInput = {
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
   autoSendCategories?: Prisma.SortOrder
+  filterMarketing?: Prisma.SortOrder
+  filterOtp?: Prisma.SortOrder
+  filterPasswordReset?: Prisma.SortOrder
+  filterBilling?: Prisma.SortOrder
+  filterShipping?: Prisma.SortOrder
+  filterCalendar?: Prisma.SortOrder
   imapConfig?: Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrder
@@ -536,6 +656,12 @@ export type EmailAccountMaxOrderByAggregateInput = {
   displayName?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
+  filterMarketing?: Prisma.SortOrder
+  filterOtp?: Prisma.SortOrder
+  filterPasswordReset?: Prisma.SortOrder
+  filterBilling?: Prisma.SortOrder
+  filterShipping?: Prisma.SortOrder
+  filterCalendar?: Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrder
   lastSyncError?: Prisma.SortOrder
@@ -552,6 +678,12 @@ export type EmailAccountMinOrderByAggregateInput = {
   displayName?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
+  filterMarketing?: Prisma.SortOrder
+  filterOtp?: Prisma.SortOrder
+  filterPasswordReset?: Prisma.SortOrder
+  filterBilling?: Prisma.SortOrder
+  filterShipping?: Prisma.SortOrder
+  filterCalendar?: Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrder
   lastSyncError?: Prisma.SortOrder
@@ -674,6 +806,12 @@ export type EmailAccountCreateWithoutUserInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -694,6 +832,12 @@ export type EmailAccountUncheckedCreateWithoutUserInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -744,6 +888,12 @@ export type EmailAccountScalarWhereInput = {
   isPrimary?: Prisma.BoolFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  filterMarketing?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterOtp?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterPasswordReset?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterBilling?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterShipping?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  filterCalendar?: Prisma.BoolFilter<"EmailAccount"> | boolean
   imapConfig?: Prisma.JsonNullableFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableFilter<"EmailAccount"> | Date | string | null
@@ -761,6 +911,12 @@ export type EmailAccountCreateWithoutCredentialInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -782,6 +938,12 @@ export type EmailAccountUncheckedCreateWithoutCredentialInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -817,6 +979,12 @@ export type EmailAccountUpdateWithoutCredentialInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -838,6 +1006,12 @@ export type EmailAccountUncheckedUpdateWithoutCredentialInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -857,6 +1031,12 @@ export type EmailAccountCreateWithoutFoldersInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -878,6 +1058,12 @@ export type EmailAccountUncheckedCreateWithoutFoldersInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -913,6 +1099,12 @@ export type EmailAccountUpdateWithoutFoldersInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -934,6 +1126,12 @@ export type EmailAccountUncheckedUpdateWithoutFoldersInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -953,6 +1151,12 @@ export type EmailAccountCreateWithoutThreadsInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -974,6 +1178,12 @@ export type EmailAccountUncheckedCreateWithoutThreadsInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1009,6 +1219,12 @@ export type EmailAccountUpdateWithoutThreadsInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1030,6 +1246,12 @@ export type EmailAccountUncheckedUpdateWithoutThreadsInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1049,6 +1271,12 @@ export type EmailAccountCreateManyUserInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1066,6 +1294,12 @@ export type EmailAccountUpdateWithoutUserInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1086,6 +1320,12 @@ export type EmailAccountUncheckedUpdateWithoutUserInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1106,6 +1346,12 @@ export type EmailAccountUncheckedUpdateManyWithoutUserInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1164,6 +1410,12 @@ export type EmailAccountSelect<ExtArgs extends runtime.Types.Extensions.Internal
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -1187,6 +1439,12 @@ export type EmailAccountSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -1206,6 +1464,12 @@ export type EmailAccountSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -1225,6 +1489,12 @@ export type EmailAccountSelectScalar = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -1234,7 +1504,7 @@ export type EmailAccountSelectScalar = {
   deletedAt?: boolean
 }
 
-export type EmailAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "provider" | "email" | "displayName" | "isPrimary" | "syncEnabled" | "autoSendCategories" | "imapConfig" | "syncStatus" | "lastSyncedAt" | "lastSyncError" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["emailAccount"]>
+export type EmailAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "provider" | "email" | "displayName" | "isPrimary" | "syncEnabled" | "autoSendCategories" | "filterMarketing" | "filterOtp" | "filterPasswordReset" | "filterBilling" | "filterShipping" | "filterCalendar" | "imapConfig" | "syncStatus" | "lastSyncedAt" | "lastSyncError" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["emailAccount"]>
 export type EmailAccountInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   credential?: boolean | Prisma.EmailAccount$credentialArgs<ExtArgs>
@@ -1266,6 +1536,12 @@ export type $EmailAccountPayload<ExtArgs extends runtime.Types.Extensions.Intern
     isPrimary: boolean
     syncEnabled: boolean
     autoSendCategories: string[]
+    filterMarketing: boolean
+    filterOtp: boolean
+    filterPasswordReset: boolean
+    filterBilling: boolean
+    filterShipping: boolean
+    filterCalendar: boolean
     imapConfig: runtime.JsonValue | null
     syncStatus: $Enums.SyncStatus
     lastSyncedAt: Date | null
@@ -1708,6 +1984,12 @@ export interface EmailAccountFieldRefs {
   readonly isPrimary: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly syncEnabled: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly autoSendCategories: Prisma.FieldRef<"EmailAccount", 'String[]'>
+  readonly filterMarketing: Prisma.FieldRef<"EmailAccount", 'Boolean'>
+  readonly filterOtp: Prisma.FieldRef<"EmailAccount", 'Boolean'>
+  readonly filterPasswordReset: Prisma.FieldRef<"EmailAccount", 'Boolean'>
+  readonly filterBilling: Prisma.FieldRef<"EmailAccount", 'Boolean'>
+  readonly filterShipping: Prisma.FieldRef<"EmailAccount", 'Boolean'>
+  readonly filterCalendar: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly imapConfig: Prisma.FieldRef<"EmailAccount", 'Json'>
   readonly syncStatus: Prisma.FieldRef<"EmailAccount", 'SyncStatus'>
   readonly lastSyncedAt: Prisma.FieldRef<"EmailAccount", 'DateTime'>

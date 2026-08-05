@@ -29,6 +29,26 @@ const CLASSIFICATION_CATEGORIES = [
   "General",
 ];
 
+type SyncFilterKey =
+  | "filterMarketing"
+  | "filterOtp"
+  | "filterPasswordReset"
+  | "filterBilling"
+  | "filterShipping"
+  | "filterCalendar";
+
+// Header-based and automated-sender detection (noreply/donotreply/etc.)
+// always exclude and aren't listed here — only the subject-shape
+// categories are user-configurable.
+const SYNC_FILTER_CATEGORIES: { key: SyncFilterKey; label: string }[] = [
+  { key: "filterMarketing", label: "Marketing" },
+  { key: "filterOtp", label: "OTP codes" },
+  { key: "filterPasswordReset", label: "Password reset" },
+  { key: "filterBilling", label: "Billing" },
+  { key: "filterShipping", label: "Shipping" },
+  { key: "filterCalendar", label: "Calendar invites" },
+];
+
 export function EmailAccountCard({
   account,
   onMakePrimary,
@@ -36,6 +56,7 @@ export function EmailAccountCard({
   onSyncNow,
   onDisconnect,
   onUpdateAutoSend,
+  onUpdateFilters,
   busy,
 }: {
   account: EmailAccount;
@@ -44,9 +65,11 @@ export function EmailAccountCard({
   onSyncNow: () => void;
   onDisconnect: () => void;
   onUpdateAutoSend: (categories: string[]) => void;
+  onUpdateFilters: (filters: Partial<Record<SyncFilterKey, boolean>>) => void;
   busy: boolean;
 }) {
   const [showAutoSend, setShowAutoSend] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   function toggleCategory(category: string) {
     const next = account.autoSendCategories.includes(category)
@@ -54,6 +77,14 @@ export function EmailAccountCard({
       : [...account.autoSendCategories, category];
     onUpdateAutoSend(next);
   }
+
+  function toggleFilter(key: SyncFilterKey) {
+    onUpdateFilters({ [key]: !account[key] });
+  }
+
+  const activeFilterCount = SYNC_FILTER_CATEGORIES.filter(
+    ({ key }) => account[key],
+  ).length;
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -109,6 +140,13 @@ export function EmailAccountCard({
               ? `(${account.autoSendCategories.length})`
               : "(off)"}
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowFilters((v) => !v)}
+          >
+            Sync filters ({activeFilterCount})
+          </Button>
           {!account.isPrimary && (
             <Button variant="secondary" size="sm" onClick={onMakePrimary} disabled={busy}>
               Make primary
@@ -144,6 +182,39 @@ export function EmailAccountCard({
                   )}
                 >
                   {category}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {showFilters && (
+        <div className="mt-4 border-t border-zinc-100 pt-3">
+          <p className="mb-2 text-xs text-zinc-500">
+            Highlighted categories are excluded from sync entirely — they
+            never appear in your inbox and never reach the AI pipeline.
+            Click to let a category sync anyway. A message that&apos;s part
+            of a real conversation always syncs regardless of these
+            settings.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SYNC_FILTER_CATEGORIES.map(({ key, label }) => {
+              const active = account[key];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => toggleFilter(key)}
+                  className={clsx(
+                    "rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset disabled:cursor-not-allowed disabled:opacity-50",
+                    active
+                      ? "bg-indigo-600 text-white ring-indigo-600"
+                      : "bg-white text-zinc-600 ring-zinc-300 hover:bg-zinc-50",
+                  )}
+                >
+                  {label}
                 </button>
               );
             })}

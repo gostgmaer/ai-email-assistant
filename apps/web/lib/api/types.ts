@@ -30,6 +30,12 @@ export interface EmailAccount {
   lastSyncedAt: string | null;
   lastSyncError: string | null;
   autoSendCategories: string[];
+  filterMarketing: boolean;
+  filterOtp: boolean;
+  filterPasswordReset: boolean;
+  filterBilling: boolean;
+  filterShipping: boolean;
+  filterCalendar: boolean;
   createdAt: string;
 }
 

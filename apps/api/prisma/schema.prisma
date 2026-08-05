@@ -141,6 +141,18 @@ model EmailAccount {
   // default: nothing auto-sends until explicitly configured.
   autoSendCategories String[] @default([])
 
+  // Per-category sync filters (see bulk-mail.util.ts). Default true means
+  // "exclude by default" — the aggressive-filtering behavior most users
+  // want out of the box. Flip to false to let that category sync anyway.
+  // Header-based and automated-sender detection are NOT here — they're
+  // always on, not user-configurable.
+  filterMarketing     Boolean @default(true)
+  filterOtp           Boolean @default(true)
+  filterPasswordReset Boolean @default(true)
+  filterBilling       Boolean @default(true)
+  filterShipping      Boolean @default(true)
+  filterCalendar      Boolean @default(true)
+
   // IMAP-only connection settings (host/port/secure/username); null for GOOGLE/MICROSOFT
   imapConfig Json?
 

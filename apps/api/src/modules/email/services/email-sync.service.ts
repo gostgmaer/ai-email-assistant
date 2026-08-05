@@ -8,6 +8,7 @@ import {
 import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNamespace';
 import { QueueService } from '../../../infrastructure/queue';
 import { EmailAccountService } from '../../email-account';
+import { isBulkMail, MailFilterSettings } from '../providers/bulk-mail.util';
 import {
   ListMessagesOptions,
   MailProviderClient,
@@ -165,14 +166,25 @@ export class EmailSyncService {
     );
 
     // Newsletters/notifications/automated mail (detected from bulk-sender
-    // headers, sender-address patterns, or subject shape) never enter the
-    // app at all — no thread, no message, nothing to show in the inbox.
-    // Only applies to inbound mail; never skip the user's own sent/draft
-    // copies. Exception: a message that's part of a real conversation
-    // (explicit In-Reply-To, or the thread already has other messages) is
-    // always synced regardless — a bulk-looking auto-reply inside a thread
-    // you're actually having is still part of that conversation.
-    if (isInbound && message.isBulkMail) {
+    // headers, sender-address patterns, or subject shape — filtered
+    // per-category according to the account's own filter* settings) never
+    // enter the app at all — no thread, no message, nothing to show in
+    // the inbox. Only applies to inbound mail; never skip the user's own
+    // sent/draft copies. Exception: a message that's part of a real
+    // conversation (explicit In-Reply-To, or the thread already has other
+    // messages) is always synced regardless — a bulk-looking auto-reply
+    // inside a thread you're actually having is still part of that
+    // conversation.
+    const filterSettings: MailFilterSettings = {
+      filterMarketing: account.filterMarketing,
+      filterOtp: account.filterOtp,
+      filterPasswordReset: account.filterPasswordReset,
+      filterBilling: account.filterBilling,
+      filterShipping: account.filterShipping,
+      filterCalendar: account.filterCalendar,
+    };
+
+    if (isInbound && isBulkMail(message.bulkMailSignals, filterSettings)) {
       const isPartOfConversation =
         !!message.inReplyTo ||
         (await this.prisma.emailThread.findFirst({

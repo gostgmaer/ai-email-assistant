@@ -50,6 +50,12 @@ export async function updateEmailAccount(
     isPrimary?: boolean;
     syncEnabled?: boolean;
     autoSendCategories?: string[];
+    filterMarketing?: boolean;
+    filterOtp?: boolean;
+    filterPasswordReset?: boolean;
+    filterBilling?: boolean;
+    filterShipping?: boolean;
+    filterCalendar?: boolean;
   },
 ): Promise<EmailAccount> {
   return apiFetch<EmailAccount>(`/email-accounts/${id}`, {
