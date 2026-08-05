@@ -171,6 +171,9 @@ export class MicrosoftGraphClient implements MailProviderClient {
     const headers = message.internetMessageHeaders ?? [];
     const header = (name: string) =>
       headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
+    const hasEspSignature = headers.some((h) =>
+      /^x-(mailgun|sg|sendgrid)/i.test(h.name),
+    );
 
     return {
       providerMessageId: message.id,
@@ -189,14 +192,19 @@ export class MicrosoftGraphClient implements MailProviderClient {
         ? new Date(message.receivedDateTime)
         : new Date(),
       isRead: message.isRead ?? true,
+      inReplyTo: header('In-Reply-To'),
       isBulkMail: isBulkMail(
         {
           listUnsubscribe: header('List-Unsubscribe'),
           listId: header('List-Id'),
           precedence: header('Precedence'),
           autoSubmitted: header('Auto-Submitted'),
+          autoResponseSuppress: header('X-Auto-Response-Suppress'),
+          feedbackId: header('Feedback-ID'),
+          hasEspSignature,
         },
         message.from?.emailAddress.address,
+        message.subject,
       ),
     };
   }

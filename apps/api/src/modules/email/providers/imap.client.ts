@@ -210,16 +210,20 @@ export class ImapClient implements MailProviderClient {
     const messageId = message.envelope?.messageId ?? `<uid-${message.uid}>`;
     const header = (name: string) =>
       this.headerString(parsed?.headers.get(name.toLowerCase()));
+    const hasEspSignature = Array.from(parsed?.headers.keys() ?? []).some(
+      (name) => /^x-(mailgun|sg|sendgrid)/i.test(name),
+    );
     const from = (message.envelope?.from ?? []).map((a) =>
       this.fromImapAddress(a),
     );
+    const subject = message.envelope?.subject;
 
     return {
       providerMessageId: messageId,
       // Generic IMAP has no native thread id; a reply's In-Reply-To points at
       // the root message's Message-ID, which we use as the thread key.
       providerThreadId: message.envelope?.inReplyTo ?? messageId,
-      subject: message.envelope?.subject,
+      subject,
       from,
       to: (message.envelope?.to ?? []).map((a) => this.fromImapAddress(a)),
       cc: (message.envelope?.cc ?? []).map((a) => this.fromImapAddress(a)),
@@ -231,14 +235,19 @@ export class ImapClient implements MailProviderClient {
         ? new Date(message.internalDate)
         : new Date(),
       isRead: message.flags ? message.flags.has('\\Seen') : false,
+      inReplyTo: message.envelope?.inReplyTo,
       isBulkMail: isBulkMail(
         {
           listUnsubscribe: header('list-unsubscribe'),
           listId: header('list-id'),
           precedence: header('precedence'),
           autoSubmitted: header('auto-submitted'),
+          autoResponseSuppress: header('x-auto-response-suppress'),
+          feedbackId: header('feedback-id'),
+          hasEspSignature,
         },
         from[0]?.address,
+        subject,
       ),
     };
   }

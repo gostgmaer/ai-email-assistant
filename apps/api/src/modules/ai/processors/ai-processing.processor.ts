@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
 import { AIJobs, QueueNames } from '../../../infrastructure/queue';
+import { isAutomatedAddress } from '../../email/providers/bulk-mail.util';
 import { NormalizedParticipant } from '../../email/interfaces';
 import { ComposeService } from '../../email/services/compose.service';
 import { EmailMessageDto } from '../dto';
@@ -64,6 +65,17 @@ export class AiProcessingProcessor extends WorkerHost {
 
     if (!sender?.address) {
       // No usable sender to reply to or build a contact profile for.
+      await this.markProcessed(messageId);
+      return;
+    }
+
+    if (isAutomatedAddress(sender.address)) {
+      // A reply here would go into a black hole (noreply/donotreply/alert
+      // inbox) regardless of what the message is about — skip before
+      // spending any AI calls on it, not just before sending.
+      this.logger.log(
+        `Message ${messageId} is from an automated address (${sender.address}), skipping.`,
+      );
       await this.markProcessed(messageId);
       return;
     }

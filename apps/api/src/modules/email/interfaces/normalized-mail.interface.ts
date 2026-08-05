@@ -24,11 +24,16 @@ export interface NormalizedMessage {
   snippet?: string;
   receivedAt: Date;
   isRead: boolean;
-  /** True for newsletters, social notifications, and automated /
-   * transactional mail, detected via List-Unsubscribe/List-Id/Precedence/
-   * Auto-Submitted headers. Used to skip the AI pipeline, not to hide the
-   * message from sync. */
+  /** True for newsletters, social notifications, marketing, and automated /
+   * transactional mail, detected via bulk-sender headers, sender-address
+   * patterns, and subject-line shape. Messages flagged true are excluded
+   * from sync entirely — UNLESS they're part of an existing conversation
+   * (see inReplyTo and the thread-continuity check in EmailSyncService). */
   isBulkMail: boolean;
+  /** Message-ID this is a reply to (In-Reply-To / envelope threading), if
+   * any. A message with this set is always synced regardless of
+   * isBulkMail — it's part of a real conversation. */
+  inReplyTo?: string;
 }
 
 export interface ListMessagesOptions {

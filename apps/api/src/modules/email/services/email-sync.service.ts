@@ -164,13 +164,25 @@ export class EmailSyncService {
       (sender) => sender.address.toLowerCase() === account.email.toLowerCase(),
     );
 
-    // Newsletters/notifications/automated mail (detected from
-    // List-Unsubscribe/List-Id/Precedence/Auto-Submitted headers, or a
-    // noreply-style sender) never enter the app at all — no thread, no
-    // message, nothing to show in the inbox. Only applies to inbound mail;
-    // never skip the user's own sent/draft copies.
+    // Newsletters/notifications/automated mail (detected from bulk-sender
+    // headers, sender-address patterns, or subject shape) never enter the
+    // app at all — no thread, no message, nothing to show in the inbox.
+    // Only applies to inbound mail; never skip the user's own sent/draft
+    // copies. Exception: a message that's part of a real conversation
+    // (explicit In-Reply-To, or the thread already has other messages) is
+    // always synced regardless — a bulk-looking auto-reply inside a thread
+    // you're actually having is still part of that conversation.
     if (isInbound && message.isBulkMail) {
-      return;
+      const isPartOfConversation =
+        !!message.inReplyTo ||
+        (await this.prisma.emailThread.findFirst({
+          where: { accountId, providerThreadId: message.providerThreadId },
+          select: { id: true },
+        })) !== null;
+
+      if (!isPartOfConversation) {
+        return;
+      }
     }
 
     const thread = await this.prisma.emailThread.upsert({

@@ -168,13 +168,18 @@ export class GmailClient implements MailProviderClient {
     const header = (name: string) =>
       headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
 
+    const hasEspSignature = headers.some((h) =>
+      /^x-(mailgun|sg|sendgrid)/i.test(h.name),
+    );
+
     const { text, html } = this.extractBody(message.payload);
     const from = this.parseAddressList(header('From'));
+    const subject = header('Subject');
 
     return {
       providerMessageId: message.id,
       providerThreadId: message.threadId,
-      subject: header('Subject'),
+      subject,
       from,
       to: this.parseAddressList(header('To')),
       cc: this.parseAddressList(header('Cc')),
@@ -186,14 +191,19 @@ export class GmailClient implements MailProviderClient {
         ? new Date(Number(message.internalDate))
         : new Date(),
       isRead: !(message.labelIds ?? []).includes('UNREAD'),
+      inReplyTo: header('In-Reply-To'),
       isBulkMail: isBulkMail(
         {
           listUnsubscribe: header('List-Unsubscribe'),
           listId: header('List-Id'),
           precedence: header('Precedence'),
           autoSubmitted: header('Auto-Submitted'),
+          autoResponseSuppress: header('X-Auto-Response-Suppress'),
+          feedbackId: header('Feedback-ID'),
+          hasEspSignature,
         },
         from[0]?.address,
+        subject,
       ),
     };
   }
