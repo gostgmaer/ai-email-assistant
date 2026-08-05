@@ -57,6 +57,17 @@ const SYSTEM_LABEL_TYPE: Record<string, NormalizedFolder['type']> = {
 // what was driving 429 rate limits.
 const CATEGORY_LABEL_PREFIX = 'CATEGORY_';
 
+// Same problem as CATEGORY_*: these are overlay flags Gmail applies to
+// messages that are usually already in INBOX/SENT, not separate mailboxes
+// a user files mail into. Treating them as syncable folders means a
+// message can get its EmailThread permanently anchored here instead of
+// INBOX (folderId is set once, on first sync) whenever it's fetched via
+// one of these labels before INBOX — e.g. an older INBOX message outside
+// the per-sync fetch window that's also tagged IMPORTANT. That misfiled
+// thread then never shows up in the app's Inbox tab (which only queries
+// folderType: INBOX) even though it's genuinely still in the inbox.
+const NON_FOLDER_LABELS = new Set(['IMPORTANT', 'STARRED', 'UNREAD', 'CHAT']);
+
 interface GmailLabel {
   id: string;
   name: string;
@@ -98,6 +109,7 @@ export class GmailClient implements MailProviderClient {
     return data.labels
       .filter((label) => label.type === 'system' || label.type === 'user')
       .filter((label) => !label.id.startsWith(CATEGORY_LABEL_PREFIX))
+      .filter((label) => !NON_FOLDER_LABELS.has(label.id))
       .map((label) => ({
         providerFolderId: label.id,
         name: label.name,
