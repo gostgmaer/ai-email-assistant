@@ -59,7 +59,8 @@ export const ModelName = {
   EmailCredential: 'EmailCredential',
   MailFolder: 'MailFolder',
   EmailThread: 'EmailThread',
-  EmailMessage: 'EmailMessage'
+  EmailMessage: 'EmailMessage',
+  ContactMemory: 'ContactMemory'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -145,6 +146,7 @@ export const EmailAccountScalarFieldEnum = {
   displayName: 'displayName',
   isPrimary: 'isPrimary',
   syncEnabled: 'syncEnabled',
+  autoSendCategories: 'autoSendCategories',
   imapConfig: 'imapConfig',
   syncStatus: 'syncStatus',
   lastSyncedAt: 'lastSyncedAt',
@@ -212,11 +214,26 @@ export const EmailMessageScalarFieldEnum = {
   bodyHtml: 'bodyHtml',
   receivedAt: 'receivedAt',
   isRead: 'isRead',
+  inReplyToMessageId: 'inReplyToMessageId',
+  aiProcessedAt: 'aiProcessedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type EmailMessageScalarFieldEnum = (typeof EmailMessageScalarFieldEnum)[keyof typeof EmailMessageScalarFieldEnum]
+
+
+export const ContactMemoryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  senderEmail: 'senderEmail',
+  senderName: 'senderName',
+  facts: 'facts',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContactMemoryScalarFieldEnum = (typeof ContactMemoryScalarFieldEnum)[keyof typeof ContactMemoryScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -35,12 +35,13 @@ describe('EmailSyncService', () => {
         upsert: jest.fn().mockResolvedValue({ id: 'thread-row-1' }),
       },
       emailMessage: {
-        upsert: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest.fn().mockResolvedValue({ id: 'message-row-1' }),
       },
     };
   }
 
-  function buildClient(): MailProviderClient {
+  function buildClient(from: { address: string }[]): MailProviderClient {
     return {
       listFolders: jest
         .fn()
@@ -52,7 +53,7 @@ describe('EmailSyncService', () => {
           {
             providerMessageId: 'msg-1',
             providerThreadId,
-            from: [{ address: 'a@example.com' }],
+            from,
             to: [{ address: 'b@example.com' }],
             receivedAt: new Date(),
             isRead: false,
@@ -65,10 +66,14 @@ describe('EmailSyncService', () => {
     };
   }
 
-  it('upserts EmailThread scoped by { accountId, providerThreadId }, not folderId', async () => {
-    const prisma = buildPrismaMock();
-    const client = buildClient();
-
+  function buildService(
+    prisma: ReturnType<typeof buildPrismaMock>,
+    client: MailProviderClient,
+    queueService: {
+      enqueueNotification: jest.Mock;
+      enqueueAiProcessing: jest.Mock;
+    },
+  ): EmailSyncService {
     const emailAccountService = {
       markSyncStarted: jest.fn(),
       markSyncCompleted: jest.fn(),
@@ -79,16 +84,23 @@ describe('EmailSyncService', () => {
       createClient: jest.fn().mockResolvedValue(client),
     } as unknown as MailProviderFactory;
 
-    const queueService = {
-      enqueueNotification: jest.fn(),
-    } as unknown as QueueService;
-
-    const service = new EmailSyncService(
+    return new EmailSyncService(
       prisma as unknown as PrismaService,
       emailAccountService,
       mailProviderFactory,
-      queueService,
+      queueService as unknown as QueueService,
     );
+  }
+
+  it('upserts EmailThread scoped by { accountId, providerThreadId }, not folderId', async () => {
+    const prisma = buildPrismaMock();
+    const client = buildClient([{ address: 'a@example.com' }]);
+    const queueService = {
+      enqueueNotification: jest.fn(),
+      enqueueAiProcessing: jest.fn(),
+    };
+
+    const service = buildService(prisma, client, queueService);
 
     await service.syncAccount(accountId, 'full');
 
@@ -102,5 +114,55 @@ describe('EmailSyncService', () => {
       }),
     );
     /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+  });
+
+  it('enqueues AI processing for a new inbound message', async () => {
+    const prisma = buildPrismaMock();
+    const client = buildClient([{ address: 'a@example.com' }]);
+    const queueService = {
+      enqueueNotification: jest.fn(),
+      enqueueAiProcessing: jest.fn(),
+    };
+
+    const service = buildService(prisma, client, queueService);
+
+    await service.syncAccount(accountId, 'full');
+
+    expect(queueService.enqueueAiProcessing).toHaveBeenCalledWith(
+      'message-row-1',
+    );
+  });
+
+  it('does not enqueue AI processing for our own outbound (SENT-copy) message', async () => {
+    const prisma = buildPrismaMock();
+    // The account owner (user@example.com) is the sender — this is our own
+    // outbound mail, not something to auto-reply to.
+    const client = buildClient([{ address: 'user@example.com' }]);
+    const queueService = {
+      enqueueNotification: jest.fn(),
+      enqueueAiProcessing: jest.fn(),
+    };
+
+    const service = buildService(prisma, client, queueService);
+
+    await service.syncAccount(accountId, 'full');
+
+    expect(queueService.enqueueAiProcessing).not.toHaveBeenCalled();
+  });
+
+  it('does not enqueue AI processing when the message already existed (resync, not new)', async () => {
+    const prisma = buildPrismaMock();
+    prisma.emailMessage.findUnique.mockResolvedValue({ id: 'message-row-1' });
+    const client = buildClient([{ address: 'a@example.com' }]);
+    const queueService = {
+      enqueueNotification: jest.fn(),
+      enqueueAiProcessing: jest.fn(),
+    };
+
+    const service = buildService(prisma, client, queueService);
+
+    await service.syncAccount(accountId, 'full');
+
+    expect(queueService.enqueueAiProcessing).not.toHaveBeenCalled();
   });
 });

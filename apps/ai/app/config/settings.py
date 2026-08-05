@@ -30,7 +30,8 @@ class Settings(BaseSettings):
     llm_model: str = "gemini-3.5-flash-lite"
 
     embedding_provider: str = "google"
-    embedding_model: str = "text-embedding-004"
+    embedding_model: str = "gemini-embedding-001"
+    embedding_dimensions: int = 768
 
     # ============================================================
     # API Keys

@@ -11,6 +11,8 @@ export const AIJobs = {
   DraftReply: 'draft-reply',
   RewriteReply: 'rewrite-reply',
   ClassifyEmail: 'classify-email',
+  /** Autonomous pipeline: classify -> contact memory -> reply -> auto-send or draft. */
+  ProcessMessage: 'process-message',
 } as const;
 
 export const NotificationJobs = {

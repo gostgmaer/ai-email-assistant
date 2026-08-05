@@ -2,16 +2,19 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from '../auth';
+import { EmailModule } from '../email';
 import { AiController } from './controllers/ai.controller';
+import { AiProcessingProcessor } from './processors/ai-processing.processor';
 import { AiClientService } from './services/ai-client.service';
+import { ContactMemoryService } from './services/contact-memory.service';
 
 @Module({
-  imports: [ConfigModule, AuthModule],
+  imports: [ConfigModule, AuthModule, EmailModule],
 
   controllers: [AiController],
 
-  providers: [AiClientService],
+  providers: [AiClientService, ContactMemoryService, AiProcessingProcessor],
 
-  exports: [AiClientService],
+  exports: [AiClientService, ContactMemoryService],
 })
 export class AiModule {}

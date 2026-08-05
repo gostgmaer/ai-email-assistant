@@ -213,6 +213,7 @@ export class EmailAccountService {
       displayName?: string;
       isPrimary?: boolean;
       syncEnabled?: boolean;
+      autoSendCategories?: string[];
     },
   ): Promise<EmailAccountModel> {
     await this.getOwnedAccountOrThrow(userId, accountId);

@@ -45,6 +45,21 @@ export interface ClassifyResponse {
   usage: TokenUsage;
 }
 
+export interface ContactFacts {
+  role: string | null;
+  company: string | null;
+  summary: string;
+  commitments: string[];
+}
+
+export interface ContactMemoryResponse {
+  facts: ContactFacts;
+  embedding: number[];
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
 interface RawUsage {
   input_tokens: number;
   output_tokens: number;
@@ -83,6 +98,14 @@ interface RawRewriteResponse {
 
 interface RawClassifyResponse {
   classification: ClassificationResult;
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
+interface RawContactMemoryResponse {
+  facts: ContactFacts;
+  embedding: number[];
   provider: string;
   model: string;
   usage: RawUsage;
@@ -131,10 +154,7 @@ export class AiClientService {
     };
   }
 
-  async rewrite(
-    draft: string,
-    instruction?: string,
-  ): Promise<RewriteResponse> {
+  async rewrite(draft: string, instruction?: string): Promise<RewriteResponse> {
     const res = await this.post<RawRewriteResponse>('/email/rewrite', {
       draft,
       instruction,
@@ -159,6 +179,24 @@ export class AiClientService {
 
     return {
       classification: res.classification,
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
+  }
+
+  async contactMemory(
+    subject: string,
+    thread: EmailMessageDto[],
+  ): Promise<ContactMemoryResponse> {
+    const res = await this.post<RawContactMemoryResponse>(
+      '/email/contact-memory',
+      { subject, thread },
+    );
+
+    return {
+      facts: res.facts,
+      embedding: res.embedding,
       provider: res.provider,
       model: res.model,
       usage: mapUsage(res.usage),

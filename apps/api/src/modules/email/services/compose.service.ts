@@ -94,6 +94,60 @@ export class ComposeService {
     );
   }
 
+  /**
+   * Used by the autonomous AI pipeline to hold a drafted reply for human
+   * review instead of sending it. Reuses the same local-Drafts mechanism as
+   * saveDraft() (so it shows up in the existing Drafts tab), but threads it
+   * to the message being replied to via inReplyToMessageId.
+   */
+  async saveDraftReply(
+    userId: string,
+    originalMessageId: string,
+    content: { subject: string; bodyText: string },
+  ) {
+    const original = await this.inboxService.getMessageOwned(
+      userId,
+      originalMessageId,
+    );
+    const account = original.thread.account;
+
+    const to = original.from as unknown as NormalizedParticipant[];
+
+    const folder = await this.findOrCreateLocalFolder(
+      account.id,
+      'DRAFTS',
+      'Drafts',
+    );
+
+    const thread = await this.prisma.emailThread.create({
+      data: {
+        accountId: account.id,
+        folderId: folder.id,
+        providerThreadId: `local-draft-${randomUUID()}`,
+        subject: content.subject,
+        snippet: content.bodyText.slice(0, 200),
+        lastMessageAt: new Date(),
+      },
+    });
+
+    return this.prisma.emailMessage.create({
+      data: {
+        threadId: thread.id,
+        providerMessageId: `local-draft-${randomUUID()}`,
+        from: [],
+        to: to as unknown as InputJsonValue,
+        cc: [],
+        bcc: [],
+        subject: content.subject,
+        bodyHtml: `<p>${content.bodyText.replace(/\n/g, '<br />')}</p>`,
+        bodyText: content.bodyText,
+        receivedAt: new Date(),
+        isRead: true,
+        inReplyToMessageId: originalMessageId,
+      },
+    });
+  }
+
   async saveDraft(userId: string, dto: CreateDraftDto) {
     const account = await this.emailAccountService.getOwnedAccountOrThrow(
       userId,

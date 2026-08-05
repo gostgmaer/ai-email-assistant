@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateEmailAccountDto {
   @ApiPropertyOptional()
@@ -17,4 +23,14 @@ export class UpdateEmailAccountDto {
   @IsOptional()
   @IsBoolean()
   syncEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description:
+      'Classification categories safe to auto-send a drafted reply for on this account. Empty means nothing auto-sends.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  autoSendCategories?: string[];
 }

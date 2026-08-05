@@ -15,6 +15,11 @@ from app.capabilities.extract.schemas import ExtractRequest, ExtractResponse
 from app.capabilities.extract.graph import extract_graph
 from app.capabilities.rewrite.schemas import RewriteRequest, RewriteResponse
 from app.capabilities.rewrite.graph import rewrite_graph
+from app.capabilities.contact_memory.schemas import (
+    ContactMemoryRequest,
+    ContactMemoryResponse,
+)
+from app.capabilities.contact_memory.graph import contact_memory_graph
 class EmailAIService:
     """Email AI service."""
 
@@ -91,5 +96,21 @@ class EmailAIService:
         model=result["model"],
         usage=result["usage"],
     )
+
+    async def contact_memory(
+        self,
+        request: ContactMemoryRequest,
+    ) -> ContactMemoryResponse:
+        """Extract sender facts and an embedding for contact memory."""
+
+        result = await contact_memory_graph.ainvoke(request.model_dump())
+
+        return ContactMemoryResponse(
+            facts=result["facts"],
+            embedding=result["embedding"],
+            provider=result["provider"],
+            model=result["model"],
+            usage=result["usage"],
+        )
 
 email_ai_service = EmailAIService()

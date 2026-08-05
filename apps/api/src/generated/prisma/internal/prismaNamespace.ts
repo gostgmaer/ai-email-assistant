@@ -405,7 +405,8 @@ export const ModelName = {
   EmailCredential: 'EmailCredential',
   MailFolder: 'MailFolder',
   EmailThread: 'EmailThread',
-  EmailMessage: 'EmailMessage'
+  EmailMessage: 'EmailMessage',
+  ContactMemory: 'ContactMemory'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -421,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "emailCredential" | "mailFolder" | "emailThread" | "emailMessage"
+    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "emailCredential" | "mailFolder" | "emailThread" | "emailMessage" | "contactMemory"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1091,6 +1092,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ContactMemory: {
+      payload: Prisma.$ContactMemoryPayload<ExtArgs>
+      fields: Prisma.ContactMemoryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ContactMemoryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ContactMemoryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>
+        }
+        findFirst: {
+          args: Prisma.ContactMemoryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ContactMemoryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>
+        }
+        findMany: {
+          args: Prisma.ContactMemoryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>[]
+        }
+        create: {
+          args: Prisma.ContactMemoryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>
+        }
+        createMany: {
+          args: Prisma.ContactMemoryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ContactMemoryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>[]
+        }
+        delete: {
+          args: Prisma.ContactMemoryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>
+        }
+        update: {
+          args: Prisma.ContactMemoryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>
+        }
+        deleteMany: {
+          args: Prisma.ContactMemoryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ContactMemoryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ContactMemoryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>[]
+        }
+        upsert: {
+          args: Prisma.ContactMemoryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMemoryPayload>
+        }
+        aggregate: {
+          args: Prisma.ContactMemoryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateContactMemory>
+        }
+        groupBy: {
+          args: Prisma.ContactMemoryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactMemoryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ContactMemoryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactMemoryCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1197,6 +1272,7 @@ export const EmailAccountScalarFieldEnum = {
   displayName: 'displayName',
   isPrimary: 'isPrimary',
   syncEnabled: 'syncEnabled',
+  autoSendCategories: 'autoSendCategories',
   imapConfig: 'imapConfig',
   syncStatus: 'syncStatus',
   lastSyncedAt: 'lastSyncedAt',
@@ -1264,11 +1340,26 @@ export const EmailMessageScalarFieldEnum = {
   bodyHtml: 'bodyHtml',
   receivedAt: 'receivedAt',
   isRead: 'isRead',
+  inReplyToMessageId: 'inReplyToMessageId',
+  aiProcessedAt: 'aiProcessedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type EmailMessageScalarFieldEnum = (typeof EmailMessageScalarFieldEnum)[keyof typeof EmailMessageScalarFieldEnum]
+
+
+export const ContactMemoryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  senderEmail: 'senderEmail',
+  senderName: 'senderName',
+  facts: 'facts',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContactMemoryScalarFieldEnum = (typeof ContactMemoryScalarFieldEnum)[keyof typeof ContactMemoryScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1603,6 +1694,7 @@ export type GlobalOmitConfig = {
   mailFolder?: Prisma.MailFolderOmit
   emailThread?: Prisma.EmailThreadOmit
   emailMessage?: Prisma.EmailMessageOmit
+  contactMemory?: Prisma.ContactMemoryOmit
 }
 
 /* Types for Logging */

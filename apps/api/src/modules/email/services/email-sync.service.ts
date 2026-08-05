@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
-import { MailFolderModel } from '../../../generated/prisma/models';
+import {
+  EmailAccountModel,
+  MailFolderModel,
+} from '../../../generated/prisma/models';
 import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNamespace';
 import { QueueService } from '../../../infrastructure/queue';
 import { EmailAccountService } from '../../email-account';
@@ -45,15 +48,17 @@ export class EmailSyncService {
       // created (see persistMessage); syncing INBOX/SENT first ensures
       // new threads anchor to a meaningful folder instead of whichever
       // label the provider happened to list first.
-      const folderPriority: Partial<Record<MailFolderModel['type'], number>> =
-        { INBOX: 0, SENT: 1 };
+      const folderPriority: Partial<Record<MailFolderModel['type'], number>> = {
+        INBOX: 0,
+        SENT: 1,
+      };
       const orderedFolders = [...folders].sort(
         (a, b) =>
           (folderPriority[a.type] ?? 99) - (folderPriority[b.type] ?? 99),
       );
 
       for (const folder of orderedFolders) {
-        await this.syncFolderMessages(folder, client, mode);
+        await this.syncFolderMessages(folder, client, mode, account);
       }
 
       await this.emailAccountService.markSyncCompleted(accountId);
@@ -123,6 +128,7 @@ export class EmailSyncService {
     folder: MailFolderModel,
     client: MailProviderClient,
     mode: 'full' | 'incremental',
+    account: EmailAccountModel,
   ): Promise<void> {
     if (!folder.providerFolderId) {
       return;
@@ -136,7 +142,7 @@ export class EmailSyncService {
     const result = await client.listMessages(folder.providerFolderId, options);
 
     for (const message of result.messages) {
-      await this.persistMessage(folder.accountId, folder.id, message);
+      await this.persistMessage(folder.id, message, account);
     }
 
     if (result.cursor && result.cursor !== folder.syncCursor) {
@@ -148,10 +154,12 @@ export class EmailSyncService {
   }
 
   private async persistMessage(
-    accountId: string,
     folderId: string,
     message: NormalizedMessage,
+    account: EmailAccountModel,
   ): Promise<void> {
+    const accountId = account.id;
+
     const thread = await this.prisma.emailThread.upsert({
       where: {
         accountId_providerThreadId: {
@@ -174,7 +182,17 @@ export class EmailSyncService {
       },
     });
 
-    await this.prisma.emailMessage.upsert({
+    const existing = await this.prisma.emailMessage.findUnique({
+      where: {
+        threadId_providerMessageId: {
+          threadId: thread.id,
+          providerMessageId: message.providerMessageId,
+        },
+      },
+      select: { id: true },
+    });
+
+    const saved = await this.prisma.emailMessage.upsert({
       where: {
         threadId_providerMessageId: {
           threadId: thread.id,
@@ -198,5 +216,15 @@ export class EmailSyncService {
         isRead: message.isRead,
       },
     });
+
+    const isInbound = !message.from.some(
+      (sender) => sender.address.toLowerCase() === account.email.toLowerCase(),
+    );
+
+    // Only run the AI pipeline for genuinely new, inbound messages — never
+    // for updates (re-syncs) or the SENT-folder copy of our own outbound mail.
+    if (!existing && isInbound) {
+      await this.queueService.enqueueAiProcessing(saved.id);
+    }
   }
 }

@@ -2,7 +2,11 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 
-import { EmailSyncJobs, NotificationJobs } from './constants/job.constants';
+import {
+  AIJobs,
+  EmailSyncJobs,
+  NotificationJobs,
+} from './constants/job.constants';
 import { QueueNames } from './constants/queue.constants';
 
 const BACKGROUND_SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -29,6 +33,14 @@ export class QueueService {
       EmailSyncJobs.IncrementalSync,
       { accountId },
       { jobId: `${EmailSyncJobs.IncrementalSync}:${accountId}:${Date.now()}` },
+    );
+  }
+
+  async enqueueAiProcessing(messageId: string): Promise<void> {
+    await this.aiQueue.add(
+      AIJobs.ProcessMessage,
+      { messageId },
+      { jobId: `${AIJobs.ProcessMessage}:${messageId}` },
     );
   }
 

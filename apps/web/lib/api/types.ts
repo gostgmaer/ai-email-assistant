@@ -29,6 +29,7 @@ export interface EmailAccount {
   syncStatus: SyncStatus;
   lastSyncedAt: string | null;
   lastSyncError: string | null;
+  autoSendCategories: string[];
   createdAt: string;
 }
 

@@ -234,6 +234,7 @@ export type UserWhereInput = {
   refreshTokens?: Prisma.RefreshTokenListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
   verificationTokens?: Prisma.VerificationTokenListRelationFilter
+  contactMemories?: Prisma.ContactMemoryListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -252,6 +253,7 @@ export type UserOrderByWithRelationInput = {
   refreshTokens?: Prisma.RefreshTokenOrderByRelationAggregateInput
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
   verificationTokens?: Prisma.VerificationTokenOrderByRelationAggregateInput
+  contactMemories?: Prisma.ContactMemoryOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -273,6 +275,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   refreshTokens?: Prisma.RefreshTokenListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
   verificationTokens?: Prisma.VerificationTokenListRelationFilter
+  contactMemories?: Prisma.ContactMemoryListRelationFilter
 }, "id" | "email" | "googleId" | "microsoftId">
 
 export type UserOrderByWithAggregationInput = {
@@ -325,6 +328,7 @@ export type UserCreateInput = {
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -343,6 +347,7 @@ export type UserUncheckedCreateInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -361,6 +366,7 @@ export type UserUpdateInput = {
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -379,6 +385,7 @@ export type UserUncheckedUpdateInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -542,6 +549,20 @@ export type UserUpdateOneRequiredWithoutEmailAccountsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutEmailAccountsInput, Prisma.UserUpdateWithoutEmailAccountsInput>, Prisma.UserUncheckedUpdateWithoutEmailAccountsInput>
 }
 
+export type UserCreateNestedOneWithoutContactMemoriesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutContactMemoriesInput, Prisma.UserUncheckedCreateWithoutContactMemoriesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutContactMemoriesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutContactMemoriesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutContactMemoriesInput, Prisma.UserUncheckedCreateWithoutContactMemoriesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutContactMemoriesInput
+  upsert?: Prisma.UserUpsertWithoutContactMemoriesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutContactMemoriesInput, Prisma.UserUpdateWithoutContactMemoriesInput>, Prisma.UserUncheckedUpdateWithoutContactMemoriesInput>
+}
+
 export type UserCreateWithoutVerificationTokensInput = {
   id?: string
   email: string
@@ -557,6 +578,7 @@ export type UserCreateWithoutVerificationTokensInput = {
   emailAccounts?: Prisma.EmailAccountCreateNestedManyWithoutUserInput
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutVerificationTokensInput = {
@@ -574,6 +596,7 @@ export type UserUncheckedCreateWithoutVerificationTokensInput = {
   emailAccounts?: Prisma.EmailAccountUncheckedCreateNestedManyWithoutUserInput
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutVerificationTokensInput = {
@@ -607,6 +630,7 @@ export type UserUpdateWithoutVerificationTokensInput = {
   emailAccounts?: Prisma.EmailAccountUpdateManyWithoutUserNestedInput
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVerificationTokensInput = {
@@ -624,6 +648,7 @@ export type UserUncheckedUpdateWithoutVerificationTokensInput = {
   emailAccounts?: Prisma.EmailAccountUncheckedUpdateManyWithoutUserNestedInput
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotificationsInput = {
@@ -641,6 +666,7 @@ export type UserCreateWithoutNotificationsInput = {
   emailAccounts?: Prisma.EmailAccountCreateNestedManyWithoutUserInput
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -658,6 +684,7 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   emailAccounts?: Prisma.EmailAccountUncheckedCreateNestedManyWithoutUserInput
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -691,6 +718,7 @@ export type UserUpdateWithoutNotificationsInput = {
   emailAccounts?: Prisma.EmailAccountUpdateManyWithoutUserNestedInput
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -708,6 +736,7 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   emailAccounts?: Prisma.EmailAccountUncheckedUpdateManyWithoutUserNestedInput
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRefreshTokensInput = {
@@ -725,6 +754,7 @@ export type UserCreateWithoutRefreshTokensInput = {
   emailAccounts?: Prisma.EmailAccountCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRefreshTokensInput = {
@@ -742,6 +772,7 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   emailAccounts?: Prisma.EmailAccountUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRefreshTokensInput = {
@@ -775,6 +806,7 @@ export type UserUpdateWithoutRefreshTokensInput = {
   emailAccounts?: Prisma.EmailAccountUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRefreshTokensInput = {
@@ -792,6 +824,7 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   emailAccounts?: Prisma.EmailAccountUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutEmailAccountsInput = {
@@ -809,6 +842,7 @@ export type UserCreateWithoutEmailAccountsInput = {
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutEmailAccountsInput = {
@@ -826,6 +860,7 @@ export type UserUncheckedCreateWithoutEmailAccountsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   verificationTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutEmailAccountsInput = {
@@ -859,6 +894,7 @@ export type UserUpdateWithoutEmailAccountsInput = {
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEmailAccountsInput = {
@@ -876,6 +912,95 @@ export type UserUncheckedUpdateWithoutEmailAccountsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   verificationTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutContactMemoriesInput = {
+  id?: string
+  email: string
+  displayName?: string | null
+  avatar?: string | null
+  passwordHash?: string | null
+  emailVerifiedAt?: Date | string | null
+  googleId?: string | null
+  microsoftId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  emailAccounts?: Prisma.EmailAccountCreateNestedManyWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  verificationTokens?: Prisma.VerificationTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutContactMemoriesInput = {
+  id?: string
+  email: string
+  displayName?: string | null
+  avatar?: string | null
+  passwordHash?: string | null
+  emailVerifiedAt?: Date | string | null
+  googleId?: string | null
+  microsoftId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  emailAccounts?: Prisma.EmailAccountUncheckedCreateNestedManyWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  verificationTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutContactMemoriesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutContactMemoriesInput, Prisma.UserUncheckedCreateWithoutContactMemoriesInput>
+}
+
+export type UserUpsertWithoutContactMemoriesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutContactMemoriesInput, Prisma.UserUncheckedUpdateWithoutContactMemoriesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutContactMemoriesInput, Prisma.UserUncheckedCreateWithoutContactMemoriesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutContactMemoriesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutContactMemoriesInput, Prisma.UserUncheckedUpdateWithoutContactMemoriesInput>
+}
+
+export type UserUpdateWithoutContactMemoriesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  microsoftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailAccounts?: Prisma.EmailAccountUpdateManyWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  verificationTokens?: Prisma.VerificationTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutContactMemoriesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  microsoftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailAccounts?: Prisma.EmailAccountUncheckedUpdateManyWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  verificationTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -888,6 +1013,7 @@ export type UserCountOutputType = {
   refreshTokens: number
   notifications: number
   verificationTokens: number
+  contactMemories: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -895,6 +1021,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   refreshTokens?: boolean | UserCountOutputTypeCountRefreshTokensArgs
   notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
   verificationTokens?: boolean | UserCountOutputTypeCountVerificationTokensArgs
+  contactMemories?: boolean | UserCountOutputTypeCountContactMemoriesArgs
 }
 
 /**
@@ -935,6 +1062,13 @@ export type UserCountOutputTypeCountVerificationTokensArgs<ExtArgs extends runti
   where?: Prisma.VerificationTokenWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountContactMemoriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ContactMemoryWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -952,6 +1086,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   verificationTokens?: boolean | Prisma.User$verificationTokensArgs<ExtArgs>
+  contactMemories?: boolean | Prisma.User$contactMemoriesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1003,6 +1138,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   verificationTokens?: boolean | Prisma.User$verificationTokensArgs<ExtArgs>
+  contactMemories?: boolean | Prisma.User$contactMemoriesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1015,6 +1151,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     refreshTokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
     notifications: Prisma.$NotificationPayload<ExtArgs>[]
     verificationTokens: Prisma.$VerificationTokenPayload<ExtArgs>[]
+    contactMemories: Prisma.$ContactMemoryPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1426,6 +1563,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   refreshTokens<T extends Prisma.User$refreshTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   verificationTokens<T extends Prisma.User$verificationTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$verificationTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VerificationTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  contactMemories<T extends Prisma.User$contactMemoriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$contactMemoriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactMemoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1952,6 +2090,30 @@ export type User$verificationTokensArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.VerificationTokenScalarFieldEnum | Prisma.VerificationTokenScalarFieldEnum[]
+}
+
+/**
+ * User.contactMemories
+ */
+export type User$contactMemoriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ContactMemory
+   */
+  select?: Prisma.ContactMemorySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ContactMemory
+   */
+  omit?: Prisma.ContactMemoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ContactMemoryInclude<ExtArgs> | null
+  where?: Prisma.ContactMemoryWhereInput
+  orderBy?: Prisma.ContactMemoryOrderByWithRelationInput | Prisma.ContactMemoryOrderByWithRelationInput[]
+  cursor?: Prisma.ContactMemoryWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ContactMemoryScalarFieldEnum | Prisma.ContactMemoryScalarFieldEnum[]
 }
 
 /**

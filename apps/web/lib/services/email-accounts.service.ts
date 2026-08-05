@@ -45,7 +45,12 @@ export async function connectImap(
 
 export async function updateEmailAccount(
   id: string,
-  data: { displayName?: string; isPrimary?: boolean; syncEnabled?: boolean },
+  data: {
+    displayName?: string;
+    isPrimary?: boolean;
+    syncEnabled?: boolean;
+    autoSendCategories?: string[];
+  },
 ): Promise<EmailAccount> {
   return apiFetch<EmailAccount>(`/email-accounts/${id}`, {
     method: "PATCH",

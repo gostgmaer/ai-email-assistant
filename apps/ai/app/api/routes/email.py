@@ -5,6 +5,10 @@ from app.capabilities.extract.schemas import ExtractRequest, ExtractResponse
 from app.capabilities.rewrite.schemas import RewriteRequest, RewriteResponse
 from app.capabilities.summarize.schemas import SummarizeRequest, SummarizeResponse
 from app.capabilities.reply.schemas import ReplyRequest, ReplyResponse
+from app.capabilities.contact_memory.schemas import (
+    ContactMemoryRequest,
+    ContactMemoryResponse,
+)
 from app.services.email_ai_service import email_ai_service
 
 router = APIRouter(
@@ -66,3 +70,15 @@ async def rewrite_email(
     """Rewrite an email draft."""
 
     return await email_ai_service.rewrite(request)
+
+
+@router.post(
+    "/contact-memory",
+    response_model=ContactMemoryResponse,
+)
+async def build_contact_memory(
+    request: ContactMemoryRequest,
+) -> ContactMemoryResponse:
+    """Extract sender facts and an embedding for contact memory."""
+
+    return await email_ai_service.contact_memory(request)
