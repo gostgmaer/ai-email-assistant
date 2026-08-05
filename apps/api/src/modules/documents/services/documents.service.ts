@@ -76,12 +76,39 @@ export class DocumentsService {
       file.mimetype,
     );
 
+    // Second, content-based check: catches files whose bytes differ but
+    // whose extracted text is identical (re-saved PDF, different line
+    // endings), and pre-existing rows that predate the contentHash column
+    // and so can never match on the fast path above.
+    const chunkContentHash = createHash('sha256')
+      .update(result.chunks.map((chunk) => chunk.content).join(''))
+      .digest('hex');
+
+    const existingByContent = await this.prisma.document.findUnique({
+      where: { userId_chunkContentHash: { userId, chunkContentHash } },
+      include: { _count: { select: { chunks: true } } },
+    });
+
+    if (existingByContent) {
+      return {
+        id: existingByContent.id,
+        filename: existingByContent.filename,
+        contentType: existingByContent.contentType,
+        provider: existingByContent.provider,
+        model: existingByContent.model,
+        createdAt: existingByContent.createdAt,
+        chunkCount: existingByContent._count.chunks,
+        duplicate: true,
+      };
+    }
+
     const document = await this.prisma.document.create({
       data: {
         userId,
         filename: file.originalname,
         contentType: file.mimetype,
         contentHash,
+        chunkContentHash,
         provider: result.provider,
         model: result.model,
       },

@@ -312,12 +312,20 @@ model Document {
   filename    String
   contentType String
 
-  /// SHA-256 of the uploaded file's raw bytes, used to make re-uploading
-  /// the same file idempotent instead of reprocessing and duplicating
-  /// chunks. Nullable so pre-existing rows (uploaded before this column
-  /// existed) don't collide — Postgres unique indexes treat NULL as
+  /// SHA-256 of the uploaded file's raw bytes. Checked BEFORE calling the
+  /// AI service, so re-uploading a byte-identical file is free (no
+  /// embedding cost). Nullable so pre-existing rows (uploaded before this
+  /// column existed) don't collide — Postgres unique indexes treat NULL as
   /// distinct, so they're excluded from the uniqueness check.
   contentHash String?
+
+  /// SHA-256 of the ordered, concatenated chunk text produced by the AI
+  /// service. Checked AFTER processing, as a fallback for cases the raw
+  /// byte hash can't catch: two files with different bytes that extract to
+  /// identical text (re-saved PDF, different line endings, a pre-existing
+  /// row that has no contentHash yet). Same nullability rationale as
+  /// contentHash.
+  chunkContentHash String?
 
   // Echoed back from the AI service's document_processing capability for
   // the run that produced this document's chunks.
@@ -329,6 +337,7 @@ model Document {
   createdAt DateTime @default(now())
 
   @@unique([userId, contentHash])
+  @@unique([userId, chunkContentHash])
   @@index([userId])
 }
 

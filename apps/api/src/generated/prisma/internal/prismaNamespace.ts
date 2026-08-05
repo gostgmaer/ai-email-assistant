@@ -1518,6 +1518,7 @@ export const DocumentScalarFieldEnum = {
   filename: 'filename',
   contentType: 'contentType',
   contentHash: 'contentHash',
+  chunkContentHash: 'chunkContentHash',
   provider: 'provider',
   model: 'model',
   createdAt: 'createdAt'
