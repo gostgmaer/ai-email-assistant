@@ -8,6 +8,9 @@ export interface DocumentSummary {
   model: string;
   createdAt: string;
   chunkCount: number;
+  /** True when this exact file was already uploaded and the existing
+   * document was returned instead of being reprocessed. */
+  duplicate?: boolean;
 }
 
 export interface DocumentChunk {

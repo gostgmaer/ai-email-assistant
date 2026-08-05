@@ -29,6 +29,7 @@ export type DocumentMinAggregateOutputType = {
   userId: string | null
   filename: string | null
   contentType: string | null
+  contentHash: string | null
   provider: string | null
   model: string | null
   createdAt: Date | null
@@ -39,6 +40,7 @@ export type DocumentMaxAggregateOutputType = {
   userId: string | null
   filename: string | null
   contentType: string | null
+  contentHash: string | null
   provider: string | null
   model: string | null
   createdAt: Date | null
@@ -49,6 +51,7 @@ export type DocumentCountAggregateOutputType = {
   userId: number
   filename: number
   contentType: number
+  contentHash: number
   provider: number
   model: number
   createdAt: number
@@ -61,6 +64,7 @@ export type DocumentMinAggregateInputType = {
   userId?: true
   filename?: true
   contentType?: true
+  contentHash?: true
   provider?: true
   model?: true
   createdAt?: true
@@ -71,6 +75,7 @@ export type DocumentMaxAggregateInputType = {
   userId?: true
   filename?: true
   contentType?: true
+  contentHash?: true
   provider?: true
   model?: true
   createdAt?: true
@@ -81,6 +86,7 @@ export type DocumentCountAggregateInputType = {
   userId?: true
   filename?: true
   contentType?: true
+  contentHash?: true
   provider?: true
   model?: true
   createdAt?: true
@@ -164,6 +170,7 @@ export type DocumentGroupByOutputType = {
   userId: string
   filename: string
   contentType: string
+  contentHash: string | null
   provider: string
   model: string
   createdAt: Date
@@ -195,6 +202,7 @@ export type DocumentWhereInput = {
   userId?: Prisma.StringFilter<"Document"> | string
   filename?: Prisma.StringFilter<"Document"> | string
   contentType?: Prisma.StringFilter<"Document"> | string
+  contentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   provider?: Prisma.StringFilter<"Document"> | string
   model?: Prisma.StringFilter<"Document"> | string
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
@@ -207,6 +215,7 @@ export type DocumentOrderByWithRelationInput = {
   userId?: Prisma.SortOrder
   filename?: Prisma.SortOrder
   contentType?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -216,24 +225,27 @@ export type DocumentOrderByWithRelationInput = {
 
 export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  userId_contentHash?: Prisma.DocumentUserIdContentHashCompoundUniqueInput
   AND?: Prisma.DocumentWhereInput | Prisma.DocumentWhereInput[]
   OR?: Prisma.DocumentWhereInput[]
   NOT?: Prisma.DocumentWhereInput | Prisma.DocumentWhereInput[]
   userId?: Prisma.StringFilter<"Document"> | string
   filename?: Prisma.StringFilter<"Document"> | string
   contentType?: Prisma.StringFilter<"Document"> | string
+  contentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   provider?: Prisma.StringFilter<"Document"> | string
   model?: Prisma.StringFilter<"Document"> | string
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   chunks?: Prisma.DocumentChunkListRelationFilter
-}, "id">
+}, "id" | "userId_contentHash">
 
 export type DocumentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   filename?: Prisma.SortOrder
   contentType?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -250,6 +262,7 @@ export type DocumentScalarWhereWithAggregatesInput = {
   userId?: Prisma.StringWithAggregatesFilter<"Document"> | string
   filename?: Prisma.StringWithAggregatesFilter<"Document"> | string
   contentType?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  contentHash?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   provider?: Prisma.StringWithAggregatesFilter<"Document"> | string
   model?: Prisma.StringWithAggregatesFilter<"Document"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Document"> | Date | string
@@ -259,6 +272,7 @@ export type DocumentCreateInput = {
   id?: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -271,6 +285,7 @@ export type DocumentUncheckedCreateInput = {
   userId: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -281,6 +296,7 @@ export type DocumentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -293,6 +309,7 @@ export type DocumentUncheckedUpdateInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -304,6 +321,7 @@ export type DocumentCreateManyInput = {
   userId: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -313,6 +331,7 @@ export type DocumentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -323,6 +342,7 @@ export type DocumentUncheckedUpdateManyInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -338,11 +358,17 @@ export type DocumentOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type DocumentUserIdContentHashCompoundUniqueInput = {
+  userId: string
+  contentHash: string
+}
+
 export type DocumentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   filename?: Prisma.SortOrder
   contentType?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -353,6 +379,7 @@ export type DocumentMaxOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   filename?: Prisma.SortOrder
   contentType?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -363,6 +390,7 @@ export type DocumentMinOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   filename?: Prisma.SortOrder
   contentType?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -433,6 +461,7 @@ export type DocumentCreateWithoutUserInput = {
   id?: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -443,6 +472,7 @@ export type DocumentUncheckedCreateWithoutUserInput = {
   id?: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -483,6 +513,7 @@ export type DocumentScalarWhereInput = {
   userId?: Prisma.StringFilter<"Document"> | string
   filename?: Prisma.StringFilter<"Document"> | string
   contentType?: Prisma.StringFilter<"Document"> | string
+  contentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   provider?: Prisma.StringFilter<"Document"> | string
   model?: Prisma.StringFilter<"Document"> | string
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
@@ -492,6 +523,7 @@ export type DocumentCreateWithoutChunksInput = {
   id?: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -503,6 +535,7 @@ export type DocumentUncheckedCreateWithoutChunksInput = {
   userId: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -528,6 +561,7 @@ export type DocumentUpdateWithoutChunksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -539,6 +573,7 @@ export type DocumentUncheckedUpdateWithoutChunksInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -548,6 +583,7 @@ export type DocumentCreateManyUserInput = {
   id?: string
   filename: string
   contentType: string
+  contentHash?: string | null
   provider: string
   model: string
   createdAt?: Date | string
@@ -557,6 +593,7 @@ export type DocumentUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -567,6 +604,7 @@ export type DocumentUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -577,6 +615,7 @@ export type DocumentUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -618,6 +657,7 @@ export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   userId?: boolean
   filename?: boolean
   contentType?: boolean
+  contentHash?: boolean
   provider?: boolean
   model?: boolean
   createdAt?: boolean
@@ -631,6 +671,7 @@ export type DocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   userId?: boolean
   filename?: boolean
   contentType?: boolean
+  contentHash?: boolean
   provider?: boolean
   model?: boolean
   createdAt?: boolean
@@ -642,6 +683,7 @@ export type DocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   userId?: boolean
   filename?: boolean
   contentType?: boolean
+  contentHash?: boolean
   provider?: boolean
   model?: boolean
   createdAt?: boolean
@@ -653,12 +695,13 @@ export type DocumentSelectScalar = {
   userId?: boolean
   filename?: boolean
   contentType?: boolean
+  contentHash?: boolean
   provider?: boolean
   model?: boolean
   createdAt?: boolean
 }
 
-export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "filename" | "contentType" | "provider" | "model" | "createdAt", ExtArgs["result"]["document"]>
+export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "filename" | "contentType" | "contentHash" | "provider" | "model" | "createdAt", ExtArgs["result"]["document"]>
 export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   chunks?: boolean | Prisma.Document$chunksArgs<ExtArgs>
@@ -682,6 +725,14 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     userId: string
     filename: string
     contentType: string
+    /**
+     * SHA-256 of the uploaded file's raw bytes, used to make re-uploading
+     * the same file idempotent instead of reprocessing and duplicating
+     * chunks. Nullable so pre-existing rows (uploaded before this column
+     * existed) don't collide — Postgres unique indexes treat NULL as
+     * distinct, so they're excluded from the uniqueness check.
+     */
+    contentHash: string | null
     provider: string
     model: string
     createdAt: Date
@@ -1114,6 +1165,7 @@ export interface DocumentFieldRefs {
   readonly userId: Prisma.FieldRef<"Document", 'String'>
   readonly filename: Prisma.FieldRef<"Document", 'String'>
   readonly contentType: Prisma.FieldRef<"Document", 'String'>
+  readonly contentHash: Prisma.FieldRef<"Document", 'String'>
   readonly provider: Prisma.FieldRef<"Document", 'String'>
   readonly model: Prisma.FieldRef<"Document", 'String'>
   readonly createdAt: Prisma.FieldRef<"Document", 'DateTime'>

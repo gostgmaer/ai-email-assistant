@@ -243,6 +243,7 @@ export const DocumentScalarFieldEnum = {
   userId: 'userId',
   filename: 'filename',
   contentType: 'contentType',
+  contentHash: 'contentHash',
   provider: 'provider',
   model: 'model',
   createdAt: 'createdAt'

@@ -75,6 +75,11 @@ export default function DocumentsPage() {
                 : "Could not process the document"}
             </p>
           )}
+          {uploadMutation.isSuccess && uploadMutation.data.duplicate && (
+            <p className="text-xs text-amber-600">
+              This file was already uploaded — showing the existing document.
+            </p>
+          )}
           <Button
             type="submit"
             disabled={!selectedFile}

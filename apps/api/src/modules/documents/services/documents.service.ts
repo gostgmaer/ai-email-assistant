@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AiClientService } from '../../ai';
@@ -11,6 +13,9 @@ export interface DocumentSummary {
   model: string;
   createdAt: Date;
   chunkCount: number;
+  /** True when this file was already uploaded — the existing document was
+   * returned as-is instead of being reprocessed. Only set by upload. */
+  duplicate?: boolean;
 }
 
 export interface DocumentChunkView {
@@ -45,6 +50,26 @@ export class DocumentsService {
     userId: string,
     file: Express.Multer.File,
   ): Promise<DocumentSummary> {
+    const contentHash = createHash('sha256').update(file.buffer).digest('hex');
+
+    const existing = await this.prisma.document.findUnique({
+      where: { userId_contentHash: { userId, contentHash } },
+      include: { _count: { select: { chunks: true } } },
+    });
+
+    if (existing) {
+      return {
+        id: existing.id,
+        filename: existing.filename,
+        contentType: existing.contentType,
+        provider: existing.provider,
+        model: existing.model,
+        createdAt: existing.createdAt,
+        chunkCount: existing._count.chunks,
+        duplicate: true,
+      };
+    }
+
     const result = await this.aiClientService.processDocument(
       file.buffer,
       file.originalname,
@@ -56,6 +81,7 @@ export class DocumentsService {
         userId,
         filename: file.originalname,
         contentType: file.mimetype,
+        contentHash,
         provider: result.provider,
         model: result.model,
       },
@@ -77,6 +103,7 @@ export class DocumentsService {
       model: document.model,
       createdAt: document.createdAt,
       chunkCount: result.chunks.length,
+      duplicate: false,
     };
   }
 

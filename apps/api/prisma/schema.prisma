@@ -312,6 +312,13 @@ model Document {
   filename    String
   contentType String
 
+  /// SHA-256 of the uploaded file's raw bytes, used to make re-uploading
+  /// the same file idempotent instead of reprocessing and duplicating
+  /// chunks. Nullable so pre-existing rows (uploaded before this column
+  /// existed) don't collide — Postgres unique indexes treat NULL as
+  /// distinct, so they're excluded from the uniqueness check.
+  contentHash String?
+
   // Echoed back from the AI service's document_processing capability for
   // the run that produced this document's chunks.
   provider String
@@ -321,6 +328,7 @@ model Document {
 
   createdAt DateTime @default(now())
 
+  @@unique([userId, contentHash])
   @@index([userId])
 }
 
