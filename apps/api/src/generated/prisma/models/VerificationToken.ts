@@ -600,7 +600,8 @@ export type $VerificationTokenPayload<ExtArgs extends runtime.Types.Extensions.I
     type: $Enums.VerificationTokenType
     tokenHash: string
     /**
-     * * Only set for EMAIL_CHANGE: the address being switched to.
+     * *
+     *    * Only set for EMAIL_CHANGE: the address being switched to.
      */
     newEmail: string | null
     expiresAt: Date

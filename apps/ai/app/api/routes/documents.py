@@ -26,7 +26,7 @@ async def process_document_route(
     raw_bytes = await file.read()
 
     try:
-        chunks = process_document(
+        result = process_document(
             filename=file.filename or "document",
             content_type=file.content_type or "application/octet-stream",
             raw_bytes=raw_bytes,
@@ -35,7 +35,7 @@ async def process_document_route(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     return ProcessDocumentResponse(
-        chunks=chunks,
+        **result,
         provider=embedding_manager.provider,
         model=embedding_manager.model,
     )

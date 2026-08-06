@@ -20,6 +20,8 @@ export default function DocumentsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [documentTypeFilter, setDocumentTypeFilter] = useState("");
 
   const {
     data: documents,
@@ -41,7 +43,11 @@ export default function DocumentsPage() {
   });
 
   const searchMutation = useMutation({
-    mutationFn: searchDocuments,
+    mutationFn: (vars: { query: string; category?: string; documentType?: string }) =>
+      searchDocuments(vars.query, {
+        category: vars.category || undefined,
+        documentType: vars.documentType || undefined,
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -103,23 +109,45 @@ export default function DocumentsPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (searchQuery.trim()) searchMutation.mutate(searchQuery.trim());
+            if (searchQuery.trim()) {
+              searchMutation.mutate({
+                query: searchQuery.trim(),
+                category: categoryFilter.trim(),
+                documentType: documentTypeFilter.trim(),
+              });
+            }
           }}
-          className="flex gap-2"
+          className="space-y-2"
         >
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Ask something covered by your documents…"
-            className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm"
-          />
-          <Button
-            type="submit"
-            disabled={!searchQuery.trim()}
-            loading={searchMutation.isPending}
-          >
-            Search
-          </Button>
+          <div className="flex gap-2">
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Ask something covered by your documents…"
+              className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <Button
+              type="submit"
+              disabled={!searchQuery.trim()}
+              loading={searchMutation.isPending}
+            >
+              Search
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              placeholder="Filter by category (optional)"
+              className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 text-xs"
+            />
+            <input
+              value={documentTypeFilter}
+              onChange={(e) => setDocumentTypeFilter(e.target.value)}
+              placeholder="Filter by file type, e.g. pdf (optional)"
+              className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 text-xs"
+            />
+          </div>
         </form>
         {searchMutation.isError && (
           <p className="text-xs text-red-600">
@@ -149,6 +177,29 @@ export default function DocumentsPage() {
                     chunk {match.chunkIndex + 1} · distance{" "}
                     {match.distance.toFixed(3)}
                   </span>
+                  {match.section && (
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                      {match.section}
+                    </span>
+                  )}
+                  {match.page != null && (
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                      page {match.page}
+                    </span>
+                  )}
+                  {match.category && (
+                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
+                      {match.category}
+                    </span>
+                  )}
+                  {match.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
                 </div>
                 <p className="mt-1 line-clamp-3 text-sm text-zinc-700">
                   {match.content}
@@ -181,11 +232,25 @@ export default function DocumentsPage() {
               className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-50"
             >
               <Link href={`/documents/${doc.id}`} className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-zinc-900">
-                  {doc.filename}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-medium text-zinc-900">
+                    {doc.filename}
+                  </p>
+                  {doc.status !== "INDEXED" && (
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        doc.status === "FAILED"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {doc.status.toLowerCase()}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-zinc-500">
                   {doc.chunkCount} chunk{doc.chunkCount === 1 ? "" : "s"} ·{" "}
+                  {doc.documentType.toUpperCase()} ·{" "}
                   {doc.provider}/{doc.model} ·{" "}
                   {new Date(doc.createdAt).toLocaleString()}
                 </p>

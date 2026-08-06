@@ -1,5 +1,5 @@
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
   IsOptional,
@@ -22,4 +22,50 @@ export class SearchDocumentsDto {
   @Min(1)
   @Max(20)
   limit?: number = 5;
+
+  @ApiPropertyOptional({
+    description: 'Restrict results to this Document.category',
+  })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Restrict results to this Document.documentType (pdf, docx, md, txt)',
+  })
+  @IsOptional()
+  @IsString()
+  documentType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Restrict results to this Document.sourceType',
+  })
+  @IsOptional()
+  @IsString()
+  sourceType?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Restrict results to this DocumentChunk.chunkType (text, table, code, ...)',
+  })
+  @IsOptional()
+  @IsString()
+  chunkType?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Comma-separated tags — matches documents with at least one of them',
+    type: String,
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }): unknown =>
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+      : value,
+  )
+  tags?: string[];
 }

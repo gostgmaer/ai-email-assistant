@@ -7,8 +7,9 @@ import {
   forwardRef,
 } from '@nestjs/common';
 
-import { AiClientService } from '../../ai';
+import { AiClientService, ProcessedDocumentChunk } from '../../ai';
 import { PrismaService } from '../../../database';
+import { Prisma } from '../../../generated/prisma/client';
 
 export interface DocumentSummary {
   id: string;
@@ -16,32 +17,148 @@ export interface DocumentSummary {
   contentType: string;
   provider: string;
   model: string;
+  title: string;
+  category: string | null;
+  tags: string[];
+  status: string;
+  sourceType: string;
+  documentType: string;
+  fileSize: number;
+  version: number;
+  parser: string | null;
+  splitter: string | null;
+  chunkSize: number | null;
+  chunkOverlap: number | null;
+  embeddingDimension: number;
+  pageCount: number | null;
+  totalChunks: number;
+  totalTokens: number;
   createdAt: Date;
+  indexedAt: Date | null;
   chunkCount: number;
   /** True when this file was already uploaded — the existing document was
    * returned as-is instead of being reprocessed. Only set by upload. */
   duplicate?: boolean;
 }
 
-export interface DocumentChunkView {
-  id: string;
-  chunkIndex: number;
-  content: string;
-  metadata: Record<string, unknown>;
-}
-
+/** Fields that stay null until a real enrichment/connector step exists —
+ * broken out from DocumentSummary so the list view isn't cluttered with
+ * always-empty columns. */
 export interface DocumentDetail extends DocumentSummary {
+  description: string | null;
+  summary: string | null;
+  author: string | null;
+  owner: string | null;
+  language: string | null;
+  sourceName: string | null;
+  sourcePath: string | null;
+  sourceUrl: string | null;
+  externalId: string | null;
+  metadata: Record<string, unknown>;
   chunks: DocumentChunkView[];
 }
 
-export interface DocumentChunkMatch {
+interface DocumentChunkFields {
   id: string;
-  documentId: string;
-  filename: string;
   chunkIndex: number;
   content: string;
+  contentHash: string | null;
   metadata: Record<string, unknown>;
+  section: string | null;
+  page: number | null;
+  chunkType: string;
+  tokenCount: number | null;
+  wordCount: number | null;
+  characterCount: number | null;
+  startChar: number | null;
+  endChar: number | null;
+  lineStart: number | null;
+  lineEnd: number | null;
+  parentChunkId: string | null;
+  keywords: unknown[];
+  entities: unknown[];
+  importance: number | null;
+  embeddingModel: string | null;
+  embeddingDimension: number;
+  embeddingVersion: number;
+}
+
+export type DocumentChunkView = DocumentChunkFields;
+
+export interface DocumentChunkMatch extends DocumentChunkFields {
+  documentId: string;
+  filename: string;
+  title: string;
+  category: string | null;
+  tags: string[];
+  documentType: string;
+  sourceType: string;
   distance: number;
+}
+
+/** Metadata filters applied alongside the vector search — the "Metadata
+ * Filtering" step between vector search and re-ranking. */
+export interface SearchFilters {
+  category?: string;
+  documentType?: string;
+  sourceType?: string;
+  chunkType?: string;
+  tags?: string[];
+}
+
+interface DocumentRow {
+  id: string;
+  filename: string;
+  contentType: string;
+  provider: string;
+  model: string;
+  title: string;
+  category: string | null;
+  tags: string[];
+  status: string;
+  sourceType: string;
+  documentType: string;
+  fileSize: number;
+  version: number;
+  parser: string | null;
+  splitter: string | null;
+  chunkSize: number | null;
+  chunkOverlap: number | null;
+  embeddingDimension: number;
+  pageCount: number | null;
+  totalChunks: number;
+  totalTokens: number;
+  createdAt: Date;
+  indexedAt: Date | null;
+}
+
+function toSummary(document: DocumentRow, chunkCount: number): DocumentSummary {
+  return {
+    id: document.id,
+    filename: document.filename,
+    contentType: document.contentType,
+    provider: document.provider,
+    model: document.model,
+    title: document.title,
+    category: document.category,
+    tags: document.tags,
+    status: document.status,
+    sourceType: document.sourceType,
+    documentType: document.documentType,
+    fileSize: document.fileSize,
+    version: document.version,
+    parser: document.parser,
+    splitter: document.splitter,
+    chunkSize: document.chunkSize,
+    chunkOverlap: document.chunkOverlap,
+    embeddingDimension: document.embeddingDimension,
+    pageCount: document.pageCount,
+    totalChunks: document.totalChunks,
+    totalTokens: document.totalTokens,
+    createdAt: document.createdAt,
+    indexedAt: document.indexedAt,
+    chunkCount,
+  };
 }
 
 @Injectable()
@@ -65,13 +182,7 @@ export class DocumentsService {
 
     if (existing) {
       return {
-        id: existing.id,
-        filename: existing.filename,
-        contentType: existing.contentType,
-        provider: existing.provider,
-        model: existing.model,
-        createdAt: existing.createdAt,
-        chunkCount: existing._count.chunks,
+        ...toSummary(existing, existing._count.chunks),
         duplicate: true,
       };
     }
@@ -97,17 +208,17 @@ export class DocumentsService {
 
     if (existingByContent) {
       return {
-        id: existingByContent.id,
-        filename: existingByContent.filename,
-        contentType: existingByContent.contentType,
-        provider: existingByContent.provider,
-        model: existingByContent.model,
-        createdAt: existingByContent.createdAt,
-        chunkCount: existingByContent._count.chunks,
+        ...toSummary(existingByContent, existingByContent._count.chunks),
         duplicate: true,
       };
     }
 
+    const fileExtension = extensionOf(file.originalname);
+    const stats = aggregateStats(result.chunks);
+
+    // Created at status PROCESSING first: the chunk-insert loop below is
+    // not transactional, so a crash mid-loop leaves the row honestly
+    // reflecting an incomplete index instead of silently claiming INDEXED.
     const document = await this.prisma.document.create({
       data: {
         userId,
@@ -117,27 +228,59 @@ export class DocumentsService {
         chunkContentHash,
         provider: result.provider,
         model: result.model,
+        title: file.originalname,
+        sourceType: 'upload',
+        documentType: fileExtension || file.mimetype,
+        fileExtension,
+        fileSize: file.size,
+        status: 'PROCESSING',
+        parser: result.parser,
+        splitter: result.splitter,
+        chunkSize: result.chunkSize,
+        chunkOverlap: result.chunkOverlap,
+        pageCount: result.pageCount,
+        ...(result.chunks[0]
+          ? { embeddingDimension: result.chunks[0].embedding.length }
+          : {}),
       },
     });
 
     for (const [index, chunk] of result.chunks.entries()) {
       const vector = toVectorLiteral(chunk.embedding);
+      const chunkContentHashValue = createHash('sha256')
+        .update(chunk.content)
+        .digest('hex');
+
       await this.prisma.$executeRaw`
-        INSERT INTO "DocumentChunk" ("id", "documentId", "chunkIndex", "content", "metadata", "embedding", "createdAt")
-        VALUES (gen_random_uuid(), ${document.id}, ${index}, ${chunk.content}, ${JSON.stringify(chunk.metadata)}::jsonb, ${vector}::vector, now())
+        INSERT INTO "DocumentChunk"
+          ("id", "documentId", "chunkIndex", "content", "contentHash", "metadata",
+           "section", "page", "chunkType", "tokenCount", "wordCount", "characterCount",
+           "startChar", "endChar", "lineStart", "lineEnd",
+           "embeddingModel", "embeddingDimension", "embeddingVersion",
+           "embedding", "createdAt", "updatedAt")
+        VALUES
+          (gen_random_uuid(), ${document.id}, ${index}, ${chunk.content}, ${chunkContentHashValue},
+           ${JSON.stringify(chunk.metadata)}::jsonb, ${chunk.section}, ${chunk.page},
+           ${chunk.chunkType}, ${chunk.tokenCount}, ${chunk.wordCount}, ${chunk.characterCount},
+           ${chunk.startChar}, ${chunk.endChar}, ${chunk.lineStart}, ${chunk.lineEnd},
+           ${result.model}, ${chunk.embedding.length}, 1,
+           ${vector}::vector, now(), now())
       `;
     }
 
-    return {
-      id: document.id,
-      filename: document.filename,
-      contentType: document.contentType,
-      provider: document.provider,
-      model: document.model,
-      createdAt: document.createdAt,
-      chunkCount: result.chunks.length,
-      duplicate: false,
-    };
+    const indexedAt = new Date();
+    const updated = await this.prisma.document.update({
+      where: { id: document.id },
+      data: {
+        status: 'INDEXED',
+        indexedAt,
+        totalChunks: stats.totalChunks,
+        totalTokens: stats.totalTokens,
+        totalCharacters: stats.totalCharacters,
+      },
+    });
+
+    return { ...toSummary(updated, stats.totalChunks), duplicate: false };
   }
 
   async listForUser(userId: string): Promise<DocumentSummary[]> {
@@ -147,15 +290,9 @@ export class DocumentsService {
       include: { _count: { select: { chunks: true } } },
     });
 
-    return documents.map((document) => ({
-      id: document.id,
-      filename: document.filename,
-      contentType: document.contentType,
-      provider: document.provider,
-      model: document.model,
-      createdAt: document.createdAt,
-      chunkCount: document._count.chunks,
-    }));
+    return documents.map((document) =>
+      toSummary(document, document._count.chunks),
+    );
   }
 
   async getForUser(userId: string, id: string): Promise<DocumentDetail> {
@@ -168,19 +305,33 @@ export class DocumentsService {
     }
 
     const chunks = await this.prisma.$queryRaw<DocumentChunkView[]>`
-      SELECT "id", "chunkIndex", "content", "metadata" FROM "DocumentChunk"
+      SELECT "id", "chunkIndex", "content", "contentHash", "metadata", "section", "page",
+             "chunkType", "tokenCount", "wordCount", "characterCount",
+             "startChar", "endChar", "lineStart", "lineEnd", "parentChunkId",
+             "keywords", "entities", "importance",
+             "embeddingModel", "embeddingDimension", "embeddingVersion"
+      FROM "DocumentChunk"
       WHERE "documentId" = ${id}
       ORDER BY "chunkIndex" ASC
     `;
 
+    // Best-effort retrieval touch — doesn't block the response on failure.
+    void this.prisma.document
+      .update({ where: { id }, data: { lastAccessedAt: new Date() } })
+      .catch(() => undefined);
+
     return {
-      id: document.id,
-      filename: document.filename,
-      contentType: document.contentType,
-      provider: document.provider,
-      model: document.model,
-      createdAt: document.createdAt,
-      chunkCount: chunks.length,
+      ...toSummary(document, chunks.length),
+      description: document.description,
+      summary: document.summary,
+      author: document.author,
+      owner: document.owner,
+      language: document.language,
+      sourceName: document.sourceName,
+      sourcePath: document.sourcePath,
+      sourceUrl: document.sourceUrl,
+      externalId: document.externalId,
+      metadata: document.metadata as Record<string, unknown>,
       chunks,
     };
   }
@@ -206,23 +357,93 @@ export class DocumentsService {
     userId: string,
     query: string,
     limit = 5,
+    filters?: SearchFilters,
   ): Promise<DocumentChunkMatch[]> {
     const { embedding } = await this.aiClientService.embedQuery(query);
     const vector = toVectorLiteral(embedding);
 
-    return this.prisma.$queryRaw<DocumentChunkMatch[]>`
-      SELECT dc."id", dc."chunkIndex", dc."content", dc."metadata",
-             d."id" AS "documentId", d."filename",
-             (dc.embedding <=> ${vector}::vector) AS distance
-      FROM "DocumentChunk" dc
-      JOIN "Document" d ON d."id" = dc."documentId"
-      WHERE d."userId" = ${userId} AND dc.embedding IS NOT NULL
-      ORDER BY dc.embedding <=> ${vector}::vector
-      LIMIT ${limit}
-    `;
+    // Only INDEXED documents: PROCESSING means the row exists but chunks
+    // may still be mid-insert; FAILED shouldn't happen (see create() above)
+    // but is excluded defensively.
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`d."userId" = ${userId}`,
+      Prisma.sql`dc."embedding" IS NOT NULL`,
+      Prisma.sql`d."status" = 'INDEXED'`,
+    ];
+
+    // "Metadata Filtering" pass alongside the vector search, not after it —
+    // narrowing by document/chunk identity before ranking is cheaper and
+    // more precise than filtering a fixed top-N vector result afterwards.
+    if (filters?.category) {
+      conditions.push(Prisma.sql`d."category" = ${filters.category}`);
+    }
+    if (filters?.documentType) {
+      conditions.push(Prisma.sql`d."documentType" = ${filters.documentType}`);
+    }
+    if (filters?.sourceType) {
+      conditions.push(Prisma.sql`d."sourceType" = ${filters.sourceType}`);
+    }
+    if (filters?.chunkType) {
+      conditions.push(Prisma.sql`dc."chunkType" = ${filters.chunkType}`);
+    }
+    if (filters?.tags && filters.tags.length > 0) {
+      conditions.push(Prisma.sql`d."tags" && ${filters.tags}::text[]`);
+    }
+
+    const matches = await this.prisma.$queryRaw<DocumentChunkMatch[]>(
+      Prisma.sql`
+        SELECT dc."id", dc."chunkIndex", dc."content", dc."contentHash", dc."metadata",
+               dc."section", dc."page", dc."chunkType", dc."tokenCount", dc."wordCount",
+               dc."characterCount", dc."startChar", dc."endChar", dc."lineStart", dc."lineEnd",
+               dc."parentChunkId", dc."keywords", dc."entities", dc."importance",
+               dc."embeddingModel", dc."embeddingDimension", dc."embeddingVersion",
+               d."id" AS "documentId", d."filename", d."title", d."category", d."tags",
+               d."documentType", d."sourceType",
+               (dc.embedding <=> ${vector}::vector) AS distance
+        FROM "DocumentChunk" dc
+        JOIN "Document" d ON d."id" = dc."documentId"
+        WHERE ${Prisma.join(conditions, ' AND ')}
+        ORDER BY dc.embedding <=> ${vector}::vector
+        LIMIT ${limit}
+      `,
+    );
+
+    const documentIds = [...new Set(matches.map((match) => match.documentId))];
+    if (documentIds.length > 0) {
+      void this.prisma.document
+        .updateMany({
+          where: { id: { in: documentIds } },
+          data: { lastAccessedAt: new Date() },
+        })
+        .catch(() => undefined);
+    }
+
+    return matches;
   }
 }
 
 function toVectorLiteral(embedding: number[]): string {
   return `[${embedding.join(',')}]`;
+}
+
+function extensionOf(filename: string): string {
+  return filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
+}
+
+function aggregateStats(chunks: ProcessedDocumentChunk[]): {
+  totalChunks: number;
+  totalTokens: number;
+  totalCharacters: number;
+} {
+  return {
+    totalChunks: chunks.length,
+    totalTokens: chunks.reduce(
+      (sum, chunk) => sum + (chunk.tokenCount || 0),
+      0,
+    ),
+    totalCharacters: chunks.reduce(
+      (sum, chunk) => sum + (chunk.characterCount || 0),
+      0,
+    ),
+  };
 }

@@ -37,6 +37,12 @@ enum VerificationTokenType {
   EMAIL_CHANGE
 }
 
+enum DocumentStatus {
+  PROCESSING
+  INDEXED
+  FAILED
+}
+
 model User {
   id          String  @id @default(uuid())
   email       String  @unique
@@ -74,7 +80,9 @@ model VerificationToken {
 
   tokenHash String @unique
 
-  /** Only set for EMAIL_CHANGE: the address being switched to. */
+  /**
+   * Only set for EMAIL_CHANGE: the address being switched to.
+   */
   newEmail String?
 
   expiresAt DateTime
@@ -156,8 +164,8 @@ model EmailAccount {
   // IMAP-only connection settings (host/port/secure/username); null for GOOGLE/MICROSOFT
   imapConfig Json?
 
-  syncStatus   SyncStatus @default(IDLE)
-  lastSyncedAt DateTime?
+  syncStatus    SyncStatus @default(IDLE)
+  lastSyncedAt  DateTime?
   lastSyncError String?
 
   createdAt DateTime  @default(now())
@@ -199,7 +207,9 @@ model MailFolder {
 
   type MailFolderType
 
-  /** Opaque provider cursor (Gmail historyId, Graph delta token, IMAP UID) for incremental sync. */
+  /**
+   * Opaque provider cursor (Gmail historyId, Graph delta token, IMAP UID) for incremental sync.
+   */
   syncCursor String?
 
   threads EmailThread[]
@@ -273,8 +283,8 @@ model EmailMessage {
   // Set when this message is an AI-drafted reply awaiting review (a local
   // draft, not yet sent) — points at the message it's replying to.
   inReplyToMessageId String?
-  inReplyTo           EmailMessage?  @relation("MessageReplies", fields: [inReplyToMessageId], references: [id], onDelete: SetNull)
-  draftReplies        EmailMessage[] @relation("MessageReplies")
+  inReplyTo          EmailMessage?  @relation("MessageReplies", fields: [inReplyToMessageId], references: [id], onDelete: SetNull)
+  draftReplies       EmailMessage[] @relation("MessageReplies")
 
   // Set once the autonomous AI pipeline (classify -> contact memory ->
   // reply) has run for this message, so retries/resyncs don't reprocess it.
@@ -344,13 +354,89 @@ model Document {
   provider String
   model    String
 
+  // --- Identification & organization (title defaults to filename; the
+  // rest are nullable/empty until a real AI-enrichment step populates
+  // them — see DocumentChunk.keywords/entities for the same pattern). ---
+  title       String
+  description String?
+  summary     String?
+  category    String?
+  tags        String[] @default([])
+  author      String?
+  /// Team/owner distinct from author — no ownership model exists yet
+  /// (single-tenant uploads), so always null until one does.
+  owner       String?
+  /// BCP-47 / ISO language code — no language detection runs yet.
+  language    String?
+
+  /// Origin channel. Always "upload" today (the only ingestion path); kept
+  /// as a plain string, not an enum, so future sources (url, notion, s3...)
+  /// don't require a migration.
+  sourceType String  @default("upload")
+  /// Null for uploads (there's no repo/site/app name to record) — set by
+  /// future non-upload connectors.
+  sourceName String?
+  sourcePath String?
+  sourceUrl  String?
+  /// ID in an external system (e.g. a Notion page ID) — null for uploads.
+  externalId String?
+
+  /// File extension, lowercased (pdf, docx, md, txt) — what the AI service
+  /// dispatches its extraction strategy on. `contentType` above already
+  /// carries the MIME type, so there's no separate mimeType column.
+  documentType  String
+  fileExtension String
+  fileSize      Int
+
+  /// Bumped by a future re-processing/re-indexing flow; uploads always
+  /// create version 1 today (each distinct upload is its own Document row).
+  version Int @default(1)
+
+  status DocumentStatus @default(PROCESSING)
+
+  /// Extraction strategy the AI service used — pdf, docx, markdown, plain_text.
+  parser       String?
+  /// Splitting strategy — recursive, markdown_recursive.
+  splitter     String?
+  chunkSize    Int?
+  chunkOverlap Int?
+
+  /// Mirrors DocumentChunk.embedding's vector width — lets future
+  /// multi-model support identify documents needing re-embedding without
+  /// inspecting the vector column itself.
+  embeddingDimension Int @default(768)
+
+  /// PDF page count. Null for non-paginated formats (md/txt/docx).
+  pageCount Int?
+
+  // Aggregated from this document's chunks once indexing finishes.
+  totalChunks     Int @default(0)
+  totalTokens     Int @default(0)
+  totalCharacters Int @default(0)
+
+  /// Connector-specific extras that don't warrant their own column.
+  metadata Json @default("{}")
+
   chunks DocumentChunk[]
 
-  createdAt DateTime @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  /// Set when the chunk-insert loop completes; stays null if a crash left
+  /// the row stuck at status PROCESSING with partial chunks.
+  indexedAt      DateTime?
+  /// Touched on read (get-by-id, search hits) — lets "most relevant /
+  /// recently used" retrieval ranking be added later without a new column.
+  lastAccessedAt DateTime?
 
   @@unique([userId, contentHash])
   @@unique([userId, chunkContentHash])
   @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([indexedAt])
+  @@index([sourceType])
+  @@index([language])
+  @@index([version])
 }
 
 model DocumentChunk {
@@ -362,11 +448,54 @@ model DocumentChunk {
   chunkIndex Int
   content    String
 
+  /// Self-relation for hierarchical chunking (e.g. a table-of-contents
+  /// summary chunk over several detail chunks). Not produced by the AI
+  /// service yet — the flat splitter has no parent/child concept — so
+  /// always null today.
+  parentChunkId String?
+  parentChunk   DocumentChunk?  @relation("ChunkHierarchy", fields: [parentChunkId], references: [id], onDelete: SetNull)
+  childChunks   DocumentChunk[] @relation("ChunkHierarchy")
+
+  /// SHA-256 of `content`, for chunk-level dedup/change-detection —
+  /// Document.contentHash's counterpart at chunk granularity.
+  contentHash String?
+
   /// Structure-derived context from the ai service's chunking strategy for
   /// this document type — e.g. { source, heading, section } for Markdown,
   /// { source, page } for PDF. Always has "source"; other keys are
-  /// type-dependent and may be absent.
+  /// type-dependent and may be absent. section/page below mirror the two
+  /// keys worth indexing directly; the rest stays here.
   metadata Json @default("{}")
+
+  /// Heading text the chunk falls under (Markdown/DOCX). Null for chunk
+  /// types with no heading structure (plain text).
+  section String?
+  /// 1-based page number (PDF only).
+  page    Int?
+
+  /// Character offsets of this chunk within its structural unit (the PDF
+  /// page text, the Markdown/DOCX section text, or the whole document for
+  /// plain text) — not within the document as a whole. Combined with
+  /// page/section, still enough to locate and cite the source text.
+  startChar Int?
+  endChar   Int?
+  /// 1-based line numbers, same "relative to its structural unit" scope
+  /// as startChar/endChar above.
+  lineStart Int?
+  lineEnd   Int?
+
+  /// text today (the only strategy the AI service implements); table/
+  /// code/image_caption are anticipated but not yet produced.
+  chunkType String @default("text")
+
+  tokenCount     Int?
+  wordCount      Int?
+  characterCount Int?
+
+  /// AI-enrichment fields — empty/null until a real enrichment step exists.
+  keywords   Json @default("[]")
+  entities   Json @default("[]")
+  importance Int?
 
   /// Embedding of chunk content, generated by the ai service's
   /// document_processing capability (Google gemini-embedding-001, 768
@@ -375,8 +504,21 @@ model DocumentChunk {
   /// operator.
   embedding Unsupported("vector(768)")?
 
+  /// Echoed per-chunk (not just on the parent Document) so a future
+  /// partial re-embed — upgrading only some chunks to a newer model —
+  /// stays identifiable without a join.
+  embeddingModel     String?
+  embeddingDimension Int     @default(768)
+  embeddingVersion   Int     @default(1)
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([documentId, chunkIndex])
   @@index([documentId])
+  @@index([page])
+  @@index([section])
+  @@index([chunkType])
+  @@index([tokenCount])
+  @@index([parentChunkId])
 }

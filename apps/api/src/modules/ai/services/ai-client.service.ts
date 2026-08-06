@@ -120,12 +120,54 @@ export interface ProcessedDocumentChunk {
   content: string;
   embedding: number[];
   metadata: Record<string, unknown>;
+  page: number | null;
+  section: string | null;
+  chunkType: string;
+  tokenCount: number;
+  wordCount: number;
+  characterCount: number;
+  startChar: number;
+  endChar: number;
+  lineStart: number;
+  lineEnd: number;
 }
 
 export interface ProcessDocumentResponse {
   chunks: ProcessedDocumentChunk[];
   provider: string;
   model: string;
+  parser: string | null;
+  splitter: string | null;
+  chunkSize: number | null;
+  chunkOverlap: number | null;
+  pageCount: number | null;
+}
+
+interface RawProcessedDocumentChunk {
+  content: string;
+  embedding: number[];
+  metadata: Record<string, unknown>;
+  page: number | null;
+  section: string | null;
+  chunk_type: string;
+  token_count: number;
+  word_count: number;
+  character_count: number;
+  start_char: number;
+  end_char: number;
+  line_start: number;
+  line_end: number;
+}
+
+interface RawProcessDocumentResponse {
+  chunks: RawProcessedDocumentChunk[];
+  provider: string;
+  model: string;
+  parser: string | null;
+  splitter: string | null;
+  chunk_size: number | null;
+  chunk_overlap: number | null;
+  page_count: number | null;
 }
 
 export interface EmbedQueryResponse {
@@ -238,10 +280,35 @@ export class AiClientService {
       filename,
     );
 
-    return this.postMultipart<ProcessDocumentResponse>(
+    const res = await this.postMultipart<RawProcessDocumentResponse>(
       '/documents/process',
       formData,
     );
+
+    return {
+      provider: res.provider,
+      model: res.model,
+      parser: res.parser,
+      splitter: res.splitter,
+      chunkSize: res.chunk_size,
+      chunkOverlap: res.chunk_overlap,
+      pageCount: res.page_count,
+      chunks: res.chunks.map((chunk) => ({
+        content: chunk.content,
+        embedding: chunk.embedding,
+        metadata: chunk.metadata,
+        page: chunk.page,
+        section: chunk.section,
+        chunkType: chunk.chunk_type,
+        tokenCount: chunk.token_count,
+        wordCount: chunk.word_count,
+        characterCount: chunk.character_count,
+        startChar: chunk.start_char,
+        endChar: chunk.end_char,
+        lineStart: chunk.line_start,
+        lineEnd: chunk.line_end,
+      })),
+    };
   }
 
   async embedQuery(text: string): Promise<EmbedQueryResponse> {

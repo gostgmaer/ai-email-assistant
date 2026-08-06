@@ -20,8 +20,34 @@ export type DocumentModel = runtime.Types.Result.DefaultSelection<Prisma.$Docume
 
 export type AggregateDocument = {
   _count: DocumentCountAggregateOutputType | null
+  _avg: DocumentAvgAggregateOutputType | null
+  _sum: DocumentSumAggregateOutputType | null
   _min: DocumentMinAggregateOutputType | null
   _max: DocumentMaxAggregateOutputType | null
+}
+
+export type DocumentAvgAggregateOutputType = {
+  fileSize: number | null
+  version: number | null
+  chunkSize: number | null
+  chunkOverlap: number | null
+  embeddingDimension: number | null
+  pageCount: number | null
+  totalChunks: number | null
+  totalTokens: number | null
+  totalCharacters: number | null
+}
+
+export type DocumentSumAggregateOutputType = {
+  fileSize: number | null
+  version: number | null
+  chunkSize: number | null
+  chunkOverlap: number | null
+  embeddingDimension: number | null
+  pageCount: number | null
+  totalChunks: number | null
+  totalTokens: number | null
+  totalCharacters: number | null
 }
 
 export type DocumentMinAggregateOutputType = {
@@ -33,7 +59,36 @@ export type DocumentMinAggregateOutputType = {
   chunkContentHash: string | null
   provider: string | null
   model: string | null
+  title: string | null
+  description: string | null
+  summary: string | null
+  category: string | null
+  author: string | null
+  owner: string | null
+  language: string | null
+  sourceType: string | null
+  sourceName: string | null
+  sourcePath: string | null
+  sourceUrl: string | null
+  externalId: string | null
+  documentType: string | null
+  fileExtension: string | null
+  fileSize: number | null
+  version: number | null
+  status: $Enums.DocumentStatus | null
+  parser: string | null
+  splitter: string | null
+  chunkSize: number | null
+  chunkOverlap: number | null
+  embeddingDimension: number | null
+  pageCount: number | null
+  totalChunks: number | null
+  totalTokens: number | null
+  totalCharacters: number | null
   createdAt: Date | null
+  updatedAt: Date | null
+  indexedAt: Date | null
+  lastAccessedAt: Date | null
 }
 
 export type DocumentMaxAggregateOutputType = {
@@ -45,7 +100,36 @@ export type DocumentMaxAggregateOutputType = {
   chunkContentHash: string | null
   provider: string | null
   model: string | null
+  title: string | null
+  description: string | null
+  summary: string | null
+  category: string | null
+  author: string | null
+  owner: string | null
+  language: string | null
+  sourceType: string | null
+  sourceName: string | null
+  sourcePath: string | null
+  sourceUrl: string | null
+  externalId: string | null
+  documentType: string | null
+  fileExtension: string | null
+  fileSize: number | null
+  version: number | null
+  status: $Enums.DocumentStatus | null
+  parser: string | null
+  splitter: string | null
+  chunkSize: number | null
+  chunkOverlap: number | null
+  embeddingDimension: number | null
+  pageCount: number | null
+  totalChunks: number | null
+  totalTokens: number | null
+  totalCharacters: number | null
   createdAt: Date | null
+  updatedAt: Date | null
+  indexedAt: Date | null
+  lastAccessedAt: Date | null
 }
 
 export type DocumentCountAggregateOutputType = {
@@ -57,10 +141,65 @@ export type DocumentCountAggregateOutputType = {
   chunkContentHash: number
   provider: number
   model: number
+  title: number
+  description: number
+  summary: number
+  category: number
+  tags: number
+  author: number
+  owner: number
+  language: number
+  sourceType: number
+  sourceName: number
+  sourcePath: number
+  sourceUrl: number
+  externalId: number
+  documentType: number
+  fileExtension: number
+  fileSize: number
+  version: number
+  status: number
+  parser: number
+  splitter: number
+  chunkSize: number
+  chunkOverlap: number
+  embeddingDimension: number
+  pageCount: number
+  totalChunks: number
+  totalTokens: number
+  totalCharacters: number
+  metadata: number
   createdAt: number
+  updatedAt: number
+  indexedAt: number
+  lastAccessedAt: number
   _all: number
 }
 
+
+export type DocumentAvgAggregateInputType = {
+  fileSize?: true
+  version?: true
+  chunkSize?: true
+  chunkOverlap?: true
+  embeddingDimension?: true
+  pageCount?: true
+  totalChunks?: true
+  totalTokens?: true
+  totalCharacters?: true
+}
+
+export type DocumentSumAggregateInputType = {
+  fileSize?: true
+  version?: true
+  chunkSize?: true
+  chunkOverlap?: true
+  embeddingDimension?: true
+  pageCount?: true
+  totalChunks?: true
+  totalTokens?: true
+  totalCharacters?: true
+}
 
 export type DocumentMinAggregateInputType = {
   id?: true
@@ -71,7 +210,36 @@ export type DocumentMinAggregateInputType = {
   chunkContentHash?: true
   provider?: true
   model?: true
+  title?: true
+  description?: true
+  summary?: true
+  category?: true
+  author?: true
+  owner?: true
+  language?: true
+  sourceType?: true
+  sourceName?: true
+  sourcePath?: true
+  sourceUrl?: true
+  externalId?: true
+  documentType?: true
+  fileExtension?: true
+  fileSize?: true
+  version?: true
+  status?: true
+  parser?: true
+  splitter?: true
+  chunkSize?: true
+  chunkOverlap?: true
+  embeddingDimension?: true
+  pageCount?: true
+  totalChunks?: true
+  totalTokens?: true
+  totalCharacters?: true
   createdAt?: true
+  updatedAt?: true
+  indexedAt?: true
+  lastAccessedAt?: true
 }
 
 export type DocumentMaxAggregateInputType = {
@@ -83,7 +251,36 @@ export type DocumentMaxAggregateInputType = {
   chunkContentHash?: true
   provider?: true
   model?: true
+  title?: true
+  description?: true
+  summary?: true
+  category?: true
+  author?: true
+  owner?: true
+  language?: true
+  sourceType?: true
+  sourceName?: true
+  sourcePath?: true
+  sourceUrl?: true
+  externalId?: true
+  documentType?: true
+  fileExtension?: true
+  fileSize?: true
+  version?: true
+  status?: true
+  parser?: true
+  splitter?: true
+  chunkSize?: true
+  chunkOverlap?: true
+  embeddingDimension?: true
+  pageCount?: true
+  totalChunks?: true
+  totalTokens?: true
+  totalCharacters?: true
   createdAt?: true
+  updatedAt?: true
+  indexedAt?: true
+  lastAccessedAt?: true
 }
 
 export type DocumentCountAggregateInputType = {
@@ -95,7 +292,38 @@ export type DocumentCountAggregateInputType = {
   chunkContentHash?: true
   provider?: true
   model?: true
+  title?: true
+  description?: true
+  summary?: true
+  category?: true
+  tags?: true
+  author?: true
+  owner?: true
+  language?: true
+  sourceType?: true
+  sourceName?: true
+  sourcePath?: true
+  sourceUrl?: true
+  externalId?: true
+  documentType?: true
+  fileExtension?: true
+  fileSize?: true
+  version?: true
+  status?: true
+  parser?: true
+  splitter?: true
+  chunkSize?: true
+  chunkOverlap?: true
+  embeddingDimension?: true
+  pageCount?: true
+  totalChunks?: true
+  totalTokens?: true
+  totalCharacters?: true
+  metadata?: true
   createdAt?: true
+  updatedAt?: true
+  indexedAt?: true
+  lastAccessedAt?: true
   _all?: true
 }
 
@@ -137,6 +365,18 @@ export type DocumentAggregateArgs<ExtArgs extends runtime.Types.Extensions.Inter
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: DocumentAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: DocumentSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: DocumentMinAggregateInputType
@@ -167,6 +407,8 @@ export type DocumentGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   _count?: DocumentCountAggregateInputType | true
+  _avg?: DocumentAvgAggregateInputType
+  _sum?: DocumentSumAggregateInputType
   _min?: DocumentMinAggregateInputType
   _max?: DocumentMaxAggregateInputType
 }
@@ -180,8 +422,41 @@ export type DocumentGroupByOutputType = {
   chunkContentHash: string | null
   provider: string
   model: string
+  title: string
+  description: string | null
+  summary: string | null
+  category: string | null
+  tags: string[]
+  author: string | null
+  owner: string | null
+  language: string | null
+  sourceType: string
+  sourceName: string | null
+  sourcePath: string | null
+  sourceUrl: string | null
+  externalId: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version: number
+  status: $Enums.DocumentStatus
+  parser: string | null
+  splitter: string | null
+  chunkSize: number | null
+  chunkOverlap: number | null
+  embeddingDimension: number
+  pageCount: number | null
+  totalChunks: number
+  totalTokens: number
+  totalCharacters: number
+  metadata: runtime.JsonValue
   createdAt: Date
+  updatedAt: Date
+  indexedAt: Date | null
+  lastAccessedAt: Date | null
   _count: DocumentCountAggregateOutputType | null
+  _avg: DocumentAvgAggregateOutputType | null
+  _sum: DocumentSumAggregateOutputType | null
   _min: DocumentMinAggregateOutputType | null
   _max: DocumentMaxAggregateOutputType | null
 }
@@ -213,7 +488,38 @@ export type DocumentWhereInput = {
   chunkContentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   provider?: Prisma.StringFilter<"Document"> | string
   model?: Prisma.StringFilter<"Document"> | string
+  title?: Prisma.StringFilter<"Document"> | string
+  description?: Prisma.StringNullableFilter<"Document"> | string | null
+  summary?: Prisma.StringNullableFilter<"Document"> | string | null
+  category?: Prisma.StringNullableFilter<"Document"> | string | null
+  tags?: Prisma.StringNullableListFilter<"Document">
+  author?: Prisma.StringNullableFilter<"Document"> | string | null
+  owner?: Prisma.StringNullableFilter<"Document"> | string | null
+  language?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourceType?: Prisma.StringFilter<"Document"> | string
+  sourceName?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourcePath?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourceUrl?: Prisma.StringNullableFilter<"Document"> | string | null
+  externalId?: Prisma.StringNullableFilter<"Document"> | string | null
+  documentType?: Prisma.StringFilter<"Document"> | string
+  fileExtension?: Prisma.StringFilter<"Document"> | string
+  fileSize?: Prisma.IntFilter<"Document"> | number
+  version?: Prisma.IntFilter<"Document"> | number
+  status?: Prisma.EnumDocumentStatusFilter<"Document"> | $Enums.DocumentStatus
+  parser?: Prisma.StringNullableFilter<"Document"> | string | null
+  splitter?: Prisma.StringNullableFilter<"Document"> | string | null
+  chunkSize?: Prisma.IntNullableFilter<"Document"> | number | null
+  chunkOverlap?: Prisma.IntNullableFilter<"Document"> | number | null
+  embeddingDimension?: Prisma.IntFilter<"Document"> | number
+  pageCount?: Prisma.IntNullableFilter<"Document"> | number | null
+  totalChunks?: Prisma.IntFilter<"Document"> | number
+  totalTokens?: Prisma.IntFilter<"Document"> | number
+  totalCharacters?: Prisma.IntFilter<"Document"> | number
+  metadata?: Prisma.JsonFilter<"Document">
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  indexedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
+  lastAccessedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   chunks?: Prisma.DocumentChunkListRelationFilter
 }
@@ -227,7 +533,38 @@ export type DocumentOrderByWithRelationInput = {
   chunkContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  title?: Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
+  summary?: Prisma.SortOrderInput | Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
+  tags?: Prisma.SortOrder
+  author?: Prisma.SortOrderInput | Prisma.SortOrder
+  owner?: Prisma.SortOrderInput | Prisma.SortOrder
+  language?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceName?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourcePath?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  externalId?: Prisma.SortOrderInput | Prisma.SortOrder
+  documentType?: Prisma.SortOrder
+  fileExtension?: Prisma.SortOrder
+  fileSize?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  parser?: Prisma.SortOrderInput | Prisma.SortOrder
+  splitter?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkSize?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkOverlap?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  pageCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  totalChunks?: Prisma.SortOrder
+  totalTokens?: Prisma.SortOrder
+  totalCharacters?: Prisma.SortOrder
+  metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  indexedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  lastAccessedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
   chunks?: Prisma.DocumentChunkOrderByRelationAggregateInput
 }
@@ -246,7 +583,38 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   chunkContentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   provider?: Prisma.StringFilter<"Document"> | string
   model?: Prisma.StringFilter<"Document"> | string
+  title?: Prisma.StringFilter<"Document"> | string
+  description?: Prisma.StringNullableFilter<"Document"> | string | null
+  summary?: Prisma.StringNullableFilter<"Document"> | string | null
+  category?: Prisma.StringNullableFilter<"Document"> | string | null
+  tags?: Prisma.StringNullableListFilter<"Document">
+  author?: Prisma.StringNullableFilter<"Document"> | string | null
+  owner?: Prisma.StringNullableFilter<"Document"> | string | null
+  language?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourceType?: Prisma.StringFilter<"Document"> | string
+  sourceName?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourcePath?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourceUrl?: Prisma.StringNullableFilter<"Document"> | string | null
+  externalId?: Prisma.StringNullableFilter<"Document"> | string | null
+  documentType?: Prisma.StringFilter<"Document"> | string
+  fileExtension?: Prisma.StringFilter<"Document"> | string
+  fileSize?: Prisma.IntFilter<"Document"> | number
+  version?: Prisma.IntFilter<"Document"> | number
+  status?: Prisma.EnumDocumentStatusFilter<"Document"> | $Enums.DocumentStatus
+  parser?: Prisma.StringNullableFilter<"Document"> | string | null
+  splitter?: Prisma.StringNullableFilter<"Document"> | string | null
+  chunkSize?: Prisma.IntNullableFilter<"Document"> | number | null
+  chunkOverlap?: Prisma.IntNullableFilter<"Document"> | number | null
+  embeddingDimension?: Prisma.IntFilter<"Document"> | number
+  pageCount?: Prisma.IntNullableFilter<"Document"> | number | null
+  totalChunks?: Prisma.IntFilter<"Document"> | number
+  totalTokens?: Prisma.IntFilter<"Document"> | number
+  totalCharacters?: Prisma.IntFilter<"Document"> | number
+  metadata?: Prisma.JsonFilter<"Document">
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  indexedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
+  lastAccessedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   chunks?: Prisma.DocumentChunkListRelationFilter
 }, "id" | "userId_contentHash" | "userId_chunkContentHash">
@@ -260,10 +628,43 @@ export type DocumentOrderByWithAggregationInput = {
   chunkContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  title?: Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
+  summary?: Prisma.SortOrderInput | Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
+  tags?: Prisma.SortOrder
+  author?: Prisma.SortOrderInput | Prisma.SortOrder
+  owner?: Prisma.SortOrderInput | Prisma.SortOrder
+  language?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceName?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourcePath?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  externalId?: Prisma.SortOrderInput | Prisma.SortOrder
+  documentType?: Prisma.SortOrder
+  fileExtension?: Prisma.SortOrder
+  fileSize?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  parser?: Prisma.SortOrderInput | Prisma.SortOrder
+  splitter?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkSize?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkOverlap?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  pageCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  totalChunks?: Prisma.SortOrder
+  totalTokens?: Prisma.SortOrder
+  totalCharacters?: Prisma.SortOrder
+  metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  indexedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  lastAccessedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.DocumentCountOrderByAggregateInput
+  _avg?: Prisma.DocumentAvgOrderByAggregateInput
   _max?: Prisma.DocumentMaxOrderByAggregateInput
   _min?: Prisma.DocumentMinOrderByAggregateInput
+  _sum?: Prisma.DocumentSumOrderByAggregateInput
 }
 
 export type DocumentScalarWhereWithAggregatesInput = {
@@ -278,7 +679,38 @@ export type DocumentScalarWhereWithAggregatesInput = {
   chunkContentHash?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   provider?: Prisma.StringWithAggregatesFilter<"Document"> | string
   model?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  title?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  description?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  summary?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  category?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  tags?: Prisma.StringNullableListFilter<"Document">
+  author?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  owner?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  language?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  sourceType?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  sourceName?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  sourcePath?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  sourceUrl?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  externalId?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  documentType?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  fileExtension?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  fileSize?: Prisma.IntWithAggregatesFilter<"Document"> | number
+  version?: Prisma.IntWithAggregatesFilter<"Document"> | number
+  status?: Prisma.EnumDocumentStatusWithAggregatesFilter<"Document"> | $Enums.DocumentStatus
+  parser?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  splitter?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  chunkSize?: Prisma.IntNullableWithAggregatesFilter<"Document"> | number | null
+  chunkOverlap?: Prisma.IntNullableWithAggregatesFilter<"Document"> | number | null
+  embeddingDimension?: Prisma.IntWithAggregatesFilter<"Document"> | number
+  pageCount?: Prisma.IntNullableWithAggregatesFilter<"Document"> | number | null
+  totalChunks?: Prisma.IntWithAggregatesFilter<"Document"> | number
+  totalTokens?: Prisma.IntWithAggregatesFilter<"Document"> | number
+  totalCharacters?: Prisma.IntWithAggregatesFilter<"Document"> | number
+  metadata?: Prisma.JsonWithAggregatesFilter<"Document">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Document"> | Date | string
+  indexedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Document"> | Date | string | null
+  lastAccessedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Document"> | Date | string | null
 }
 
 export type DocumentCreateInput = {
@@ -289,7 +721,38 @@ export type DocumentCreateInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutDocumentsInput
   chunks?: Prisma.DocumentChunkCreateNestedManyWithoutDocumentInput
 }
@@ -303,7 +766,38 @@ export type DocumentUncheckedCreateInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
   chunks?: Prisma.DocumentChunkUncheckedCreateNestedManyWithoutDocumentInput
 }
 
@@ -315,7 +809,38 @@ export type DocumentUpdateInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutDocumentsNestedInput
   chunks?: Prisma.DocumentChunkUpdateManyWithoutDocumentNestedInput
 }
@@ -329,7 +854,38 @@ export type DocumentUncheckedUpdateInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chunks?: Prisma.DocumentChunkUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
@@ -342,7 +898,38 @@ export type DocumentCreateManyInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
 }
 
 export type DocumentUpdateManyMutationInput = {
@@ -353,7 +940,38 @@ export type DocumentUpdateManyMutationInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type DocumentUncheckedUpdateManyInput = {
@@ -365,7 +983,38 @@ export type DocumentUncheckedUpdateManyInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type DocumentListRelationFilter = {
@@ -397,7 +1046,50 @@ export type DocumentCountOrderByAggregateInput = {
   chunkContentHash?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  title?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  summary?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  tags?: Prisma.SortOrder
+  author?: Prisma.SortOrder
+  owner?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceName?: Prisma.SortOrder
+  sourcePath?: Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrder
+  externalId?: Prisma.SortOrder
+  documentType?: Prisma.SortOrder
+  fileExtension?: Prisma.SortOrder
+  fileSize?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  parser?: Prisma.SortOrder
+  splitter?: Prisma.SortOrder
+  chunkSize?: Prisma.SortOrder
+  chunkOverlap?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  pageCount?: Prisma.SortOrder
+  totalChunks?: Prisma.SortOrder
+  totalTokens?: Prisma.SortOrder
+  totalCharacters?: Prisma.SortOrder
+  metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  indexedAt?: Prisma.SortOrder
+  lastAccessedAt?: Prisma.SortOrder
+}
+
+export type DocumentAvgOrderByAggregateInput = {
+  fileSize?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  chunkSize?: Prisma.SortOrder
+  chunkOverlap?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  pageCount?: Prisma.SortOrder
+  totalChunks?: Prisma.SortOrder
+  totalTokens?: Prisma.SortOrder
+  totalCharacters?: Prisma.SortOrder
 }
 
 export type DocumentMaxOrderByAggregateInput = {
@@ -409,7 +1101,36 @@ export type DocumentMaxOrderByAggregateInput = {
   chunkContentHash?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  title?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  summary?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  author?: Prisma.SortOrder
+  owner?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceName?: Prisma.SortOrder
+  sourcePath?: Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrder
+  externalId?: Prisma.SortOrder
+  documentType?: Prisma.SortOrder
+  fileExtension?: Prisma.SortOrder
+  fileSize?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  parser?: Prisma.SortOrder
+  splitter?: Prisma.SortOrder
+  chunkSize?: Prisma.SortOrder
+  chunkOverlap?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  pageCount?: Prisma.SortOrder
+  totalChunks?: Prisma.SortOrder
+  totalTokens?: Prisma.SortOrder
+  totalCharacters?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  indexedAt?: Prisma.SortOrder
+  lastAccessedAt?: Prisma.SortOrder
 }
 
 export type DocumentMinOrderByAggregateInput = {
@@ -421,7 +1142,48 @@ export type DocumentMinOrderByAggregateInput = {
   chunkContentHash?: Prisma.SortOrder
   provider?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  title?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  summary?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  author?: Prisma.SortOrder
+  owner?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceName?: Prisma.SortOrder
+  sourcePath?: Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrder
+  externalId?: Prisma.SortOrder
+  documentType?: Prisma.SortOrder
+  fileExtension?: Prisma.SortOrder
+  fileSize?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  parser?: Prisma.SortOrder
+  splitter?: Prisma.SortOrder
+  chunkSize?: Prisma.SortOrder
+  chunkOverlap?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  pageCount?: Prisma.SortOrder
+  totalChunks?: Prisma.SortOrder
+  totalTokens?: Prisma.SortOrder
+  totalCharacters?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  indexedAt?: Prisma.SortOrder
+  lastAccessedAt?: Prisma.SortOrder
+}
+
+export type DocumentSumOrderByAggregateInput = {
+  fileSize?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  chunkSize?: Prisma.SortOrder
+  chunkOverlap?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  pageCount?: Prisma.SortOrder
+  totalChunks?: Prisma.SortOrder
+  totalTokens?: Prisma.SortOrder
+  totalCharacters?: Prisma.SortOrder
 }
 
 export type DocumentScalarRelationFilter = {
@@ -471,6 +1233,35 @@ export type DocumentUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.DocumentScalarWhereInput | Prisma.DocumentScalarWhereInput[]
 }
 
+export type DocumentCreatetagsInput = {
+  set: string[]
+}
+
+export type DocumentUpdatetagsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type EnumDocumentStatusFieldUpdateOperationsInput = {
+  set?: $Enums.DocumentStatus
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type DocumentCreateNestedOneWithoutChunksInput = {
   create?: Prisma.XOR<Prisma.DocumentCreateWithoutChunksInput, Prisma.DocumentUncheckedCreateWithoutChunksInput>
   connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutChunksInput
@@ -493,7 +1284,38 @@ export type DocumentCreateWithoutUserInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
   chunks?: Prisma.DocumentChunkCreateNestedManyWithoutDocumentInput
 }
 
@@ -505,7 +1327,38 @@ export type DocumentUncheckedCreateWithoutUserInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
   chunks?: Prisma.DocumentChunkUncheckedCreateNestedManyWithoutDocumentInput
 }
 
@@ -547,7 +1400,38 @@ export type DocumentScalarWhereInput = {
   chunkContentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   provider?: Prisma.StringFilter<"Document"> | string
   model?: Prisma.StringFilter<"Document"> | string
+  title?: Prisma.StringFilter<"Document"> | string
+  description?: Prisma.StringNullableFilter<"Document"> | string | null
+  summary?: Prisma.StringNullableFilter<"Document"> | string | null
+  category?: Prisma.StringNullableFilter<"Document"> | string | null
+  tags?: Prisma.StringNullableListFilter<"Document">
+  author?: Prisma.StringNullableFilter<"Document"> | string | null
+  owner?: Prisma.StringNullableFilter<"Document"> | string | null
+  language?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourceType?: Prisma.StringFilter<"Document"> | string
+  sourceName?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourcePath?: Prisma.StringNullableFilter<"Document"> | string | null
+  sourceUrl?: Prisma.StringNullableFilter<"Document"> | string | null
+  externalId?: Prisma.StringNullableFilter<"Document"> | string | null
+  documentType?: Prisma.StringFilter<"Document"> | string
+  fileExtension?: Prisma.StringFilter<"Document"> | string
+  fileSize?: Prisma.IntFilter<"Document"> | number
+  version?: Prisma.IntFilter<"Document"> | number
+  status?: Prisma.EnumDocumentStatusFilter<"Document"> | $Enums.DocumentStatus
+  parser?: Prisma.StringNullableFilter<"Document"> | string | null
+  splitter?: Prisma.StringNullableFilter<"Document"> | string | null
+  chunkSize?: Prisma.IntNullableFilter<"Document"> | number | null
+  chunkOverlap?: Prisma.IntNullableFilter<"Document"> | number | null
+  embeddingDimension?: Prisma.IntFilter<"Document"> | number
+  pageCount?: Prisma.IntNullableFilter<"Document"> | number | null
+  totalChunks?: Prisma.IntFilter<"Document"> | number
+  totalTokens?: Prisma.IntFilter<"Document"> | number
+  totalCharacters?: Prisma.IntFilter<"Document"> | number
+  metadata?: Prisma.JsonFilter<"Document">
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
+  indexedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
+  lastAccessedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
 }
 
 export type DocumentCreateWithoutChunksInput = {
@@ -558,7 +1442,38 @@ export type DocumentCreateWithoutChunksInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutDocumentsInput
 }
 
@@ -571,7 +1486,38 @@ export type DocumentUncheckedCreateWithoutChunksInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
 }
 
 export type DocumentCreateOrConnectWithoutChunksInput = {
@@ -598,7 +1544,38 @@ export type DocumentUpdateWithoutChunksInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutDocumentsNestedInput
 }
 
@@ -611,7 +1588,38 @@ export type DocumentUncheckedUpdateWithoutChunksInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type DocumentCreateManyUserInput = {
@@ -622,7 +1630,38 @@ export type DocumentCreateManyUserInput = {
   chunkContentHash?: string | null
   provider: string
   model: string
+  title: string
+  description?: string | null
+  summary?: string | null
+  category?: string | null
+  tags?: Prisma.DocumentCreatetagsInput | string[]
+  author?: string | null
+  owner?: string | null
+  language?: string | null
+  sourceType?: string
+  sourceName?: string | null
+  sourcePath?: string | null
+  sourceUrl?: string | null
+  externalId?: string | null
+  documentType: string
+  fileExtension: string
+  fileSize: number
+  version?: number
+  status?: $Enums.DocumentStatus
+  parser?: string | null
+  splitter?: string | null
+  chunkSize?: number | null
+  chunkOverlap?: number | null
+  embeddingDimension?: number
+  pageCount?: number | null
+  totalChunks?: number
+  totalTokens?: number
+  totalCharacters?: number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  updatedAt?: Date | string
+  indexedAt?: Date | string | null
+  lastAccessedAt?: Date | string | null
 }
 
 export type DocumentUpdateWithoutUserInput = {
@@ -633,7 +1672,38 @@ export type DocumentUpdateWithoutUserInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chunks?: Prisma.DocumentChunkUpdateManyWithoutDocumentNestedInput
 }
 
@@ -645,7 +1715,38 @@ export type DocumentUncheckedUpdateWithoutUserInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chunks?: Prisma.DocumentChunkUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
@@ -657,7 +1758,38 @@ export type DocumentUncheckedUpdateManyWithoutUserInput = {
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.DocumentUpdatetagsInput | string[]
+  author?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  owner?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourcePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileExtension?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumDocumentStatusFieldUpdateOperationsInput | $Enums.DocumentStatus
+  parser?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  splitter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkSize?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkOverlap?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  pageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  totalChunks?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCharacters?: Prisma.IntFieldUpdateOperationsInput | number
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  indexedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastAccessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 
@@ -700,7 +1832,38 @@ export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   chunkContentHash?: boolean
   provider?: boolean
   model?: boolean
+  title?: boolean
+  description?: boolean
+  summary?: boolean
+  category?: boolean
+  tags?: boolean
+  author?: boolean
+  owner?: boolean
+  language?: boolean
+  sourceType?: boolean
+  sourceName?: boolean
+  sourcePath?: boolean
+  sourceUrl?: boolean
+  externalId?: boolean
+  documentType?: boolean
+  fileExtension?: boolean
+  fileSize?: boolean
+  version?: boolean
+  status?: boolean
+  parser?: boolean
+  splitter?: boolean
+  chunkSize?: boolean
+  chunkOverlap?: boolean
+  embeddingDimension?: boolean
+  pageCount?: boolean
+  totalChunks?: boolean
+  totalTokens?: boolean
+  totalCharacters?: boolean
+  metadata?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
+  indexedAt?: boolean
+  lastAccessedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   chunks?: boolean | Prisma.Document$chunksArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentCountOutputTypeDefaultArgs<ExtArgs>
@@ -715,7 +1878,38 @@ export type DocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   chunkContentHash?: boolean
   provider?: boolean
   model?: boolean
+  title?: boolean
+  description?: boolean
+  summary?: boolean
+  category?: boolean
+  tags?: boolean
+  author?: boolean
+  owner?: boolean
+  language?: boolean
+  sourceType?: boolean
+  sourceName?: boolean
+  sourcePath?: boolean
+  sourceUrl?: boolean
+  externalId?: boolean
+  documentType?: boolean
+  fileExtension?: boolean
+  fileSize?: boolean
+  version?: boolean
+  status?: boolean
+  parser?: boolean
+  splitter?: boolean
+  chunkSize?: boolean
+  chunkOverlap?: boolean
+  embeddingDimension?: boolean
+  pageCount?: boolean
+  totalChunks?: boolean
+  totalTokens?: boolean
+  totalCharacters?: boolean
+  metadata?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
+  indexedAt?: boolean
+  lastAccessedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
@@ -728,7 +1922,38 @@ export type DocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   chunkContentHash?: boolean
   provider?: boolean
   model?: boolean
+  title?: boolean
+  description?: boolean
+  summary?: boolean
+  category?: boolean
+  tags?: boolean
+  author?: boolean
+  owner?: boolean
+  language?: boolean
+  sourceType?: boolean
+  sourceName?: boolean
+  sourcePath?: boolean
+  sourceUrl?: boolean
+  externalId?: boolean
+  documentType?: boolean
+  fileExtension?: boolean
+  fileSize?: boolean
+  version?: boolean
+  status?: boolean
+  parser?: boolean
+  splitter?: boolean
+  chunkSize?: boolean
+  chunkOverlap?: boolean
+  embeddingDimension?: boolean
+  pageCount?: boolean
+  totalChunks?: boolean
+  totalTokens?: boolean
+  totalCharacters?: boolean
+  metadata?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
+  indexedAt?: boolean
+  lastAccessedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
@@ -741,10 +1966,41 @@ export type DocumentSelectScalar = {
   chunkContentHash?: boolean
   provider?: boolean
   model?: boolean
+  title?: boolean
+  description?: boolean
+  summary?: boolean
+  category?: boolean
+  tags?: boolean
+  author?: boolean
+  owner?: boolean
+  language?: boolean
+  sourceType?: boolean
+  sourceName?: boolean
+  sourcePath?: boolean
+  sourceUrl?: boolean
+  externalId?: boolean
+  documentType?: boolean
+  fileExtension?: boolean
+  fileSize?: boolean
+  version?: boolean
+  status?: boolean
+  parser?: boolean
+  splitter?: boolean
+  chunkSize?: boolean
+  chunkOverlap?: boolean
+  embeddingDimension?: boolean
+  pageCount?: boolean
+  totalChunks?: boolean
+  totalTokens?: boolean
+  totalCharacters?: boolean
+  metadata?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
+  indexedAt?: boolean
+  lastAccessedAt?: boolean
 }
 
-export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "filename" | "contentType" | "contentHash" | "chunkContentHash" | "provider" | "model" | "createdAt", ExtArgs["result"]["document"]>
+export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "filename" | "contentType" | "contentHash" | "chunkContentHash" | "provider" | "model" | "title" | "description" | "summary" | "category" | "tags" | "author" | "owner" | "language" | "sourceType" | "sourceName" | "sourcePath" | "sourceUrl" | "externalId" | "documentType" | "fileExtension" | "fileSize" | "version" | "status" | "parser" | "splitter" | "chunkSize" | "chunkOverlap" | "embeddingDimension" | "pageCount" | "totalChunks" | "totalTokens" | "totalCharacters" | "metadata" | "createdAt" | "updatedAt" | "indexedAt" | "lastAccessedAt", ExtArgs["result"]["document"]>
 export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   chunks?: boolean | Prisma.Document$chunksArgs<ExtArgs>
@@ -787,7 +2043,91 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     chunkContentHash: string | null
     provider: string
     model: string
+    title: string
+    description: string | null
+    summary: string | null
+    category: string | null
+    tags: string[]
+    author: string | null
+    /**
+     * Team/owner distinct from author — no ownership model exists yet
+     * (single-tenant uploads), so always null until one does.
+     */
+    owner: string | null
+    /**
+     * BCP-47 / ISO language code — no language detection runs yet.
+     */
+    language: string | null
+    /**
+     * Origin channel. Always "upload" today (the only ingestion path); kept
+     * as a plain string, not an enum, so future sources (url, notion, s3...)
+     * don't require a migration.
+     */
+    sourceType: string
+    /**
+     * Null for uploads (there's no repo/site/app name to record) — set by
+     * future non-upload connectors.
+     */
+    sourceName: string | null
+    sourcePath: string | null
+    sourceUrl: string | null
+    /**
+     * ID in an external system (e.g. a Notion page ID) — null for uploads.
+     */
+    externalId: string | null
+    /**
+     * File extension, lowercased (pdf, docx, md, txt) — what the AI service
+     * dispatches its extraction strategy on. `contentType` above already
+     * carries the MIME type, so there's no separate mimeType column.
+     */
+    documentType: string
+    fileExtension: string
+    fileSize: number
+    /**
+     * Bumped by a future re-processing/re-indexing flow; uploads always
+     * create version 1 today (each distinct upload is its own Document row).
+     */
+    version: number
+    status: $Enums.DocumentStatus
+    /**
+     * Extraction strategy the AI service used — pdf, docx, markdown, plain_text.
+     */
+    parser: string | null
+    /**
+     * Splitting strategy — recursive, markdown_recursive.
+     */
+    splitter: string | null
+    chunkSize: number | null
+    chunkOverlap: number | null
+    /**
+     * Mirrors DocumentChunk.embedding's vector width — lets future
+     * multi-model support identify documents needing re-embedding without
+     * inspecting the vector column itself.
+     */
+    embeddingDimension: number
+    /**
+     * PDF page count. Null for non-paginated formats (md/txt/docx).
+     */
+    pageCount: number | null
+    totalChunks: number
+    totalTokens: number
+    totalCharacters: number
+    /**
+     * Connector-specific extras that don't warrant their own column.
+     */
+    metadata: runtime.JsonValue
     createdAt: Date
+    updatedAt: Date
+    /**
+     * Set when the chunk-insert loop completes; stays null if a crash left
+     * the row stuck at status PROCESSING with partial chunks.
+     */
+    indexedAt: Date | null
+    /**
+     * Touched on read (get-by-id, search hits) — lets "most relevant /
+     * recently used" retrieval ranking be added later without a new column.
+     */
+    lastAccessedAt: Date | null
   }, ExtArgs["result"]["document"]>
   composites: {}
 }
@@ -1221,7 +2561,38 @@ export interface DocumentFieldRefs {
   readonly chunkContentHash: Prisma.FieldRef<"Document", 'String'>
   readonly provider: Prisma.FieldRef<"Document", 'String'>
   readonly model: Prisma.FieldRef<"Document", 'String'>
+  readonly title: Prisma.FieldRef<"Document", 'String'>
+  readonly description: Prisma.FieldRef<"Document", 'String'>
+  readonly summary: Prisma.FieldRef<"Document", 'String'>
+  readonly category: Prisma.FieldRef<"Document", 'String'>
+  readonly tags: Prisma.FieldRef<"Document", 'String[]'>
+  readonly author: Prisma.FieldRef<"Document", 'String'>
+  readonly owner: Prisma.FieldRef<"Document", 'String'>
+  readonly language: Prisma.FieldRef<"Document", 'String'>
+  readonly sourceType: Prisma.FieldRef<"Document", 'String'>
+  readonly sourceName: Prisma.FieldRef<"Document", 'String'>
+  readonly sourcePath: Prisma.FieldRef<"Document", 'String'>
+  readonly sourceUrl: Prisma.FieldRef<"Document", 'String'>
+  readonly externalId: Prisma.FieldRef<"Document", 'String'>
+  readonly documentType: Prisma.FieldRef<"Document", 'String'>
+  readonly fileExtension: Prisma.FieldRef<"Document", 'String'>
+  readonly fileSize: Prisma.FieldRef<"Document", 'Int'>
+  readonly version: Prisma.FieldRef<"Document", 'Int'>
+  readonly status: Prisma.FieldRef<"Document", 'DocumentStatus'>
+  readonly parser: Prisma.FieldRef<"Document", 'String'>
+  readonly splitter: Prisma.FieldRef<"Document", 'String'>
+  readonly chunkSize: Prisma.FieldRef<"Document", 'Int'>
+  readonly chunkOverlap: Prisma.FieldRef<"Document", 'Int'>
+  readonly embeddingDimension: Prisma.FieldRef<"Document", 'Int'>
+  readonly pageCount: Prisma.FieldRef<"Document", 'Int'>
+  readonly totalChunks: Prisma.FieldRef<"Document", 'Int'>
+  readonly totalTokens: Prisma.FieldRef<"Document", 'Int'>
+  readonly totalCharacters: Prisma.FieldRef<"Document", 'Int'>
+  readonly metadata: Prisma.FieldRef<"Document", 'Json'>
   readonly createdAt: Prisma.FieldRef<"Document", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"Document", 'DateTime'>
+  readonly indexedAt: Prisma.FieldRef<"Document", 'DateTime'>
+  readonly lastAccessedAt: Prisma.FieldRef<"Document", 'DateTime'>
 }
     
 

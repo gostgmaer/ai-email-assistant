@@ -731,7 +731,8 @@ export type $MailFolderPayload<ExtArgs extends runtime.Types.Extensions.Internal
     name: string
     type: $Enums.MailFolderType
     /**
-     * * Opaque provider cursor (Gmail historyId, Graph delta token, IMAP UID) for incremental sync.
+     * *
+     *    * Opaque provider cursor (Gmail historyId, Graph delta token, IMAP UID) for incremental sync.
      */
     syncCursor: string | null
     createdAt: Date

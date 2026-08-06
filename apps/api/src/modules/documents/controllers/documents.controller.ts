@@ -75,7 +75,13 @@ export class DocumentsController {
     @CurrentUser() user: JwtPayload,
     @Query() query: SearchDocumentsDto,
   ) {
-    return this.documentsService.search(user.sub, query.q, query.limit);
+    return this.documentsService.search(user.sub, query.q, query.limit, {
+      category: query.category,
+      documentType: query.documentType,
+      sourceType: query.sourceType,
+      chunkType: query.chunkType,
+      tags: query.tags,
+    });
   }
 
   @Get(':id')

@@ -1527,7 +1527,38 @@ export const DocumentScalarFieldEnum = {
   chunkContentHash: 'chunkContentHash',
   provider: 'provider',
   model: 'model',
-  createdAt: 'createdAt'
+  title: 'title',
+  description: 'description',
+  summary: 'summary',
+  category: 'category',
+  tags: 'tags',
+  author: 'author',
+  owner: 'owner',
+  language: 'language',
+  sourceType: 'sourceType',
+  sourceName: 'sourceName',
+  sourcePath: 'sourcePath',
+  sourceUrl: 'sourceUrl',
+  externalId: 'externalId',
+  documentType: 'documentType',
+  fileExtension: 'fileExtension',
+  fileSize: 'fileSize',
+  version: 'version',
+  status: 'status',
+  parser: 'parser',
+  splitter: 'splitter',
+  chunkSize: 'chunkSize',
+  chunkOverlap: 'chunkOverlap',
+  embeddingDimension: 'embeddingDimension',
+  pageCount: 'pageCount',
+  totalChunks: 'totalChunks',
+  totalTokens: 'totalTokens',
+  totalCharacters: 'totalCharacters',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  indexedAt: 'indexedAt',
+  lastAccessedAt: 'lastAccessedAt'
 } as const
 
 export type DocumentScalarFieldEnum = (typeof DocumentScalarFieldEnum)[keyof typeof DocumentScalarFieldEnum]
@@ -1538,8 +1569,27 @@ export const DocumentChunkScalarFieldEnum = {
   documentId: 'documentId',
   chunkIndex: 'chunkIndex',
   content: 'content',
+  parentChunkId: 'parentChunkId',
+  contentHash: 'contentHash',
   metadata: 'metadata',
-  createdAt: 'createdAt'
+  section: 'section',
+  page: 'page',
+  startChar: 'startChar',
+  endChar: 'endChar',
+  lineStart: 'lineStart',
+  lineEnd: 'lineEnd',
+  chunkType: 'chunkType',
+  tokenCount: 'tokenCount',
+  wordCount: 'wordCount',
+  characterCount: 'characterCount',
+  keywords: 'keywords',
+  entities: 'entities',
+  importance: 'importance',
+  embeddingModel: 'embeddingModel',
+  embeddingDimension: 'embeddingDimension',
+  embeddingVersion: 'embeddingVersion',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type DocumentChunkScalarFieldEnum = (typeof DocumentChunkScalarFieldEnum)[keyof typeof DocumentChunkScalarFieldEnum]
@@ -1715,6 +1765,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DocumentStatus'
+ */
+export type EnumDocumentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DocumentStatus[]'
+ */
+export type ListEnumDocumentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentStatus[]'>
     
 
 

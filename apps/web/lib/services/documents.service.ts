@@ -6,32 +6,88 @@ export interface DocumentSummary {
   contentType: string;
   provider: string;
   model: string;
+  title: string;
+  category: string | null;
+  tags: string[];
+  status: "PROCESSING" | "INDEXED" | "FAILED";
+  sourceType: string;
+  documentType: string;
+  fileSize: number;
+  version: number;
+  parser: string | null;
+  splitter: string | null;
+  chunkSize: number | null;
+  chunkOverlap: number | null;
+  embeddingDimension: number;
+  pageCount: number | null;
+  totalChunks: number;
+  totalTokens: number;
   createdAt: string;
+  indexedAt: string | null;
   chunkCount: number;
   /** True when this exact file was already uploaded and the existing
    * document was returned instead of being reprocessed. */
   duplicate?: boolean;
 }
 
-export interface DocumentChunk {
+interface DocumentChunkFields {
   id: string;
   chunkIndex: number;
   content: string;
+  contentHash: string | null;
   metadata: Record<string, unknown>;
+  section: string | null;
+  page: number | null;
+  chunkType: string;
+  tokenCount: number | null;
+  wordCount: number | null;
+  characterCount: number | null;
+  startChar: number | null;
+  endChar: number | null;
+  lineStart: number | null;
+  lineEnd: number | null;
+  parentChunkId: string | null;
+  keywords: unknown[];
+  entities: unknown[];
+  importance: number | null;
+  embeddingModel: string | null;
+  embeddingDimension: number;
+  embeddingVersion: number;
 }
 
+export type DocumentChunk = DocumentChunkFields;
+
 export interface DocumentDetail extends DocumentSummary {
+  description: string | null;
+  summary: string | null;
+  author: string | null;
+  owner: string | null;
+  language: string | null;
+  sourceName: string | null;
+  sourcePath: string | null;
+  sourceUrl: string | null;
+  externalId: string | null;
+  metadata: Record<string, unknown>;
   chunks: DocumentChunk[];
 }
 
-export interface DocumentChunkMatch {
-  id: string;
+export interface DocumentChunkMatch extends DocumentChunkFields {
   documentId: string;
   filename: string;
-  chunkIndex: number;
-  content: string;
-  metadata: Record<string, unknown>;
+  title: string;
+  category: string | null;
+  tags: string[];
+  documentType: string;
+  sourceType: string;
   distance: number;
+}
+
+export interface SearchFilters {
+  category?: string;
+  documentType?: string;
+  sourceType?: string;
+  chunkType?: string;
+  tags?: string[];
 }
 
 export async function uploadDocument(file: File): Promise<DocumentSummary> {
@@ -58,6 +114,14 @@ export async function deleteDocument(id: string): Promise<void> {
 
 export async function searchDocuments(
   query: string,
+  filters?: SearchFilters,
 ): Promise<DocumentChunkMatch[]> {
-  return apiFetch(`/documents/search?q=${encodeURIComponent(query)}`);
+  const params = new URLSearchParams({ q: query });
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.documentType) params.set("documentType", filters.documentType);
+  if (filters?.sourceType) params.set("sourceType", filters.sourceType);
+  if (filters?.chunkType) params.set("chunkType", filters.chunkType);
+  if (filters?.tags?.length) params.set("tags", filters.tags.join(","));
+
+  return apiFetch(`/documents/search?${params.toString()}`);
 }

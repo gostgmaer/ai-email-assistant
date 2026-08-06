@@ -60,6 +60,37 @@ export default function DocumentDetailPage() {
             {document.contentType} · {document.provider}/{document.model} ·{" "}
             {new Date(document.createdAt).toLocaleString()}
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+              {document.status.toLowerCase()}
+            </span>
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+              {document.totalChunks} chunks · {document.totalTokens} tokens
+            </span>
+            {document.pageCount != null && (
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                {document.pageCount} pages
+              </span>
+            )}
+            {document.parser && (
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                {document.parser}/{document.splitter}
+              </span>
+            )}
+            {document.category && (
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
+                {document.category}
+              </span>
+            )}
+            {document.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
         </div>
         <Button
           type="button"
@@ -82,7 +113,12 @@ export default function DocumentDetailPage() {
         </h2>
         {document.chunks.map((chunk) => {
           const badgeEntries = Object.entries(chunk.metadata).filter(
-            ([key, value]) => key !== "source" && value,
+            ([key, value]) =>
+              key !== "source" &&
+              key !== "page" &&
+              key !== "section" &&
+              key !== "heading" &&
+              value,
           );
 
           return (
@@ -94,6 +130,21 @@ export default function DocumentDetailPage() {
                 <p className="text-xs font-medium text-zinc-500">
                   Chunk {chunk.chunkIndex + 1}
                 </p>
+                {chunk.page != null && (
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                    page: {chunk.page}
+                  </span>
+                )}
+                {chunk.section && (
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                    section: {chunk.section}
+                  </span>
+                )}
+                {chunk.tokenCount != null && (
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                    {chunk.tokenCount} tokens
+                  </span>
+                )}
                 {badgeEntries.map(([key, value]) => (
                   <span
                     key={key}

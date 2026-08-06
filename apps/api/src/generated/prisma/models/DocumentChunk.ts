@@ -28,10 +28,32 @@ export type AggregateDocumentChunk = {
 
 export type DocumentChunkAvgAggregateOutputType = {
   chunkIndex: number | null
+  page: number | null
+  startChar: number | null
+  endChar: number | null
+  lineStart: number | null
+  lineEnd: number | null
+  tokenCount: number | null
+  wordCount: number | null
+  characterCount: number | null
+  importance: number | null
+  embeddingDimension: number | null
+  embeddingVersion: number | null
 }
 
 export type DocumentChunkSumAggregateOutputType = {
   chunkIndex: number | null
+  page: number | null
+  startChar: number | null
+  endChar: number | null
+  lineStart: number | null
+  lineEnd: number | null
+  tokenCount: number | null
+  wordCount: number | null
+  characterCount: number | null
+  importance: number | null
+  embeddingDimension: number | null
+  embeddingVersion: number | null
 }
 
 export type DocumentChunkMinAggregateOutputType = {
@@ -39,7 +61,24 @@ export type DocumentChunkMinAggregateOutputType = {
   documentId: string | null
   chunkIndex: number | null
   content: string | null
+  parentChunkId: string | null
+  contentHash: string | null
+  section: string | null
+  page: number | null
+  startChar: number | null
+  endChar: number | null
+  lineStart: number | null
+  lineEnd: number | null
+  chunkType: string | null
+  tokenCount: number | null
+  wordCount: number | null
+  characterCount: number | null
+  importance: number | null
+  embeddingModel: string | null
+  embeddingDimension: number | null
+  embeddingVersion: number | null
   createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type DocumentChunkMaxAggregateOutputType = {
@@ -47,7 +86,24 @@ export type DocumentChunkMaxAggregateOutputType = {
   documentId: string | null
   chunkIndex: number | null
   content: string | null
+  parentChunkId: string | null
+  contentHash: string | null
+  section: string | null
+  page: number | null
+  startChar: number | null
+  endChar: number | null
+  lineStart: number | null
+  lineEnd: number | null
+  chunkType: string | null
+  tokenCount: number | null
+  wordCount: number | null
+  characterCount: number | null
+  importance: number | null
+  embeddingModel: string | null
+  embeddingDimension: number | null
+  embeddingVersion: number | null
   createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type DocumentChunkCountAggregateOutputType = {
@@ -55,18 +111,59 @@ export type DocumentChunkCountAggregateOutputType = {
   documentId: number
   chunkIndex: number
   content: number
+  parentChunkId: number
+  contentHash: number
   metadata: number
+  section: number
+  page: number
+  startChar: number
+  endChar: number
+  lineStart: number
+  lineEnd: number
+  chunkType: number
+  tokenCount: number
+  wordCount: number
+  characterCount: number
+  keywords: number
+  entities: number
+  importance: number
+  embeddingModel: number
+  embeddingDimension: number
+  embeddingVersion: number
   createdAt: number
+  updatedAt: number
   _all: number
 }
 
 
 export type DocumentChunkAvgAggregateInputType = {
   chunkIndex?: true
+  page?: true
+  startChar?: true
+  endChar?: true
+  lineStart?: true
+  lineEnd?: true
+  tokenCount?: true
+  wordCount?: true
+  characterCount?: true
+  importance?: true
+  embeddingDimension?: true
+  embeddingVersion?: true
 }
 
 export type DocumentChunkSumAggregateInputType = {
   chunkIndex?: true
+  page?: true
+  startChar?: true
+  endChar?: true
+  lineStart?: true
+  lineEnd?: true
+  tokenCount?: true
+  wordCount?: true
+  characterCount?: true
+  importance?: true
+  embeddingDimension?: true
+  embeddingVersion?: true
 }
 
 export type DocumentChunkMinAggregateInputType = {
@@ -74,7 +171,24 @@ export type DocumentChunkMinAggregateInputType = {
   documentId?: true
   chunkIndex?: true
   content?: true
+  parentChunkId?: true
+  contentHash?: true
+  section?: true
+  page?: true
+  startChar?: true
+  endChar?: true
+  lineStart?: true
+  lineEnd?: true
+  chunkType?: true
+  tokenCount?: true
+  wordCount?: true
+  characterCount?: true
+  importance?: true
+  embeddingModel?: true
+  embeddingDimension?: true
+  embeddingVersion?: true
   createdAt?: true
+  updatedAt?: true
 }
 
 export type DocumentChunkMaxAggregateInputType = {
@@ -82,7 +196,24 @@ export type DocumentChunkMaxAggregateInputType = {
   documentId?: true
   chunkIndex?: true
   content?: true
+  parentChunkId?: true
+  contentHash?: true
+  section?: true
+  page?: true
+  startChar?: true
+  endChar?: true
+  lineStart?: true
+  lineEnd?: true
+  chunkType?: true
+  tokenCount?: true
+  wordCount?: true
+  characterCount?: true
+  importance?: true
+  embeddingModel?: true
+  embeddingDimension?: true
+  embeddingVersion?: true
   createdAt?: true
+  updatedAt?: true
 }
 
 export type DocumentChunkCountAggregateInputType = {
@@ -90,8 +221,27 @@ export type DocumentChunkCountAggregateInputType = {
   documentId?: true
   chunkIndex?: true
   content?: true
+  parentChunkId?: true
+  contentHash?: true
   metadata?: true
+  section?: true
+  page?: true
+  startChar?: true
+  endChar?: true
+  lineStart?: true
+  lineEnd?: true
+  chunkType?: true
+  tokenCount?: true
+  wordCount?: true
+  characterCount?: true
+  keywords?: true
+  entities?: true
+  importance?: true
+  embeddingModel?: true
+  embeddingDimension?: true
+  embeddingVersion?: true
   createdAt?: true
+  updatedAt?: true
   _all?: true
 }
 
@@ -186,8 +336,27 @@ export type DocumentChunkGroupByOutputType = {
   documentId: string
   chunkIndex: number
   content: string
+  parentChunkId: string | null
+  contentHash: string | null
   metadata: runtime.JsonValue
+  section: string | null
+  page: number | null
+  startChar: number | null
+  endChar: number | null
+  lineStart: number | null
+  lineEnd: number | null
+  chunkType: string
+  tokenCount: number | null
+  wordCount: number | null
+  characterCount: number | null
+  keywords: runtime.JsonValue
+  entities: runtime.JsonValue
+  importance: number | null
+  embeddingModel: string | null
+  embeddingDimension: number
+  embeddingVersion: number
   createdAt: Date
+  updatedAt: Date
   _count: DocumentChunkCountAggregateOutputType | null
   _avg: DocumentChunkAvgAggregateOutputType | null
   _sum: DocumentChunkSumAggregateOutputType | null
@@ -218,9 +387,30 @@ export type DocumentChunkWhereInput = {
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntFilter<"DocumentChunk"> | number
   content?: Prisma.StringFilter<"DocumentChunk"> | string
+  parentChunkId?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  contentHash?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
   metadata?: Prisma.JsonFilter<"DocumentChunk">
+  section?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  page?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  startChar?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  endChar?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  lineStart?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  lineEnd?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  chunkType?: Prisma.StringFilter<"DocumentChunk"> | string
+  tokenCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  wordCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  characterCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  keywords?: Prisma.JsonFilter<"DocumentChunk">
+  entities?: Prisma.JsonFilter<"DocumentChunk">
+  importance?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  embeddingModel?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  embeddingDimension?: Prisma.IntFilter<"DocumentChunk"> | number
+  embeddingVersion?: Prisma.IntFilter<"DocumentChunk"> | number
   createdAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
   document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
+  parentChunk?: Prisma.XOR<Prisma.DocumentChunkNullableScalarRelationFilter, Prisma.DocumentChunkWhereInput> | null
+  childChunks?: Prisma.DocumentChunkListRelationFilter
 }
 
 export type DocumentChunkOrderByWithRelationInput = {
@@ -228,9 +418,30 @@ export type DocumentChunkOrderByWithRelationInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  parentChunkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  contentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
+  section?: Prisma.SortOrderInput | Prisma.SortOrder
+  page?: Prisma.SortOrderInput | Prisma.SortOrder
+  startChar?: Prisma.SortOrderInput | Prisma.SortOrder
+  endChar?: Prisma.SortOrderInput | Prisma.SortOrder
+  lineStart?: Prisma.SortOrderInput | Prisma.SortOrder
+  lineEnd?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkType?: Prisma.SortOrder
+  tokenCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  wordCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  characterCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  keywords?: Prisma.SortOrder
+  entities?: Prisma.SortOrder
+  importance?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  embeddingVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   document?: Prisma.DocumentOrderByWithRelationInput
+  parentChunk?: Prisma.DocumentChunkOrderByWithRelationInput
+  childChunks?: Prisma.DocumentChunkOrderByRelationAggregateInput
 }
 
 export type DocumentChunkWhereUniqueInput = Prisma.AtLeast<{
@@ -242,9 +453,30 @@ export type DocumentChunkWhereUniqueInput = Prisma.AtLeast<{
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntFilter<"DocumentChunk"> | number
   content?: Prisma.StringFilter<"DocumentChunk"> | string
+  parentChunkId?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  contentHash?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
   metadata?: Prisma.JsonFilter<"DocumentChunk">
+  section?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  page?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  startChar?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  endChar?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  lineStart?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  lineEnd?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  chunkType?: Prisma.StringFilter<"DocumentChunk"> | string
+  tokenCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  wordCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  characterCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  keywords?: Prisma.JsonFilter<"DocumentChunk">
+  entities?: Prisma.JsonFilter<"DocumentChunk">
+  importance?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  embeddingModel?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  embeddingDimension?: Prisma.IntFilter<"DocumentChunk"> | number
+  embeddingVersion?: Prisma.IntFilter<"DocumentChunk"> | number
   createdAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
   document?: Prisma.XOR<Prisma.DocumentScalarRelationFilter, Prisma.DocumentWhereInput>
+  parentChunk?: Prisma.XOR<Prisma.DocumentChunkNullableScalarRelationFilter, Prisma.DocumentChunkWhereInput> | null
+  childChunks?: Prisma.DocumentChunkListRelationFilter
 }, "id" | "documentId_chunkIndex">
 
 export type DocumentChunkOrderByWithAggregationInput = {
@@ -252,8 +484,27 @@ export type DocumentChunkOrderByWithAggregationInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  parentChunkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  contentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
+  section?: Prisma.SortOrderInput | Prisma.SortOrder
+  page?: Prisma.SortOrderInput | Prisma.SortOrder
+  startChar?: Prisma.SortOrderInput | Prisma.SortOrder
+  endChar?: Prisma.SortOrderInput | Prisma.SortOrder
+  lineStart?: Prisma.SortOrderInput | Prisma.SortOrder
+  lineEnd?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkType?: Prisma.SortOrder
+  tokenCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  wordCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  characterCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  keywords?: Prisma.SortOrder
+  entities?: Prisma.SortOrder
+  importance?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrderInput | Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  embeddingVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   _count?: Prisma.DocumentChunkCountOrderByAggregateInput
   _avg?: Prisma.DocumentChunkAvgOrderByAggregateInput
   _max?: Prisma.DocumentChunkMaxOrderByAggregateInput
@@ -269,17 +520,56 @@ export type DocumentChunkScalarWhereWithAggregatesInput = {
   documentId?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntWithAggregatesFilter<"DocumentChunk"> | number
   content?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
+  parentChunkId?: Prisma.StringNullableWithAggregatesFilter<"DocumentChunk"> | string | null
+  contentHash?: Prisma.StringNullableWithAggregatesFilter<"DocumentChunk"> | string | null
   metadata?: Prisma.JsonWithAggregatesFilter<"DocumentChunk">
+  section?: Prisma.StringNullableWithAggregatesFilter<"DocumentChunk"> | string | null
+  page?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  startChar?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  endChar?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  lineStart?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  lineEnd?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  chunkType?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
+  tokenCount?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  wordCount?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  characterCount?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  keywords?: Prisma.JsonWithAggregatesFilter<"DocumentChunk">
+  entities?: Prisma.JsonWithAggregatesFilter<"DocumentChunk">
+  importance?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
+  embeddingModel?: Prisma.StringNullableWithAggregatesFilter<"DocumentChunk"> | string | null
+  embeddingDimension?: Prisma.IntWithAggregatesFilter<"DocumentChunk"> | number
+  embeddingVersion?: Prisma.IntWithAggregatesFilter<"DocumentChunk"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DocumentChunk"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"DocumentChunk"> | Date | string
 }
 
 export type DocumentChunkCreateInput = {
   id?: string
   chunkIndex: number
   content: string
+  contentHash?: string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
   document: Prisma.DocumentCreateNestedOneWithoutChunksInput
+  parentChunk?: Prisma.DocumentChunkCreateNestedOneWithoutChildChunksInput
+  childChunks?: Prisma.DocumentChunkCreateNestedManyWithoutParentChunkInput
 }
 
 export type DocumentChunkUncheckedCreateInput = {
@@ -287,17 +577,57 @@ export type DocumentChunkUncheckedCreateInput = {
   documentId: string
   chunkIndex: number
   content: string
+  parentChunkId?: string | null
+  contentHash?: string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
+  childChunks?: Prisma.DocumentChunkUncheckedCreateNestedManyWithoutParentChunkInput
 }
 
 export type DocumentChunkUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   document?: Prisma.DocumentUpdateOneRequiredWithoutChunksNestedInput
+  parentChunk?: Prisma.DocumentChunkUpdateOneWithoutChildChunksNestedInput
+  childChunks?: Prisma.DocumentChunkUpdateManyWithoutParentChunkNestedInput
 }
 
 export type DocumentChunkUncheckedUpdateInput = {
@@ -305,8 +635,28 @@ export type DocumentChunkUncheckedUpdateInput = {
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  parentChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  childChunks?: Prisma.DocumentChunkUncheckedUpdateManyWithoutParentChunkNestedInput
 }
 
 export type DocumentChunkCreateManyInput = {
@@ -314,16 +664,53 @@ export type DocumentChunkCreateManyInput = {
   documentId: string
   chunkIndex: number
   content: string
+  parentChunkId?: string | null
+  contentHash?: string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type DocumentChunkUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DocumentChunkUncheckedUpdateManyInput = {
@@ -331,8 +718,27 @@ export type DocumentChunkUncheckedUpdateManyInput = {
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  parentChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type DocumentChunkListRelationFilter = {
@@ -345,6 +751,11 @@ export type DocumentChunkOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type DocumentChunkNullableScalarRelationFilter = {
+  is?: Prisma.DocumentChunkWhereInput | null
+  isNot?: Prisma.DocumentChunkWhereInput | null
+}
+
 export type DocumentChunkDocumentIdChunkIndexCompoundUniqueInput = {
   documentId: string
   chunkIndex: number
@@ -355,12 +766,42 @@ export type DocumentChunkCountOrderByAggregateInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  parentChunkId?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
+  section?: Prisma.SortOrder
+  page?: Prisma.SortOrder
+  startChar?: Prisma.SortOrder
+  endChar?: Prisma.SortOrder
+  lineStart?: Prisma.SortOrder
+  lineEnd?: Prisma.SortOrder
+  chunkType?: Prisma.SortOrder
+  tokenCount?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  characterCount?: Prisma.SortOrder
+  keywords?: Prisma.SortOrder
+  entities?: Prisma.SortOrder
+  importance?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  embeddingVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DocumentChunkAvgOrderByAggregateInput = {
   chunkIndex?: Prisma.SortOrder
+  page?: Prisma.SortOrder
+  startChar?: Prisma.SortOrder
+  endChar?: Prisma.SortOrder
+  lineStart?: Prisma.SortOrder
+  lineEnd?: Prisma.SortOrder
+  tokenCount?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  characterCount?: Prisma.SortOrder
+  importance?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  embeddingVersion?: Prisma.SortOrder
 }
 
 export type DocumentChunkMaxOrderByAggregateInput = {
@@ -368,7 +809,24 @@ export type DocumentChunkMaxOrderByAggregateInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  parentChunkId?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrder
+  section?: Prisma.SortOrder
+  page?: Prisma.SortOrder
+  startChar?: Prisma.SortOrder
+  endChar?: Prisma.SortOrder
+  lineStart?: Prisma.SortOrder
+  lineEnd?: Prisma.SortOrder
+  chunkType?: Prisma.SortOrder
+  tokenCount?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  characterCount?: Prisma.SortOrder
+  importance?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  embeddingVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DocumentChunkMinOrderByAggregateInput = {
@@ -376,11 +834,39 @@ export type DocumentChunkMinOrderByAggregateInput = {
   documentId?: Prisma.SortOrder
   chunkIndex?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  parentChunkId?: Prisma.SortOrder
+  contentHash?: Prisma.SortOrder
+  section?: Prisma.SortOrder
+  page?: Prisma.SortOrder
+  startChar?: Prisma.SortOrder
+  endChar?: Prisma.SortOrder
+  lineStart?: Prisma.SortOrder
+  lineEnd?: Prisma.SortOrder
+  chunkType?: Prisma.SortOrder
+  tokenCount?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  characterCount?: Prisma.SortOrder
+  importance?: Prisma.SortOrder
+  embeddingModel?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  embeddingVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type DocumentChunkSumOrderByAggregateInput = {
   chunkIndex?: Prisma.SortOrder
+  page?: Prisma.SortOrder
+  startChar?: Prisma.SortOrder
+  endChar?: Prisma.SortOrder
+  lineStart?: Prisma.SortOrder
+  lineEnd?: Prisma.SortOrder
+  tokenCount?: Prisma.SortOrder
+  wordCount?: Prisma.SortOrder
+  characterCount?: Prisma.SortOrder
+  importance?: Prisma.SortOrder
+  embeddingDimension?: Prisma.SortOrder
+  embeddingVersion?: Prisma.SortOrder
 }
 
 export type DocumentChunkCreateNestedManyWithoutDocumentInput = {
@@ -425,28 +911,118 @@ export type DocumentChunkUncheckedUpdateManyWithoutDocumentNestedInput = {
   deleteMany?: Prisma.DocumentChunkScalarWhereInput | Prisma.DocumentChunkScalarWhereInput[]
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type DocumentChunkCreateNestedOneWithoutChildChunksInput = {
+  create?: Prisma.XOR<Prisma.DocumentChunkCreateWithoutChildChunksInput, Prisma.DocumentChunkUncheckedCreateWithoutChildChunksInput>
+  connectOrCreate?: Prisma.DocumentChunkCreateOrConnectWithoutChildChunksInput
+  connect?: Prisma.DocumentChunkWhereUniqueInput
+}
+
+export type DocumentChunkCreateNestedManyWithoutParentChunkInput = {
+  create?: Prisma.XOR<Prisma.DocumentChunkCreateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput> | Prisma.DocumentChunkCreateWithoutParentChunkInput[] | Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput[]
+  connectOrCreate?: Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput | Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput[]
+  createMany?: Prisma.DocumentChunkCreateManyParentChunkInputEnvelope
+  connect?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+}
+
+export type DocumentChunkUncheckedCreateNestedManyWithoutParentChunkInput = {
+  create?: Prisma.XOR<Prisma.DocumentChunkCreateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput> | Prisma.DocumentChunkCreateWithoutParentChunkInput[] | Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput[]
+  connectOrCreate?: Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput | Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput[]
+  createMany?: Prisma.DocumentChunkCreateManyParentChunkInputEnvelope
+  connect?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+}
+
+export type DocumentChunkUpdateOneWithoutChildChunksNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentChunkCreateWithoutChildChunksInput, Prisma.DocumentChunkUncheckedCreateWithoutChildChunksInput>
+  connectOrCreate?: Prisma.DocumentChunkCreateOrConnectWithoutChildChunksInput
+  upsert?: Prisma.DocumentChunkUpsertWithoutChildChunksInput
+  disconnect?: Prisma.DocumentChunkWhereInput | boolean
+  delete?: Prisma.DocumentChunkWhereInput | boolean
+  connect?: Prisma.DocumentChunkWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentChunkUpdateToOneWithWhereWithoutChildChunksInput, Prisma.DocumentChunkUpdateWithoutChildChunksInput>, Prisma.DocumentChunkUncheckedUpdateWithoutChildChunksInput>
+}
+
+export type DocumentChunkUpdateManyWithoutParentChunkNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentChunkCreateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput> | Prisma.DocumentChunkCreateWithoutParentChunkInput[] | Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput[]
+  connectOrCreate?: Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput | Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput[]
+  upsert?: Prisma.DocumentChunkUpsertWithWhereUniqueWithoutParentChunkInput | Prisma.DocumentChunkUpsertWithWhereUniqueWithoutParentChunkInput[]
+  createMany?: Prisma.DocumentChunkCreateManyParentChunkInputEnvelope
+  set?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  disconnect?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  delete?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  connect?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  update?: Prisma.DocumentChunkUpdateWithWhereUniqueWithoutParentChunkInput | Prisma.DocumentChunkUpdateWithWhereUniqueWithoutParentChunkInput[]
+  updateMany?: Prisma.DocumentChunkUpdateManyWithWhereWithoutParentChunkInput | Prisma.DocumentChunkUpdateManyWithWhereWithoutParentChunkInput[]
+  deleteMany?: Prisma.DocumentChunkScalarWhereInput | Prisma.DocumentChunkScalarWhereInput[]
+}
+
+export type DocumentChunkUncheckedUpdateManyWithoutParentChunkNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentChunkCreateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput> | Prisma.DocumentChunkCreateWithoutParentChunkInput[] | Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput[]
+  connectOrCreate?: Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput | Prisma.DocumentChunkCreateOrConnectWithoutParentChunkInput[]
+  upsert?: Prisma.DocumentChunkUpsertWithWhereUniqueWithoutParentChunkInput | Prisma.DocumentChunkUpsertWithWhereUniqueWithoutParentChunkInput[]
+  createMany?: Prisma.DocumentChunkCreateManyParentChunkInputEnvelope
+  set?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  disconnect?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  delete?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  connect?: Prisma.DocumentChunkWhereUniqueInput | Prisma.DocumentChunkWhereUniqueInput[]
+  update?: Prisma.DocumentChunkUpdateWithWhereUniqueWithoutParentChunkInput | Prisma.DocumentChunkUpdateWithWhereUniqueWithoutParentChunkInput[]
+  updateMany?: Prisma.DocumentChunkUpdateManyWithWhereWithoutParentChunkInput | Prisma.DocumentChunkUpdateManyWithWhereWithoutParentChunkInput[]
+  deleteMany?: Prisma.DocumentChunkScalarWhereInput | Prisma.DocumentChunkScalarWhereInput[]
 }
 
 export type DocumentChunkCreateWithoutDocumentInput = {
   id?: string
   chunkIndex: number
   content: string
+  contentHash?: string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
+  parentChunk?: Prisma.DocumentChunkCreateNestedOneWithoutChildChunksInput
+  childChunks?: Prisma.DocumentChunkCreateNestedManyWithoutParentChunkInput
 }
 
 export type DocumentChunkUncheckedCreateWithoutDocumentInput = {
   id?: string
   chunkIndex: number
   content: string
+  parentChunkId?: string | null
+  contentHash?: string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
+  childChunks?: Prisma.DocumentChunkUncheckedCreateNestedManyWithoutParentChunkInput
 }
 
 export type DocumentChunkCreateOrConnectWithoutDocumentInput = {
@@ -483,42 +1059,488 @@ export type DocumentChunkScalarWhereInput = {
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   chunkIndex?: Prisma.IntFilter<"DocumentChunk"> | number
   content?: Prisma.StringFilter<"DocumentChunk"> | string
+  parentChunkId?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  contentHash?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
   metadata?: Prisma.JsonFilter<"DocumentChunk">
+  section?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  page?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  startChar?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  endChar?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  lineStart?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  lineEnd?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  chunkType?: Prisma.StringFilter<"DocumentChunk"> | string
+  tokenCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  wordCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  characterCount?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  keywords?: Prisma.JsonFilter<"DocumentChunk">
+  entities?: Prisma.JsonFilter<"DocumentChunk">
+  importance?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
+  embeddingModel?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  embeddingDimension?: Prisma.IntFilter<"DocumentChunk"> | number
+  embeddingVersion?: Prisma.IntFilter<"DocumentChunk"> | number
   createdAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"DocumentChunk"> | Date | string
+}
+
+export type DocumentChunkCreateWithoutChildChunksInput = {
+  id?: string
+  chunkIndex: number
+  content: string
+  contentHash?: string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  document: Prisma.DocumentCreateNestedOneWithoutChunksInput
+  parentChunk?: Prisma.DocumentChunkCreateNestedOneWithoutChildChunksInput
+}
+
+export type DocumentChunkUncheckedCreateWithoutChildChunksInput = {
+  id?: string
+  documentId: string
+  chunkIndex: number
+  content: string
+  parentChunkId?: string | null
+  contentHash?: string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DocumentChunkCreateOrConnectWithoutChildChunksInput = {
+  where: Prisma.DocumentChunkWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentChunkCreateWithoutChildChunksInput, Prisma.DocumentChunkUncheckedCreateWithoutChildChunksInput>
+}
+
+export type DocumentChunkCreateWithoutParentChunkInput = {
+  id?: string
+  chunkIndex: number
+  content: string
+  contentHash?: string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  document: Prisma.DocumentCreateNestedOneWithoutChunksInput
+  childChunks?: Prisma.DocumentChunkCreateNestedManyWithoutParentChunkInput
+}
+
+export type DocumentChunkUncheckedCreateWithoutParentChunkInput = {
+  id?: string
+  documentId: string
+  chunkIndex: number
+  content: string
+  contentHash?: string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  childChunks?: Prisma.DocumentChunkUncheckedCreateNestedManyWithoutParentChunkInput
+}
+
+export type DocumentChunkCreateOrConnectWithoutParentChunkInput = {
+  where: Prisma.DocumentChunkWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentChunkCreateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput>
+}
+
+export type DocumentChunkCreateManyParentChunkInputEnvelope = {
+  data: Prisma.DocumentChunkCreateManyParentChunkInput | Prisma.DocumentChunkCreateManyParentChunkInput[]
+  skipDuplicates?: boolean
+}
+
+export type DocumentChunkUpsertWithoutChildChunksInput = {
+  update: Prisma.XOR<Prisma.DocumentChunkUpdateWithoutChildChunksInput, Prisma.DocumentChunkUncheckedUpdateWithoutChildChunksInput>
+  create: Prisma.XOR<Prisma.DocumentChunkCreateWithoutChildChunksInput, Prisma.DocumentChunkUncheckedCreateWithoutChildChunksInput>
+  where?: Prisma.DocumentChunkWhereInput
+}
+
+export type DocumentChunkUpdateToOneWithWhereWithoutChildChunksInput = {
+  where?: Prisma.DocumentChunkWhereInput
+  data: Prisma.XOR<Prisma.DocumentChunkUpdateWithoutChildChunksInput, Prisma.DocumentChunkUncheckedUpdateWithoutChildChunksInput>
+}
+
+export type DocumentChunkUpdateWithoutChildChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  document?: Prisma.DocumentUpdateOneRequiredWithoutChunksNestedInput
+  parentChunk?: Prisma.DocumentChunkUpdateOneWithoutChildChunksNestedInput
+}
+
+export type DocumentChunkUncheckedUpdateWithoutChildChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  parentChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DocumentChunkUpsertWithWhereUniqueWithoutParentChunkInput = {
+  where: Prisma.DocumentChunkWhereUniqueInput
+  update: Prisma.XOR<Prisma.DocumentChunkUpdateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedUpdateWithoutParentChunkInput>
+  create: Prisma.XOR<Prisma.DocumentChunkCreateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedCreateWithoutParentChunkInput>
+}
+
+export type DocumentChunkUpdateWithWhereUniqueWithoutParentChunkInput = {
+  where: Prisma.DocumentChunkWhereUniqueInput
+  data: Prisma.XOR<Prisma.DocumentChunkUpdateWithoutParentChunkInput, Prisma.DocumentChunkUncheckedUpdateWithoutParentChunkInput>
+}
+
+export type DocumentChunkUpdateManyWithWhereWithoutParentChunkInput = {
+  where: Prisma.DocumentChunkScalarWhereInput
+  data: Prisma.XOR<Prisma.DocumentChunkUpdateManyMutationInput, Prisma.DocumentChunkUncheckedUpdateManyWithoutParentChunkInput>
 }
 
 export type DocumentChunkCreateManyDocumentInput = {
   id?: string
   chunkIndex: number
   content: string
+  parentChunkId?: string | null
+  contentHash?: string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
   createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type DocumentChunkUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  parentChunk?: Prisma.DocumentChunkUpdateOneWithoutChildChunksNestedInput
+  childChunks?: Prisma.DocumentChunkUpdateManyWithoutParentChunkNestedInput
 }
 
 export type DocumentChunkUncheckedUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  parentChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  childChunks?: Prisma.DocumentChunkUncheckedUpdateManyWithoutParentChunkNestedInput
 }
 
 export type DocumentChunkUncheckedUpdateManyWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  parentChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+export type DocumentChunkCreateManyParentChunkInput = {
+  id?: string
+  documentId: string
+  chunkIndex: number
+  content: string
+  contentHash?: string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: string | null
+  page?: number | null
+  startChar?: number | null
+  endChar?: number | null
+  lineStart?: number | null
+  lineEnd?: number | null
+  chunkType?: string
+  tokenCount?: number | null
+  wordCount?: number | null
+  characterCount?: number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: number | null
+  embeddingModel?: string | null
+  embeddingDimension?: number
+  embeddingVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DocumentChunkUpdateWithoutParentChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  document?: Prisma.DocumentUpdateOneRequiredWithoutChunksNestedInput
+  childChunks?: Prisma.DocumentChunkUpdateManyWithoutParentChunkNestedInput
+}
+
+export type DocumentChunkUncheckedUpdateWithoutParentChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  childChunks?: Prisma.DocumentChunkUncheckedUpdateManyWithoutParentChunkNestedInput
+}
+
+export type DocumentChunkUncheckedUpdateManyWithoutParentChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  endChar?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  chunkType?: Prisma.StringFieldUpdateOperationsInput | string
+  tokenCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  wordCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  characterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  keywords?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  entities?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  importance?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  embeddingModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingDimension?: Prisma.IntFieldUpdateOperationsInput | number
+  embeddingVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type DocumentChunkCountOutputType
+ */
+
+export type DocumentChunkCountOutputType = {
+  childChunks: number
+}
+
+export type DocumentChunkCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  childChunks?: boolean | DocumentChunkCountOutputTypeCountChildChunksArgs
+}
+
+/**
+ * DocumentChunkCountOutputType without action
+ */
+export type DocumentChunkCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentChunkCountOutputType
+   */
+  select?: Prisma.DocumentChunkCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * DocumentChunkCountOutputType without action
+ */
+export type DocumentChunkCountOutputTypeCountChildChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentChunkWhereInput
+}
 
 
 export type DocumentChunkSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -526,9 +1548,31 @@ export type DocumentChunkSelect<ExtArgs extends runtime.Types.Extensions.Interna
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  parentChunkId?: boolean
+  contentHash?: boolean
   metadata?: boolean
+  section?: boolean
+  page?: boolean
+  startChar?: boolean
+  endChar?: boolean
+  lineStart?: boolean
+  lineEnd?: boolean
+  chunkType?: boolean
+  tokenCount?: boolean
+  wordCount?: boolean
+  characterCount?: boolean
+  keywords?: boolean
+  entities?: boolean
+  importance?: boolean
+  embeddingModel?: boolean
+  embeddingDimension?: boolean
+  embeddingVersion?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  parentChunk?: boolean | Prisma.DocumentChunk$parentChunkArgs<ExtArgs>
+  childChunks?: boolean | Prisma.DocumentChunk$childChunksArgs<ExtArgs>
+  _count?: boolean | Prisma.DocumentChunkCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentChunk"]>
 
 export type DocumentChunkSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -536,9 +1580,29 @@ export type DocumentChunkSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  parentChunkId?: boolean
+  contentHash?: boolean
   metadata?: boolean
+  section?: boolean
+  page?: boolean
+  startChar?: boolean
+  endChar?: boolean
+  lineStart?: boolean
+  lineEnd?: boolean
+  chunkType?: boolean
+  tokenCount?: boolean
+  wordCount?: boolean
+  characterCount?: boolean
+  keywords?: boolean
+  entities?: boolean
+  importance?: boolean
+  embeddingModel?: boolean
+  embeddingDimension?: boolean
+  embeddingVersion?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  parentChunk?: boolean | Prisma.DocumentChunk$parentChunkArgs<ExtArgs>
 }, ExtArgs["result"]["documentChunk"]>
 
 export type DocumentChunkSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -546,9 +1610,29 @@ export type DocumentChunkSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  parentChunkId?: boolean
+  contentHash?: boolean
   metadata?: boolean
+  section?: boolean
+  page?: boolean
+  startChar?: boolean
+  endChar?: boolean
+  lineStart?: boolean
+  lineEnd?: boolean
+  chunkType?: boolean
+  tokenCount?: boolean
+  wordCount?: boolean
+  characterCount?: boolean
+  keywords?: boolean
+  entities?: boolean
+  importance?: boolean
+  embeddingModel?: boolean
+  embeddingDimension?: boolean
+  embeddingVersion?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  parentChunk?: boolean | Prisma.DocumentChunk$parentChunkArgs<ExtArgs>
 }, ExtArgs["result"]["documentChunk"]>
 
 export type DocumentChunkSelectScalar = {
@@ -556,25 +1640,51 @@ export type DocumentChunkSelectScalar = {
   documentId?: boolean
   chunkIndex?: boolean
   content?: boolean
+  parentChunkId?: boolean
+  contentHash?: boolean
   metadata?: boolean
+  section?: boolean
+  page?: boolean
+  startChar?: boolean
+  endChar?: boolean
+  lineStart?: boolean
+  lineEnd?: boolean
+  chunkType?: boolean
+  tokenCount?: boolean
+  wordCount?: boolean
+  characterCount?: boolean
+  keywords?: boolean
+  entities?: boolean
+  importance?: boolean
+  embeddingModel?: boolean
+  embeddingDimension?: boolean
+  embeddingVersion?: boolean
   createdAt?: boolean
+  updatedAt?: boolean
 }
 
-export type DocumentChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "chunkIndex" | "content" | "metadata" | "createdAt", ExtArgs["result"]["documentChunk"]>
+export type DocumentChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "chunkIndex" | "content" | "parentChunkId" | "contentHash" | "metadata" | "section" | "page" | "startChar" | "endChar" | "lineStart" | "lineEnd" | "chunkType" | "tokenCount" | "wordCount" | "characterCount" | "keywords" | "entities" | "importance" | "embeddingModel" | "embeddingDimension" | "embeddingVersion" | "createdAt" | "updatedAt", ExtArgs["result"]["documentChunk"]>
 export type DocumentChunkInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  parentChunk?: boolean | Prisma.DocumentChunk$parentChunkArgs<ExtArgs>
+  childChunks?: boolean | Prisma.DocumentChunk$childChunksArgs<ExtArgs>
+  _count?: boolean | Prisma.DocumentChunkCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentChunkIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  parentChunk?: boolean | Prisma.DocumentChunk$parentChunkArgs<ExtArgs>
 }
 export type DocumentChunkIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   document?: boolean | Prisma.DocumentDefaultArgs<ExtArgs>
+  parentChunk?: boolean | Prisma.DocumentChunk$parentChunkArgs<ExtArgs>
 }
 
 export type $DocumentChunkPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "DocumentChunk"
   objects: {
     document: Prisma.$DocumentPayload<ExtArgs>
+    parentChunk: Prisma.$DocumentChunkPayload<ExtArgs> | null
+    childChunks: Prisma.$DocumentChunkPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -582,13 +1692,72 @@ export type $DocumentChunkPayload<ExtArgs extends runtime.Types.Extensions.Inter
     chunkIndex: number
     content: string
     /**
+     * Self-relation for hierarchical chunking (e.g. a table-of-contents
+     * summary chunk over several detail chunks). Not produced by the AI
+     * service yet — the flat splitter has no parent/child concept — so
+     * always null today.
+     */
+    parentChunkId: string | null
+    /**
+     * SHA-256 of `content`, for chunk-level dedup/change-detection —
+     * Document.contentHash's counterpart at chunk granularity.
+     */
+    contentHash: string | null
+    /**
      * Structure-derived context from the ai service's chunking strategy for
      * this document type — e.g. { source, heading, section } for Markdown,
      * { source, page } for PDF. Always has "source"; other keys are
-     * type-dependent and may be absent.
+     * type-dependent and may be absent. section/page below mirror the two
+     * keys worth indexing directly; the rest stays here.
      */
     metadata: runtime.JsonValue
+    /**
+     * Heading text the chunk falls under (Markdown/DOCX). Null for chunk
+     * types with no heading structure (plain text).
+     */
+    section: string | null
+    /**
+     * 1-based page number (PDF only).
+     */
+    page: number | null
+    /**
+     * Character offsets of this chunk within its structural unit (the PDF
+     * page text, the Markdown/DOCX section text, or the whole document for
+     * plain text) — not within the document as a whole. Combined with
+     * page/section, still enough to locate and cite the source text.
+     */
+    startChar: number | null
+    endChar: number | null
+    /**
+     * 1-based line numbers, same "relative to its structural unit" scope
+     * as startChar/endChar above.
+     */
+    lineStart: number | null
+    lineEnd: number | null
+    /**
+     * text today (the only strategy the AI service implements); table/
+     * code/image_caption are anticipated but not yet produced.
+     */
+    chunkType: string
+    tokenCount: number | null
+    wordCount: number | null
+    characterCount: number | null
+    /**
+     * AI-enrichment fields — empty/null until a real enrichment step exists.
+     */
+    keywords: runtime.JsonValue
+    entities: runtime.JsonValue
+    importance: number | null
+    /**
+     * Echoed per-chunk (not just on the parent Document) so a future
+     * partial re-embed — upgrading only some chunks to a newer model —
+     * stays identifiable without a join.
+     */
+    embeddingModel: string | null
+    embeddingDimension: number
+    embeddingVersion: number
     createdAt: Date
+    updatedAt: Date
   }, ExtArgs["result"]["documentChunk"]>
   composites: {}
 }
@@ -984,6 +2153,8 @@ readonly fields: DocumentChunkFieldRefs;
 export interface Prisma__DocumentChunkClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   document<T extends Prisma.DocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__DocumentClient<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  parentChunk<T extends Prisma.DocumentChunk$parentChunkArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentChunk$parentChunkArgs<ExtArgs>>): Prisma.Prisma__DocumentChunkClient<runtime.Types.Result.GetResult<Prisma.$DocumentChunkPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  childChunks<T extends Prisma.DocumentChunk$childChunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentChunk$childChunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentChunkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1017,8 +2188,27 @@ export interface DocumentChunkFieldRefs {
   readonly documentId: Prisma.FieldRef<"DocumentChunk", 'String'>
   readonly chunkIndex: Prisma.FieldRef<"DocumentChunk", 'Int'>
   readonly content: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly parentChunkId: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly contentHash: Prisma.FieldRef<"DocumentChunk", 'String'>
   readonly metadata: Prisma.FieldRef<"DocumentChunk", 'Json'>
+  readonly section: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly page: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly startChar: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly endChar: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly lineStart: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly lineEnd: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly chunkType: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly tokenCount: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly wordCount: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly characterCount: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly keywords: Prisma.FieldRef<"DocumentChunk", 'Json'>
+  readonly entities: Prisma.FieldRef<"DocumentChunk", 'Json'>
+  readonly importance: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly embeddingModel: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly embeddingDimension: Prisma.FieldRef<"DocumentChunk", 'Int'>
+  readonly embeddingVersion: Prisma.FieldRef<"DocumentChunk", 'Int'>
   readonly createdAt: Prisma.FieldRef<"DocumentChunk", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"DocumentChunk", 'DateTime'>
 }
     
 
@@ -1417,6 +2607,49 @@ export type DocumentChunkDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many DocumentChunks to delete.
    */
   limit?: number
+}
+
+/**
+ * DocumentChunk.parentChunk
+ */
+export type DocumentChunk$parentChunkArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentChunk
+   */
+  select?: Prisma.DocumentChunkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentChunk
+   */
+  omit?: Prisma.DocumentChunkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentChunkInclude<ExtArgs> | null
+  where?: Prisma.DocumentChunkWhereInput
+}
+
+/**
+ * DocumentChunk.childChunks
+ */
+export type DocumentChunk$childChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentChunk
+   */
+  select?: Prisma.DocumentChunkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentChunk
+   */
+  omit?: Prisma.DocumentChunkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentChunkInclude<ExtArgs> | null
+  where?: Prisma.DocumentChunkWhereInput
+  orderBy?: Prisma.DocumentChunkOrderByWithRelationInput | Prisma.DocumentChunkOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentChunkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentChunkScalarFieldEnum | Prisma.DocumentChunkScalarFieldEnum[]
 }
 
 /**

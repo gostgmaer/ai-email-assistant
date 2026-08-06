@@ -47,3 +47,12 @@ export const VerificationTokenType = {
 } as const
 
 export type VerificationTokenType = (typeof VerificationTokenType)[keyof typeof VerificationTokenType]
+
+
+export const DocumentStatus = {
+  PROCESSING: 'PROCESSING',
+  INDEXED: 'INDEXED',
+  FAILED: 'FAILED'
+} as const
+
+export type DocumentStatus = (typeof DocumentStatus)[keyof typeof DocumentStatus]
