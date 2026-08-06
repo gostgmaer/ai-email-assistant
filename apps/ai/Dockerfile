@@ -2,12 +2,16 @@
 
 FROM python:3.14-slim AS base
 
-RUN pip install --no-cache-dir uv
+RUN for i in 1 2 3 4 5; do pip install --no-cache-dir uv && break || sleep 5; done
 
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN for i in 1 2 3 4 5; do \
+      rm -rf .venv; \
+      uv sync --frozen --no-dev && test -f .venv/bin/uvicorn && break; \
+      sleep 5; \
+    done
 
 COPY . .
 

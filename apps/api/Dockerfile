@@ -2,22 +2,22 @@
 # pnpm-lock.yaml, pnpm-workspace.yaml, plus this app's source).
 
 FROM node:24-alpine AS base
-RUN corepack enable
+RUN for i in 1 2 3 4 5; do corepack enable && break || sleep 5; done
 WORKDIR /repo
 
 FROM base AS build
 COPY . .
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter api exec prisma generate
-RUN pnpm --filter api build
+RUN for i in 1 2 3 4 5; do \
+      rm -rf node_modules apps/*/node_modules packages/*/node_modules; \
+      pnpm install --frozen-lockfile && test -f apps/api/node_modules/.bin/prisma && break; \
+      sleep 5; \
+    done
+RUN cd apps/api && node_modules/.bin/prisma generate
+RUN cd apps/api && node_modules/.bin/nest build
+RUN pnpm --filter api deploy --prod --legacy /deploy
 
 FROM base AS runtime
 ENV NODE_ENV=production
-COPY --from=build /repo/node_modules ./node_modules
-COPY --from=build /repo/apps/api/node_modules ./apps/api/node_modules
-COPY --from=build /repo/apps/api/dist ./apps/api/dist
-COPY --from=build /repo/apps/api/package.json ./apps/api/package.json
-COPY --from=build /repo/apps/api/prisma ./apps/api/prisma
-WORKDIR /repo/apps/api
+COPY --from=build /deploy .
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/main.js"]

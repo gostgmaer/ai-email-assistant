@@ -1,3 +1,12 @@
 packages:
   - apps/*
   - packages/*
+
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - "@scarf/scarf"
+  - bcrypt
+  - msgpackr-extract
+  - prisma
+  - unrs-resolver
