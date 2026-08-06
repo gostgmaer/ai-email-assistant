@@ -1,7 +1,10 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Query,
@@ -81,5 +84,14 @@ export class DocumentsController {
   @ApiResponse({ status: 404, description: 'Document not found' })
   async get(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.documentsService.getForUser(user.sub, id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a document and its chunks' })
+  @ApiResponse({ status: 204, description: 'Document deleted' })
+  @ApiResponse({ status: 404, description: 'Document not found' })
+  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    await this.documentsService.remove(user.sub, id);
   }
 }

@@ -5,7 +5,7 @@
 # NEXT_PUBLIC_API_URL must be passed as a build arg, not a runtime env var.
 
 FROM node:24-alpine AS base
-RUN for i in 1 2 3 4 5; do corepack enable && break || sleep 5; done
+RUN for i in 1 2 3 4 5; do corepack enable && break || sleep 5; done; which pnpm
 WORKDIR /repo
 
 FROM base AS build
@@ -14,9 +14,8 @@ ARG NEXT_PUBLIC_API_URL=http://localhost:3000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN for i in 1 2 3 4 5; do \
       rm -rf node_modules apps/*/node_modules packages/*/node_modules; \
-      pnpm install --frozen-lockfile && test -f apps/web/node_modules/.bin/next && break; \
-      sleep 5; \
-    done
+      pnpm install --frozen-lockfile && test -f apps/web/node_modules/.bin/next && break || sleep 5; \
+    done; test -f apps/web/node_modules/.bin/next
 RUN cd apps/web && node_modules/.bin/next build
 
 FROM base AS runtime

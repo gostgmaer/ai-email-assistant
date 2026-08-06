@@ -52,6 +52,10 @@ export async function getDocument(id: string): Promise<DocumentDetail> {
   return apiFetch(`/documents/${id}`);
 }
 
+export async function deleteDocument(id: string): Promise<void> {
+  return apiFetch(`/documents/${id}`, { method: "DELETE" });
+}
+
 export async function searchDocuments(
   query: string,
 ): Promise<DocumentChunkMatch[]> {

@@ -1,16 +1,19 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ApiError } from "@/lib/api/client";
-import { getDocument } from "@/lib/services/documents.service";
+import { deleteDocument, getDocument } from "@/lib/services/documents.service";
 
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const {
     data: document,
@@ -20,6 +23,14 @@ export default function DocumentDetailPage() {
   } = useQuery({
     queryKey: ["document", params.id],
     queryFn: () => getDocument(params.id),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteDocument(params.id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      router.push("/documents");
+    },
   });
 
   if (isLoading) return <FullPageSpinner />;
@@ -37,17 +48,32 @@ export default function DocumentDetailPage() {
   return (
     
     <div className="mx-auto w-full  flex-1 space-y-6 p-4">
-      <div>
-        <Link href="/documents" className="text-sm text-indigo-600 hover:underline">
-          &larr; Documents
-        </Link>
-        <h1 className="mt-2 text-lg font-semibold text-zinc-900">
-          {document.filename}
-        </h1>
-        <p className="text-sm text-zinc-500">
-          {document.contentType} · {document.provider}/{document.model} ·{" "}
-          {new Date(document.createdAt).toLocaleString()}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <Link href="/documents" className="text-sm text-indigo-600 hover:underline">
+            &larr; Documents
+          </Link>
+          <h1 className="mt-2 text-lg font-semibold text-zinc-900">
+            {document.filename}
+          </h1>
+          <p className="text-sm text-zinc-500">
+            {document.contentType} · {document.provider}/{document.model} ·{" "}
+            {new Date(document.createdAt).toLocaleString()}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="danger"
+          size="sm"
+          loading={deleteMutation.isPending}
+          onClick={() => {
+            if (window.confirm(`Delete "${document.filename}"?`)) {
+              deleteMutation.mutate();
+            }
+          }}
+        >
+          Delete
+        </Button>
       </div>
 
       <div className="space-y-3">

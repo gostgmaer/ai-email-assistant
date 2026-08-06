@@ -9,6 +9,7 @@ import { EmptyState, ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ApiError } from "@/lib/api/client";
 import {
+  deleteDocument,
   listDocuments,
   searchDocuments,
   uploadDocument,
@@ -41,6 +42,13 @@ export default function DocumentsPage() {
 
   const searchMutation = useMutation({
     mutationFn: searchDocuments,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteDocument,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+    },
   });
 
   return (
@@ -168,22 +176,36 @@ export default function DocumentsPage() {
       {documents && documents.length > 0 && (
         <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
           {documents.map((doc) => (
-            <li key={doc.id}>
-              <Link
-                href={`/documents/${doc.id}`}
-                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-50"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-zinc-900">
-                    {doc.filename}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    {doc.chunkCount} chunk{doc.chunkCount === 1 ? "" : "s"} ·{" "}
-                    {doc.provider}/{doc.model} ·{" "}
-                    {new Date(doc.createdAt).toLocaleString()}
-                  </p>
-                </div>
+            <li
+              key={doc.id}
+              className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-50"
+            >
+              <Link href={`/documents/${doc.id}`} className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-zinc-900">
+                  {doc.filename}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  {doc.chunkCount} chunk{doc.chunkCount === 1 ? "" : "s"} ·{" "}
+                  {doc.provider}/{doc.model} ·{" "}
+                  {new Date(doc.createdAt).toLocaleString()}
+                </p>
               </Link>
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                loading={
+                  deleteMutation.isPending &&
+                  deleteMutation.variables === doc.id
+                }
+                onClick={() => {
+                  if (window.confirm(`Delete "${doc.filename}"?`)) {
+                    deleteMutation.mutate(doc.id);
+                  }
+                }}
+              >
+                Delete
+              </Button>
             </li>
           ))}
         </ul>

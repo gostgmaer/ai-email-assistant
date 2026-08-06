@@ -185,6 +185,19 @@ export class DocumentsService {
     };
   }
 
+  async remove(userId: string, id: string): Promise<void> {
+    // deleteMany scoped by userId avoids a check-then-delete race and never
+    // throws for another user's document — it just deletes zero rows.
+    // DocumentChunk rows cascade via the FK's onDelete: Cascade.
+    const { count } = await this.prisma.document.deleteMany({
+      where: { id, userId },
+    });
+
+    if (count === 0) {
+      throw new NotFoundException('Document not found');
+    }
+  }
+
   // Joins through Document to scope by userId — DocumentChunk has no
   // userId column of its own, so this join is the entire isolation
   // boundary for cross-user chunk search. Never query DocumentChunk by
