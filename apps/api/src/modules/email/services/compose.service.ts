@@ -19,6 +19,22 @@ import { NormalizedParticipant } from '../interfaces';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
 import { InboxService } from './inbox.service';
 
+/** Provenance of an AI-generated reply — set only by the autonomous
+ * pipeline, never by manual compose/send. */
+export interface GenerationMetadata {
+  ragUsed: boolean;
+  contactMemoryUsed: boolean;
+  provider: string;
+  model: string;
+  usage: { inputTokens: number; outputTokens: number; totalTokens: number };
+  documents: Array<{
+    documentId: string;
+    chunkId: string;
+    filename: string;
+    distance: number;
+  }>;
+}
+
 @Injectable()
 export class ComposeService {
   constructor(
@@ -55,7 +71,11 @@ export class ComposeService {
     );
   }
 
-  async reply(userId: string, dto: ReplyEmailDto) {
+  async reply(
+    userId: string,
+    dto: ReplyEmailDto,
+    generationMetadata?: GenerationMetadata,
+  ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
       dto.messageId,
@@ -91,6 +111,9 @@ export class ComposeService {
       },
       result,
       to,
+      undefined,
+      undefined,
+      generationMetadata,
     );
   }
 
@@ -104,6 +127,7 @@ export class ComposeService {
     userId: string,
     originalMessageId: string,
     content: { subject: string; bodyText: string },
+    generationMetadata?: GenerationMetadata,
   ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
@@ -144,6 +168,7 @@ export class ComposeService {
         receivedAt: new Date(),
         isRead: true,
         inReplyToMessageId: originalMessageId,
+        generationMetadata: generationMetadata as unknown as InputJsonValue,
       },
     });
   }
@@ -286,6 +311,7 @@ export class ComposeService {
     to: NormalizedParticipant[],
     cc?: NormalizedParticipant[],
     bcc?: NormalizedParticipant[],
+    generationMetadata?: GenerationMetadata,
   ) {
     const account = await this.prisma.emailAccount.findUniqueOrThrow({
       where: { id: accountId },
@@ -332,6 +358,7 @@ export class ComposeService {
         bodyText: content.bodyText,
         receivedAt: new Date(),
         isRead: true,
+        generationMetadata: generationMetadata as unknown as InputJsonValue,
       },
     });
   }

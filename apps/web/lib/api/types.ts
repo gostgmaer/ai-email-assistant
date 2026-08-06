@@ -44,6 +44,20 @@ export interface Participant {
   address: string;
 }
 
+export interface GenerationMetadata {
+  ragUsed: boolean;
+  contactMemoryUsed: boolean;
+  provider: string;
+  model: string;
+  usage: { inputTokens: number; outputTokens: number; totalTokens: number };
+  documents: Array<{
+    documentId: string;
+    chunkId: string;
+    filename: string;
+    distance: number;
+  }>;
+}
+
 export interface EmailMessage {
   id: string;
   threadId: string;
@@ -58,6 +72,9 @@ export interface EmailMessage {
   receivedAt: string;
   isRead: boolean;
   createdAt: string;
+  /** Set only on AI-generated replies (drafted or auto-sent) — null for
+   * synced/manually-composed messages. */
+  generationMetadata: GenerationMetadata | null;
 }
 
 export interface EmailThreadSummary {

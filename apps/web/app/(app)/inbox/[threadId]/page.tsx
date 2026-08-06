@@ -129,9 +129,22 @@ export default function ThreadPage() {
                   to {participantListLabel(message.to)}
                 </p>
               </div>
-              <span className="shrink-0 text-xs text-zinc-400">
-                {formatDateTime(message.receivedAt)}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                {message.generationMetadata?.ragUsed && (
+                  <span
+                    title={`Grounded in: ${message.generationMetadata.documents
+                      .map((doc) => doc.filename)
+                      .filter((name, i, all) => all.indexOf(name) === i)
+                      .join(", ")}`}
+                    className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700"
+                  >
+                    📄 Grounded in your documents
+                  </span>
+                )}
+                <span className="text-xs text-zinc-400">
+                  {formatDateTime(message.receivedAt)}
+                </span>
+              </div>
             </div>
             <MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} />
           </article>

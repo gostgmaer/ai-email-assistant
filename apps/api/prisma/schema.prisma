@@ -290,6 +290,13 @@ model EmailMessage {
   // reply) has run for this message, so retries/resyncs don't reprocess it.
   aiProcessedAt DateTime?
 
+  /// Set only on AI-generated replies (drafted or auto-sent) — records what
+  /// grounded the generation so "did this use my documents?" is answerable
+  /// without re-deriving it. Null for synced/manually-composed messages.
+  /// Shape: { ragUsed, contactMemoryUsed, provider, model, usage,
+  /// documents: [{ documentId, chunkId, filename, distance }] }.
+  generationMetadata Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -515,6 +522,13 @@ model DocumentChunk {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // The HNSW vector index on `embedding` is hand-managed raw SQL, not
+  // declared here — Prisma 7.9.1 rejects `type: Hnsw`, and `embedding` is an
+  // Unsupported() column Prisma can't model anyway. It lives in migration
+  // 20260806140000_document_retrieval_indexes. IMPORTANT: because it's
+  // invisible to Prisma, every future `prisma migrate diff`/`migrate dev`
+  // against this schema will propose `DROP INDEX
+  // "DocumentChunk_embedding_hnsw_idx"` — never apply that line.
 
   @@unique([documentId, chunkIndex])
   @@index([documentId])

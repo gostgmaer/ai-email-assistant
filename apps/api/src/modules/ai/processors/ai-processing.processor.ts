@@ -10,7 +10,10 @@ import {
 } from '../../documents/services/documents.service';
 import { isAutomatedAddress } from '../../email/providers/bulk-mail.util';
 import { NormalizedParticipant } from '../../email/interfaces';
-import { ComposeService } from '../../email/services/compose.service';
+import {
+  ComposeService,
+  GenerationMetadata,
+} from '../../email/services/compose.service';
 import { EmailMessageDto } from '../dto';
 import {
   AiClientService,
@@ -126,11 +129,31 @@ export class AiProcessingProcessor extends WorkerHost {
       .search(account.userId, message.bodyText ?? subject, 3)
       .catch(() => []);
 
+    const { instruction, contactMemoryUsed } = buildContextInstruction(
+      related,
+      contactMemory,
+      documentMatches,
+    );
+
     const reply = await this.aiClientService.generateReply(
       subject,
       thread,
-      buildContextInstruction(related, contactMemory, documentMatches),
+      instruction,
     );
+
+    const generationMetadata: GenerationMetadata = {
+      ragUsed: documentMatches.length > 0,
+      contactMemoryUsed,
+      provider: reply.provider,
+      model: reply.model,
+      usage: reply.usage,
+      documents: documentMatches.map((match: DocumentChunkMatch) => ({
+        documentId: match.documentId,
+        chunkId: match.id,
+        filename: match.filename,
+        distance: match.distance,
+      })),
+    };
 
     const isSafeToAutoSend =
       !classification.spam &&
@@ -138,21 +161,30 @@ export class AiProcessingProcessor extends WorkerHost {
       account.autoSendCategories.includes(classification.category);
 
     if (isSafeToAutoSend) {
-      await this.composeService.reply(account.userId, {
-        messageId,
-        bodyHtml: `<p>${reply.reply.replace(/\n/g, '<br />')}</p>`,
-        bodyText: reply.reply,
-      });
+      await this.composeService.reply(
+        account.userId,
+        {
+          messageId,
+          bodyHtml: `<p>${reply.reply.replace(/\n/g, '<br />')}</p>`,
+          bodyText: reply.reply,
+        },
+        generationMetadata,
+      );
       this.logger.log(
-        `Auto-sent a reply to message ${messageId} (category: ${classification.category}).`,
+        `Auto-sent a reply to message ${messageId} (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
       );
     } else {
-      await this.composeService.saveDraftReply(account.userId, messageId, {
-        subject: subject.startsWith('Re:') ? subject : `Re: ${subject}`,
-        bodyText: reply.reply,
-      });
+      await this.composeService.saveDraftReply(
+        account.userId,
+        messageId,
+        {
+          subject: subject.startsWith('Re:') ? subject : `Re: ${subject}`,
+          bodyText: reply.reply,
+        },
+        generationMetadata,
+      );
       this.logger.log(
-        `Drafted a reply to message ${messageId} for review (category: ${classification.category}).`,
+        `Drafted a reply to message ${messageId} for review (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
       );
     }
 
@@ -189,7 +221,7 @@ function buildContextInstruction(
   related: ContactMemoryMatch[],
   current: ContactMemoryResponse,
   documentMatches: DocumentChunkMatch[],
-): string | undefined {
+): { instruction: string | undefined; contactMemoryUsed: boolean } {
   const sections: string[] = [];
 
   const priorContacts = related.filter(
@@ -215,5 +247,8 @@ function buildContextInstruction(
     );
   }
 
-  return sections.length > 0 ? sections.join('\n\n') : undefined;
+  return {
+    instruction: sections.length > 0 ? sections.join('\n\n') : undefined,
+    contactMemoryUsed: priorContacts.length > 0,
+  };
 }

@@ -224,6 +224,7 @@ export const EmailMessageScalarFieldEnum = {
   isRead: 'isRead',
   inReplyToMessageId: 'inReplyToMessageId',
   aiProcessedAt: 'aiProcessedAt',
+  generationMetadata: 'generationMetadata',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
