@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { Avatar } from "@/components/ui/Avatar";
+import { SearchIcon } from "@/components/icons";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export function Topbar() {
@@ -22,21 +24,22 @@ export function Topbar() {
     router.replace("/login");
   }
 
-  const initial = (user?.displayName ?? user?.email ?? "?")
-    .slice(0, 1)
-    .toUpperCase();
+  const label = user?.displayName ?? user?.email ?? "?";
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-zinc-200 bg-white px-4">
-      <form onSubmit={handleSearchSubmit} className="max-w-md flex-1">
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search email…"
-          aria-label="Search email"
-          className="w-full rounded-md border border-zinc-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
+      <form onSubmit={handleSearchSubmit} className="max-w-lg flex-1">
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search email…"
+            aria-label="Search email"
+            className="w-full rounded-full border border-transparent bg-zinc-100 py-2 pr-3 pl-9 text-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          />
+        </div>
       </form>
 
       <div className="flex items-center gap-3">
@@ -49,9 +52,7 @@ export function Topbar() {
             aria-label="Account menu"
             aria-expanded={menuOpen}
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-medium text-white">
-              {initial}
-            </span>
+            <Avatar label={label} size="sm" />
           </button>
           {menuOpen && (
             <>

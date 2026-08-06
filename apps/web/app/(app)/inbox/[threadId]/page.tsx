@@ -6,7 +6,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ChevronLeftIcon, SparklesIcon } from "@/components/icons";
 import { ReplyBox } from "@/components/inbox/ReplyBox";
+import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner, Spinner } from "@/components/ui/Spinner";
@@ -80,75 +82,86 @@ export default function ThreadPage() {
   const lastMessage = thread.messages[thread.messages.length - 1];
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
-        <div className="min-w-0">
-          <Link href="/inbox" className="text-xs text-indigo-600 hover:underline">
-            ← Back to inbox
-          </Link>
-          <h1 className="mt-1 truncate text-lg font-semibold text-zinc-900">
-            {thread.subject || "(no subject)"}
-          </h1>
-        </div>
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-zinc-50">
+      <div className="flex shrink-0 items-center gap-3 border-b border-zinc-200 bg-white px-4 py-3">
+        <Link
+          href="/inbox"
+          aria-label="Back to inbox"
+          className="-ml-1 rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 lg:hidden"
+        >
+          <ChevronLeftIcon className="h-5 w-5" />
+        </Link>
+        <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-zinc-900">
+          {thread.subject || "(no subject)"}
+        </h1>
         <Button
           variant="secondary"
           size="sm"
           onClick={handleSummarize}
           loading={summaryLoading}
         >
+          <SparklesIcon className="h-4 w-4" />
           Summarize
         </Button>
       </div>
 
       {summaryError && (
-        <p className="border-b border-zinc-100 bg-red-50 px-4 py-2 text-xs text-red-700">
+        <p className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
           {summaryError}
         </p>
       )}
       {summary && (
-        <div className="border-b border-zinc-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-500">
+        <div className="shrink-0 border-b border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-indigo-500 uppercase">
+            <SparklesIcon className="h-3.5 w-3.5" />
             AI Summary
           </p>
           {summary}
         </div>
       )}
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        {thread.messages.map((message) => (
-          <article
-            key={message.id}
-            className="rounded-lg border border-zinc-200 bg-white p-4"
-          >
-            <div className="mb-2 flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-zinc-900">
-                  {participantListLabel(message.from)}
-                </p>
-                <p className="truncate text-xs text-zinc-500">
-                  to {participantListLabel(message.to)}
-                </p>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+        {thread.messages.map((message) => {
+          const senderLabel = participantListLabel(message.from);
+          return (
+            <article
+              key={message.id}
+              className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+            >
+              <div className="mb-3 flex items-start gap-3">
+                <Avatar label={senderLabel} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="truncate text-sm font-semibold text-zinc-900">
+                      {senderLabel}
+                    </p>
+                    <span className="shrink-0 text-xs whitespace-nowrap text-zinc-400">
+                      {formatDateTime(message.receivedAt)}
+                    </span>
+                  </div>
+                  <p className="truncate text-xs text-zinc-500">
+                    to {participantListLabel(message.to)}
+                  </p>
+                  {message.generationMetadata?.ragUsed && (
+                    <span
+                      title={`Grounded in: ${message.generationMetadata.documents
+                        .map((doc) => doc.filename)
+                        .filter((name, i, all) => all.indexOf(name) === i)
+                        .join(", ")}`}
+                      className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+                    >
+                      <SparklesIcon className="h-3 w-3" />
+                      Grounded in your documents
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {message.generationMetadata?.ragUsed && (
-                  <span
-                    title={`Grounded in: ${message.generationMetadata.documents
-                      .map((doc) => doc.filename)
-                      .filter((name, i, all) => all.indexOf(name) === i)
-                      .join(", ")}`}
-                    className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700"
-                  >
-                    📄 Grounded in your documents
-                  </span>
-                )}
-                <span className="text-xs text-zinc-400">
-                  {formatDateTime(message.receivedAt)}
-                </span>
+              <div className="pl-12">
+                <MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} />
               </div>
-            </div>
-            <MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} />
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
 
       {lastMessage && (

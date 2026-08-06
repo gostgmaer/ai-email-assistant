@@ -23,14 +23,14 @@ export function MessageBody({
   if (sanitized) {
     return (
       <div
-        className="prose prose-sm max-w-none break-words text-zinc-800"
+        className="prose prose-sm prose-zinc max-w-none wrap-break-word prose-a:text-indigo-600 prose-img:rounded-md"
         dangerouslySetInnerHTML={{ __html: sanitized }}
       />
     );
   }
 
   return (
-    <p className="whitespace-pre-wrap break-words text-sm text-zinc-800">
+    <p className="whitespace-pre-wrap wrap-break-word text-sm text-zinc-800">
       {bodyText || "(no content)"}
     </p>
   );

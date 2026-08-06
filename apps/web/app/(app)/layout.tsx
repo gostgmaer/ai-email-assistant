@@ -19,11 +19,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   if (isLoading || !isAuthenticated) return <FullPageSpinner />;
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex min-h-0 flex-1 overflow-hidden">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="flex flex-1 flex-col overflow-y-auto">
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {children}
         </main>
       </div>
