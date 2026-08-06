@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
   forwardRef,
 } from '@nestjs/common';
 
@@ -193,6 +194,17 @@ export class DocumentsService {
       file.mimetype,
     );
 
+    // A document with no extractable text (scanned/image-only PDF, an empty
+    // file) would otherwise hash to sha256("") below — every such upload by
+    // the same user collides on that same empty hash and gets misreported as
+    // a "duplicate" of the FIRST one, silently discarding its real content.
+    // Reject instead of ever computing that hash.
+    if (result.chunks.length === 0) {
+      throw new UnprocessableEntityException(
+        'No extractable text found in this document',
+      );
+    }
+
     // Second, content-based check: catches files whose bytes differ but
     // whose extracted text is identical (re-saved PDF, different line
     // endings), and pre-existing rows that predate the contentHash column
@@ -239,9 +251,8 @@ export class DocumentsService {
         chunkSize: result.chunkSize,
         chunkOverlap: result.chunkOverlap,
         pageCount: result.pageCount,
-        ...(result.chunks[0]
-          ? { embeddingDimension: result.chunks[0].embedding.length }
-          : {}),
+        // result.chunks is guaranteed non-empty by the check above.
+        embeddingDimension: result.chunks[0].embedding.length,
       },
     });
 
@@ -358,6 +369,7 @@ export class DocumentsService {
     query: string,
     limit = 5,
     filters?: SearchFilters,
+    maxDistance = DEFAULT_MAX_DISTANCE,
   ): Promise<DocumentChunkMatch[]> {
     const { embedding } = await this.aiClientService.embedQuery(query);
     const vector = toVectorLiteral(embedding);
@@ -365,10 +377,18 @@ export class DocumentsService {
     // Only INDEXED documents: PROCESSING means the row exists but chunks
     // may still be mid-insert; FAILED shouldn't happen (see create() above)
     // but is excluded defensively.
+    //
+    // The cosine-distance cap keeps LIMIT from always returning `limit`
+    // chunks even when the corpus has nothing relevant to the query — those
+    // chunks would otherwise flow straight into ai-processing.processor.ts's
+    // reply-generation prompt as "relevant context". The full `<=>`
+    // expression is repeated rather than referencing the `distance` SELECT
+    // alias because Postgres evaluates WHERE before SELECT aliases exist.
     const conditions: Prisma.Sql[] = [
       Prisma.sql`d."userId" = ${userId}`,
       Prisma.sql`dc."embedding" IS NOT NULL`,
       Prisma.sql`d."status" = 'INDEXED'`,
+      Prisma.sql`(dc.embedding <=> ${vector}::vector) <= ${maxDistance}`,
     ];
 
     // "Metadata Filtering" pass alongside the vector search, not after it —
@@ -421,6 +441,12 @@ export class DocumentsService {
     return matches;
   }
 }
+
+// pgvector's `<=>` is cosine distance (0 = identical, 2 = opposite). 0.8 is
+// deliberately permissive — cutting only chunks that are essentially
+// unrelated to the query — since there's no tuned/tested threshold for this
+// corpus yet; callers needing tighter precision can pass a lower value.
+const DEFAULT_MAX_DISTANCE = 0.8;
 
 function toVectorLiteral(embedding: number[]): string {
   return `[${embedding.join(',')}]`;

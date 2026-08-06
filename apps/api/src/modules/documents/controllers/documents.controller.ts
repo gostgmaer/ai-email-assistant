@@ -39,7 +39,10 @@ export class DocumentsController {
     summary: 'Upload and process a document (PDF/DOCX/TXT/MD)',
   })
   @ApiResponse({ status: 201, description: 'The processed document' })
-  @ApiResponse({ status: 422, description: 'Unsupported document type' })
+  @ApiResponse({
+    status: 422,
+    description: 'Unsupported document type, or no extractable text found',
+  })
   @ApiResponse({
     status: 502,
     description: 'The AI service failed or is unreachable',
@@ -75,13 +78,19 @@ export class DocumentsController {
     @CurrentUser() user: JwtPayload,
     @Query() query: SearchDocumentsDto,
   ) {
-    return this.documentsService.search(user.sub, query.q, query.limit, {
-      category: query.category,
-      documentType: query.documentType,
-      sourceType: query.sourceType,
-      chunkType: query.chunkType,
-      tags: query.tags,
-    });
+    return this.documentsService.search(
+      user.sub,
+      query.q,
+      query.limit,
+      {
+        category: query.category,
+        documentType: query.documentType,
+        sourceType: query.sourceType,
+        chunkType: query.chunkType,
+        tags: query.tags,
+      },
+      query.maxDistance,
+    );
   }
 
   @Get(':id')

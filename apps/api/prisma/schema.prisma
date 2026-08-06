@@ -437,6 +437,8 @@ model Document {
   @@index([sourceType])
   @@index([language])
   @@index([version])
+  @@index([documentType])
+  @@index([tags], type: Gin)
 }
 
 model DocumentChunk {

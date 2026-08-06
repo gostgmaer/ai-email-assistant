@@ -2,6 +2,7 @@ import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -68,4 +69,16 @@ export class SearchDocumentsDto {
       : value,
   )
   tags?: string[];
+
+  @ApiPropertyOptional({
+    default: 0.8,
+    description:
+      'Maximum cosine distance (0 = identical, 2 = opposite) — chunks less similar than this are dropped instead of always returning `limit` results',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(2)
+  maxDistance?: number;
 }
