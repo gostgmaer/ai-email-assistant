@@ -2,7 +2,10 @@ import { BadRequestException } from '@nestjs/common';
 
 import type { EmailAccountService } from '../../email-account/services/email-account.service';
 import type { NotificationService } from '../../notification/services/notification.service';
-import { WorkflowAction, WorkflowCondition } from '../types/workflow-rule.types';
+import {
+  WorkflowAction,
+  WorkflowCondition,
+} from '../types/workflow-rule.types';
 import { WorkflowRuleService } from './workflow-rule.service';
 
 describe('WorkflowRuleService', () => {
@@ -43,7 +46,11 @@ describe('WorkflowRuleService', () => {
     return { service, prisma, emailAccountService, notificationService };
   }
 
-  function rule(conditions: WorkflowCondition[], actions: WorkflowAction[], order = 0) {
+  function rule(
+    conditions: WorkflowCondition[],
+    actions: WorkflowAction[],
+    order = 0,
+  ) {
     return { id: `rule-${order}`, conditions, actions, order, enabled: true };
   }
 
@@ -51,7 +58,10 @@ describe('WorkflowRuleService', () => {
     it('returns null when no rule matches', async () => {
       const { service, prisma } = buildDeps();
       prisma.workflowRule.findMany.mockResolvedValue([
-        rule([{ field: 'category', operator: 'equals', value: 'Sales' }], [{ type: 'AUTO_REPLY' }]),
+        rule(
+          [{ field: 'category', operator: 'equals', value: 'Sales' }],
+          [{ type: 'AUTO_REPLY' }],
+        ),
       ]);
 
       const result = await service.evaluate(accountId, {
@@ -67,7 +77,11 @@ describe('WorkflowRuleService', () => {
       const { service, prisma } = buildDeps();
       prisma.workflowRule.findMany.mockResolvedValue([]);
 
-      await service.evaluate(accountId, { category: 'x', priority: 'x', sender: 'x' });
+      await service.evaluate(accountId, {
+        category: 'x',
+        priority: 'x',
+        sender: 'x',
+      });
 
       expect(prisma.workflowRule.findMany).toHaveBeenCalledWith({
         where: { accountId, enabled: true },
@@ -129,7 +143,13 @@ describe('WorkflowRuleService', () => {
       const { service, prisma } = buildDeps();
       prisma.workflowRule.findMany.mockResolvedValue([
         rule(
-          [{ field: 'sender', operator: 'contains', value: 'BOSS@Company.com' }],
+          [
+            {
+              field: 'sender',
+              operator: 'contains',
+              value: 'BOSS@Company.com',
+            },
+          ],
           [{ type: 'NOTIFY', userId: 'u1' }],
         ),
       ]);
@@ -167,7 +187,10 @@ describe('WorkflowRuleService', () => {
       const { service, prisma } = buildDeps();
       prisma.accountMember.findUnique.mockResolvedValue({ id: 'member-1' });
 
-      await service.executeActions([{ type: 'ASSIGN_TO', userId: 'u2' }], context);
+      await service.executeActions(
+        [{ type: 'ASSIGN_TO', userId: 'u2' }],
+        context,
+      );
 
       expect(prisma.emailThread.update).toHaveBeenCalledWith({
         where: { id: context.threadId },
@@ -179,7 +202,10 @@ describe('WorkflowRuleService', () => {
       const { service, prisma } = buildDeps();
       prisma.accountMember.findUnique.mockResolvedValue(null);
 
-      await service.executeActions([{ type: 'ASSIGN_TO', userId: 'stranger' }], context);
+      await service.executeActions(
+        [{ type: 'ASSIGN_TO', userId: 'stranger' }],
+        context,
+      );
 
       expect(prisma.emailThread.update).not.toHaveBeenCalled();
     });
@@ -192,6 +218,7 @@ describe('WorkflowRuleService', () => {
         context,
       );
 
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
       expect(notificationService.create).toHaveBeenCalledWith(
         'u3',
         'Workflow rule matched',
@@ -226,10 +253,13 @@ describe('WorkflowRuleService', () => {
 
       await service.create(userId, accountId, {
         name: 'Test',
-        conditions: [{ field: 'category', operator: 'equals', value: 'Support' }],
+        conditions: [
+          { field: 'category', operator: 'equals', value: 'Support' },
+        ],
         actions: [{ type: 'AUTO_REPLY' }],
       });
 
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
       expect(emailAccountService.getOwnedAccountOrThrow).toHaveBeenCalledWith(
         userId,
         accountId,
@@ -243,7 +273,11 @@ describe('WorkflowRuleService', () => {
         service.create(userId, accountId, {
           name: 'Test',
           conditions: [
-            { field: 'not-a-real-field' as never, operator: 'equals', value: 'x' },
+            {
+              field: 'not-a-real-field' as never,
+              operator: 'equals',
+              value: 'x',
+            },
           ],
           actions: [{ type: 'AUTO_REPLY' }],
         }),

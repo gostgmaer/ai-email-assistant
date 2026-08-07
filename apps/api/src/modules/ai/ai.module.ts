@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { AgentModule } from '../agent';
 import { AuthModule } from '../auth';
 import { CalendarModule } from '../calendar';
 import { DocumentsModule } from '../documents';
@@ -31,6 +32,9 @@ import { ContactMemoryService } from './services/contact-memory.service';
     // -> AiModule is already reachable (see above) — this new edge closes
     // that back into a real cycle through AiModule itself.
     forwardRef(() => WorkflowModule),
+    // Same reasoning as WorkflowModule above — AgentModule -> EmailAccountModule
+    // -> AuthModule -> CalendarModule -> AiModule closes another cycle.
+    forwardRef(() => AgentModule),
   ],
 
   controllers: [AiController],

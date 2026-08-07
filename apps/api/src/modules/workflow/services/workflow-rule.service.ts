@@ -86,7 +86,7 @@ export class WorkflowRuleService {
         enabled: data.enabled ?? true,
         order: data.order ?? 0,
         conditions: data.conditions as unknown as InputJsonValue,
-        actions: data.actions as unknown as InputJsonValue,
+        actions: data.actions,
       },
     });
   }

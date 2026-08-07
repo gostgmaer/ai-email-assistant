@@ -73,7 +73,7 @@ export interface WorkflowCondition {
 }
 
 export type WorkflowAction =
-  | { type: "AUTO_REPLY" }
+  | { type: "AUTO_REPLY"; agentId?: string }
   | { type: "ASSIGN_TO"; userId: string }
   | { type: "NOTIFY"; userId: string; message?: string }
   | { type: "REQUIRE_APPROVAL" };
@@ -88,6 +88,16 @@ export interface WorkflowRule {
   order: number;
   conditions: WorkflowCondition[];
   actions: WorkflowAction[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Agent {
+  id: string;
+  accountId: string;
+  name: string;
+  systemPrompt: string;
+  enabled: boolean;
   createdAt: string;
   updatedAt: string;
 }

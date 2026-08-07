@@ -74,6 +74,18 @@ export type AccountMember = Prisma.AccountMemberModel
  */
 export type WorkflowRule = Prisma.WorkflowRuleModel
 /**
+ * Model Agent
+ * *
+ *  * AI Agents (v2.0 §4) — a named persona (system prompt), not new
+ *  * generation infrastructure. Layers on the existing reply capability:
+ *  * WorkflowRule's AUTO_REPLY action can carry an agentId, and when it does,
+ *  * apps/ai's reply.md default prompt is replaced entirely by this agent's
+ *  * systemPrompt (see ReplyRequest.system_prompt_override). Genuinely
+ *  * autonomous multi-step agents beyond what a WorkflowRule chain already
+ *  * does are deliberately out of scope — see docs/v2.0-plan.md §4.
+ */
+export type Agent = Prisma.AgentModel
+/**
  * Model EmailCredential
  * 
  */

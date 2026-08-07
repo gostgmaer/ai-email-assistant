@@ -22,5 +22,7 @@ import { Transform } from 'class-transformer';
  * the same per-element coercion.
  */
 export function passthroughArray(): PropertyDecorator {
-  return Transform(({ obj, key }: { obj: Record<string, unknown>; key: string }) => obj[key]);
+  return Transform(
+    ({ obj, key }: { obj: Record<string, unknown>; key: string }) => obj[key],
+  );
 }

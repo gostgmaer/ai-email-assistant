@@ -4,6 +4,9 @@ import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
 import { AIJobs, QueueNames } from '../../../infrastructure/queue';
+// Leaf-file import rather than the '../../agent' barrel — see the
+// comment below on WorkflowRuleService for why.
+import { AgentService } from '../../agent/services/agent.service';
 // Leaf-file import rather than the '../../calendar' barrel — see the
 // comment in meeting-scheduling.service.ts for why (avoids a Jest-only
 // circular require through calendar.module.ts <-> ai.module.ts).
@@ -53,6 +56,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly meetingSchedulingService: MeetingSchedulingService,
     @Inject(forwardRef(() => WorkflowRuleService))
     private readonly workflowRuleService: WorkflowRuleService,
+    @Inject(forwardRef(() => AgentService))
+    private readonly agentService: AgentService,
   ) {
     super();
   }
@@ -135,6 +140,26 @@ export class AiProcessingProcessor extends WorkerHost {
       account.autoScheduleMeetings,
     );
 
+    // Workflow Builder (v2.0 §3): evaluated here (before reply generation,
+    // not after) specifically so an AI Agent persona (v2.0 §4) attached to
+    // a matched rule's AUTO_REPLY action can influence the reply's actual
+    // wording, not just the later send-vs-draft decision.
+    const matchedActions = await this.workflowRuleService.evaluate(account.id, {
+      category: classification.category,
+      priority: classification.priority,
+      sender: sender.address,
+    });
+
+    const autoReplyAction = matchedActions?.find(
+      (action) => action.type === 'AUTO_REPLY',
+    );
+    const agentSystemPrompt = autoReplyAction?.agentId
+      ? ((await this.agentService.getEnabledSystemPrompt(
+          account.id,
+          autoReplyAction.agentId,
+        )) ?? undefined)
+      : undefined;
+
     const contactMemory = await this.aiClientService.contactMemory(
       subject,
       thread,
@@ -173,6 +198,7 @@ export class AiProcessingProcessor extends WorkerHost {
       subject,
       thread,
       instruction,
+      agentSystemPrompt,
     );
 
     const generationMetadata: GenerationMetadata = {
@@ -191,14 +217,11 @@ export class AiProcessingProcessor extends WorkerHost {
 
     // Workflow Builder (v2.0 §3): the account's WorkflowRule rows decide
     // whether this reply auto-sends (and any other actions — assign,
-    // notify). No matching rule falls through to the existing default:
-    // draft for review.
-    const matchedActions = await this.workflowRuleService.evaluate(account.id, {
-      category: classification.category,
-      priority: classification.priority,
-      sender: sender.address,
-    });
-
+    // notify). matchedActions was already computed above (before reply
+    // generation, so an agent persona could influence the reply's
+    // wording) — executing it here just runs the actions themselves. No
+    // matching rule falls through to the existing default: draft for
+    // review.
     let isSafeToAutoSend = false;
     if (matchedActions) {
       const { autoReply } = await this.workflowRuleService.executeActions(

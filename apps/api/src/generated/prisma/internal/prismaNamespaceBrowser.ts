@@ -58,6 +58,7 @@ export const ModelName = {
   EmailAccount: 'EmailAccount',
   AccountMember: 'AccountMember',
   WorkflowRule: 'WorkflowRule',
+  Agent: 'Agent',
   EmailCredential: 'EmailCredential',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
@@ -198,6 +199,19 @@ export const WorkflowRuleScalarFieldEnum = {
 } as const
 
 export type WorkflowRuleScalarFieldEnum = (typeof WorkflowRuleScalarFieldEnum)[keyof typeof WorkflowRuleScalarFieldEnum]
+
+
+export const AgentScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  name: 'name',
+  systemPrompt: 'systemPrompt',
+  enabled: 'enabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
 
 
 export const EmailCredentialScalarFieldEnum = {

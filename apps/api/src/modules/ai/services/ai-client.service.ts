@@ -277,11 +277,15 @@ export class AiClientService {
     subject: string,
     thread: EmailMessageDto[],
     instruction?: string,
+    // AI Agents (v2.0 §4): when set, replaces apps/ai's default reply.md
+    // prompt entirely for this call — see ReplyRequest.system_prompt_override.
+    systemPromptOverride?: string,
   ): Promise<GenerateReplyResponse> {
     const res = await this.post<RawReplyResponse>('/email/reply', {
       subject,
       thread,
       instruction,
+      system_prompt_override: systemPromptOverride,
     });
 
     return {
