@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 
 import {
   AIJobs,
+  DigestJobs,
   DocumentJobs,
   EmailSyncJobs,
   NotificationJobs,
@@ -12,6 +13,9 @@ import { QueueNames } from './constants/queue.constants';
 
 const BACKGROUND_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const DOCUMENT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+// 08:00 daily — this codebase's first cron-pattern repeatable job (every
+// other scheduled job so far uses a fixed `every` interval instead).
+const DAILY_DIGEST_CRON = '0 8 * * *';
 
 /** Everything DocumentsProcessingProcessor needs to call the AI service and
  * update the Document row, without re-querying the DB or re-deriving the
@@ -47,6 +51,7 @@ export class QueueService {
     private readonly notificationQueue: Queue,
     @InjectQueue(QueueNames.Documents)
     private readonly documentsQueue: Queue,
+    @InjectQueue(QueueNames.Digest) private readonly digestQueue: Queue,
   ) {}
 
   async enqueueInitialSync(accountId: string): Promise<void> {
@@ -129,6 +134,25 @@ export class QueueService {
     });
   }
 
+  /** Idempotent: registers the recurring daily digest build if not already
+   * scheduled. Redis-backed, so this is safe to call from every process
+   * (api + worker) on startup without double-scheduling. */
+  async scheduleDailyDigest(): Promise<void> {
+    await this.digestQueue.upsertJobScheduler(
+      'daily-digest-build',
+      { pattern: DAILY_DIGEST_CRON },
+      { name: DigestJobs.BuildAll, data: {} },
+    );
+  }
+
+  async enqueueDigestForUser(userId: string): Promise<void> {
+    await this.digestQueue.add(
+      DigestJobs.SendForUser,
+      { userId },
+      { jobId: `${DigestJobs.SendForUser}-${userId}-${Date.now()}` },
+    );
+  }
+
   getQueue(name: (typeof QueueNames)[keyof typeof QueueNames]): Queue {
     switch (name) {
       case QueueNames.EmailSync:
@@ -139,6 +163,8 @@ export class QueueService {
         return this.notificationQueue;
       case QueueNames.Documents:
         return this.documentsQueue;
+      case QueueNames.Digest:
+        return this.digestQueue;
     }
   }
 }

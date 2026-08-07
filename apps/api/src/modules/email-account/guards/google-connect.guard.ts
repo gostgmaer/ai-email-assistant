@@ -22,6 +22,7 @@ export class GoogleConnectGuard extends AuthGuard('google-connect') {
 
     const user = req.user as JwtPayload;
     const state = await this.connectStateService.createState(
+      'email-connect',
       'GOOGLE',
       user.sub,
     );

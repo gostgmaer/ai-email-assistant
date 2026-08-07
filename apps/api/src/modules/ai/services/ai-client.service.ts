@@ -50,6 +50,24 @@ export interface ClassifyResponse {
   usage: TokenUsage;
 }
 
+export interface ExtractionResult {
+  people: string[];
+  emails: string[];
+  phones: string[];
+  companies: string[];
+  dates: string[];
+  urls: string[];
+  tasks: string[];
+  meetingRequests: string[];
+}
+
+export interface ExtractResponse {
+  extraction: ExtractionResult;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
 export interface ContactFacts {
   role: string | null;
   company: string | null;
@@ -103,6 +121,24 @@ interface RawRewriteResponse {
 
 interface RawClassifyResponse {
   classification: ClassificationResult;
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
+interface RawExtractionResult {
+  people: string[];
+  emails: string[];
+  phones: string[];
+  companies: string[];
+  dates: string[];
+  urls: string[];
+  tasks: string[];
+  meeting_requests: string[];
+}
+
+interface RawExtractResponse {
+  extraction: RawExtractionResult;
   provider: string;
   model: string;
   usage: RawUsage;
@@ -256,6 +292,32 @@ export class AiClientService {
 
     return {
       classification: res.classification,
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
+  }
+
+  async extract(
+    subject: string,
+    thread: EmailMessageDto[],
+  ): Promise<ExtractResponse> {
+    const res = await this.post<RawExtractResponse>('/email/extract', {
+      subject,
+      thread,
+    });
+
+    return {
+      extraction: {
+        people: res.extraction.people,
+        emails: res.extraction.emails,
+        phones: res.extraction.phones,
+        companies: res.extraction.companies,
+        dates: res.extraction.dates,
+        urls: res.extraction.urls,
+        tasks: res.extraction.tasks,
+        meetingRequests: res.extraction.meeting_requests,
+      },
       provider: res.provider,
       model: res.model,
       usage: mapUsage(res.usage),

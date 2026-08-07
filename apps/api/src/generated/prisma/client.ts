@@ -70,6 +70,16 @@ export type EmailAccount = Prisma.EmailAccountModel
  */
 export type EmailCredential = Prisma.EmailCredentialModel
 /**
+ * Model CalendarAccount
+ * 
+ */
+export type CalendarAccount = Prisma.CalendarAccountModel
+/**
+ * Model CalendarCredential
+ * 
+ */
+export type CalendarCredential = Prisma.CalendarCredentialModel
+/**
  * Model MailFolder
  * 
  */
@@ -84,6 +94,11 @@ export type EmailThread = Prisma.EmailThreadModel
  * 
  */
 export type EmailMessage = Prisma.EmailMessageModel
+/**
+ * Model Task
+ * 
+ */
+export type Task = Prisma.TaskModel
 /**
  * Model ContactMemory
  * 

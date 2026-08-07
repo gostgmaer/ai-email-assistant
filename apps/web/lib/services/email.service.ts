@@ -9,6 +9,8 @@ export interface ListThreadsParams {
   accountId?: string;
   folderType?: string;
   q?: string;
+  priority?: string;
+  snoozed?: boolean;
   page?: number;
   limit?: number;
 }
@@ -20,6 +22,8 @@ export async function listThreads(
   if (params.accountId) query.set("accountId", params.accountId);
   if (params.folderType) query.set("folderType", params.folderType);
   if (params.q) query.set("q", params.q);
+  if (params.priority) query.set("priority", params.priority);
+  if (params.snoozed) query.set("snoozed", "true");
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
   const qs = query.toString();
@@ -28,6 +32,30 @@ export async function listThreads(
 
 export async function getThread(id: string): Promise<EmailThreadDetail> {
   return apiFetch<EmailThreadDetail>(`/email/threads/${id}`);
+}
+
+export async function snoozeThread(id: string, until: string): Promise<void> {
+  await apiFetch(`/email/threads/${id}/snooze`, {
+    method: "PATCH",
+    body: { until },
+  });
+}
+
+export async function unsnoozeThread(id: string): Promise<void> {
+  await apiFetch(`/email/threads/${id}/unsnooze`, { method: "PATCH" });
+}
+
+export interface FollowUpCandidate {
+  threadId: string;
+  subject: string | null;
+  lastMessageAt: string | null;
+  daysSinceLastMessage: number | null;
+  account: { id: string; provider: string; email: string };
+  relatedMeetingRequests: { id: string; description: string }[];
+}
+
+export async function listFollowUps(): Promise<FollowUpCandidate[]> {
+  return apiFetch<FollowUpCandidate[]>("/email/follow-ups");
 }
 
 export interface MessageWithAccount extends EmailMessage {

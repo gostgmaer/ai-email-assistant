@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState } from "@/components/ui/EmptyState";
 import {
   ArchiveIcon,
+  ClockIcon,
   DraftIcon,
   InboxIcon,
   SendIcon,
@@ -44,6 +45,8 @@ export function ThreadListPane() {
   const folderTypeParam = searchParams.get("folderType");
   const folderType = isFolderType(folderTypeParam) ? folderTypeParam : "INBOX";
   const accountId = searchParams.get("accountId") ?? undefined;
+  const priority = searchParams.get("priority") ?? undefined;
+  const snoozed = searchParams.get("snoozed") === "true";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
 
   // The active thread, if any — highlighted in the list and used to keep
@@ -73,9 +76,17 @@ export function ThreadListPane() {
     isError,
     error,
   } = useQuery({
-    queryKey: ["threads", { folderType, accountId, q, page }],
+    queryKey: ["threads", { folderType, accountId, priority, snoozed, q, page }],
     queryFn: () =>
-      listThreads({ folderType, accountId, q: q || undefined, page, limit: 25 }),
+      listThreads({
+        folderType,
+        accountId,
+        priority,
+        snoozed,
+        q: q || undefined,
+        page,
+        limit: 25,
+      }),
     placeholderData: (previous) => previous,
   });
 
@@ -85,13 +96,17 @@ export function ThreadListPane() {
         <div className="flex gap-1 overflow-x-auto">
           {FOLDER_TABS.map((tab) => {
             const Icon = tab.icon;
-            const active = folderType === tab.type;
+            const active = !snoozed && folderType === tab.type;
             return (
               <button
                 key={tab.type}
                 type="button"
                 onClick={() =>
-                  updateParams({ folderType: tab.type, page: undefined })
+                  updateParams({
+                    folderType: tab.type,
+                    snoozed: undefined,
+                    page: undefined,
+                  })
                 }
                 className={clsx(
                   "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
@@ -105,28 +120,63 @@ export function ThreadListPane() {
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() =>
+              updateParams({ snoozed: snoozed ? undefined : "true", page: undefined })
+            }
+            className={clsx(
+              "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+              snoozed
+                ? "bg-indigo-600 text-white"
+                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200",
+            )}
+          >
+            <ClockIcon className="h-3.5 w-3.5" />
+            Snoozed
+          </button>
         </div>
 
-        {accounts && accounts.length > 1 && (
+        <div className="flex gap-2">
+          {accounts && accounts.length > 1 && (
+            <select
+              value={accountId ?? ""}
+              onChange={(event) =>
+                updateParams({
+                  accountId: event.target.value || undefined,
+                  page: undefined,
+                })
+              }
+              className="w-full rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-xs text-zinc-600"
+              aria-label="Filter by account"
+            >
+              <option value="">All accounts</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.email}
+                </option>
+              ))}
+            </select>
+          )}
+
           <select
-            value={accountId ?? ""}
+            value={priority ?? ""}
             onChange={(event) =>
               updateParams({
-                accountId: event.target.value || undefined,
+                priority: event.target.value || undefined,
                 page: undefined,
               })
             }
             className="w-full rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-xs text-zinc-600"
-            aria-label="Filter by account"
+            aria-label="Filter by priority"
           >
-            <option value="">All accounts</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.email}
-              </option>
-            ))}
+            <option value="">Any priority</option>
+            <option value="Urgent">Urgent</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
           </select>
-        )}
+        </div>
       </div>
 
       {isLoading && <ThreadListSkeleton />}
@@ -156,6 +206,7 @@ export function ThreadListPane() {
                 key={thread.id}
                 thread={thread}
                 active={thread.id === activeThreadId}
+                showAccountBadge={!accountId && (accounts?.length ?? 0) > 1}
               />
             ))}
           </div>

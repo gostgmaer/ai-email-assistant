@@ -61,11 +61,13 @@ model User {
   deletedAt DateTime?
 
   emailAccounts      EmailAccount[]
+  calendarAccounts   CalendarAccount[]
   refreshTokens      RefreshToken[]
   notifications      Notification[]
   verificationTokens VerificationToken[]
   contactMemories    ContactMemory[]
   documents          Document[]
+  tasks              Task[]
 
   @@index([createdAt])
 }
@@ -195,6 +197,53 @@ model EmailCredential {
   updatedAt DateTime @updatedAt
 }
 
+enum CalendarProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+// Deliberately separate from EmailAccount, not a calendar-scoped extension
+// of it — a user may want calendar access without granting mail access (or
+// vice versa), and Google/Microsoft both treat these as independently
+// grantable OAuth scopes. See docs/v1.2-plan.md's Calendar Integration
+// section for the design rationale.
+model CalendarAccount {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider CalendarProvider
+
+  email       String
+  displayName String?
+
+  isPrimary Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  credential CalendarCredential?
+
+  @@unique([provider, email])
+  @@index([userId])
+}
+
+model CalendarCredential {
+  id String @id @default(uuid())
+
+  accountId String          @unique
+  account   CalendarAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model MailFolder {
   id String @id @default(uuid())
 
@@ -245,13 +294,21 @@ model EmailThread {
 
   lastMessageAt DateTime?
 
+  // Set to hide this thread from the default inbox view until this time —
+  // purely a query-time filter (see InboxService.listThreads), not a job:
+  // there's nothing to actively "resurface", the thread just stops being
+  // excluded once this timestamp passes. Null means not snoozed.
+  snoozedUntil DateTime?
+
   messages EmailMessage[]
+  tasks    Task[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([accountId, providerThreadId])
   @@index([folderId])
+  @@index([snoozedUntil])
 }
 
 model EmailMessage {
@@ -297,12 +354,71 @@ model EmailMessage {
   /// documents: [{ documentId, chunkId, filename, distance }] }.
   generationMetadata Json?
 
+  // Persisted output of the classify AI capability (previously computed on
+  // every processed message and discarded — see AiProcessingProcessor).
+  // Loosely-typed strings, not enums: mirrors ClassificationResult on the
+  // AI service side, which isn't constrained to a fixed value set either.
+  category  String?
+  priority  String?
+  sentiment String?
+  isSpam    Boolean @default(false)
+
+  tasks Task[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([threadId, providerMessageId])
   @@index([threadId])
   @@index([inReplyToMessageId])
+  @@index([priority])
+}
+
+enum TaskType {
+  ACTION_ITEM
+  MEETING_REQUEST
+}
+
+enum TaskStatus {
+  PENDING
+  DONE
+  DISMISSED
+}
+
+// Extracted from the /email/extract AI capability (tasks + meeting_requests)
+// — apps/ai already computes this per message; this model is what persists
+// it instead of discarding it, same story as EmailMessage's classification
+// fields above. See docs/v1.2-plan.md's "AI Task Extraction" section.
+model Task {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Both nullable and SetNull on delete: a Task should outlive the message
+  // it was extracted from (e.g. still shows in the user's action items
+  // after the source email is deleted), not cascade-delete with it.
+  emailMessageId String?
+  emailMessage   EmailMessage? @relation(fields: [emailMessageId], references: [id], onDelete: SetNull)
+
+  threadId String?
+  thread   EmailThread? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+
+  type TaskType
+
+  description String
+
+  dueDate DateTime?
+
+  status      TaskStatus @default(PENDING)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([emailMessageId])
+  @@index([threadId])
 }
 
 model ContactMemory {

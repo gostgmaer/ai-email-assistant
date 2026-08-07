@@ -92,6 +92,7 @@ export class MicrosoftConnectStrategy extends PassportStrategy(
 
     const state = typeof req.query.state === 'string' ? req.query.state : '';
     const userId = await this.connectStateService.verifyState(
+      'email-connect',
       state,
       'MICROSOFT',
     );

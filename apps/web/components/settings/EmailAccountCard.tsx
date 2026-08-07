@@ -3,12 +3,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { EmailAccount } from "@/lib/api/types";
-
-const PROVIDER_LABEL: Record<EmailAccount["provider"], string> = {
-  GOOGLE: "Gmail",
-  MICROSOFT: "Outlook",
-  IMAP: "IMAP",
-};
+import { providerLabel } from "@/lib/utils/format";
 
 const STATUS_STYLE: Record<EmailAccount["syncStatus"], string> = {
   IDLE: "bg-emerald-50 text-emerald-700",
@@ -109,7 +104,7 @@ export function EmailAccountCard({
             </span>
           </div>
           <p className="text-xs text-zinc-500">
-            {PROVIDER_LABEL[account.provider]}
+            {providerLabel(account.provider)}
             {account.lastSyncedAt &&
               ` · last synced ${new Date(account.lastSyncedAt).toLocaleString()}`}
           </p>

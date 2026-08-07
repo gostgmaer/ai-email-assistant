@@ -3,18 +3,33 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { ChevronLeftIcon, SparklesIcon } from "@/components/icons";
+import { ChevronLeftIcon, ClockIcon, SparklesIcon } from "@/components/icons";
 import { ReplyBox } from "@/components/inbox/ReplyBox";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner, Spinner } from "@/components/ui/Spinner";
 import { summarize, toAiThreadMessage } from "@/lib/services/ai.service";
-import { getThread, markMessageRead } from "@/lib/services/email.service";
-import { formatDateTime, participantListLabel } from "@/lib/utils/format";
+import {
+  getThread,
+  markMessageRead,
+  snoozeThread,
+  unsnoozeThread,
+} from "@/lib/services/email.service";
+import {
+  formatDateTime,
+  participantListLabel,
+  providerLabel,
+} from "@/lib/utils/format";
+
+const SNOOZE_PRESETS: { label: string; hoursFromNow: number }[] = [
+  { label: "Later today (+3h)", hoursFromNow: 3 },
+  { label: "Tomorrow morning", hoursFromNow: 18 },
+  { label: "Next week", hoursFromNow: 24 * 7 },
+];
 
 // Email HTML is untrusted content — sanitize/render client-only, never on the server.
 const MessageBody = dynamic(
@@ -24,6 +39,7 @@ const MessageBody = dynamic(
 
 export default function ThreadPage() {
   const { threadId } = useParams<{ threadId: string }>();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -40,6 +56,22 @@ export default function ThreadPage() {
   });
 
   const markReadMutation = useMutation({ mutationFn: markMessageRead });
+
+  const snoozeMutation = useMutation({
+    mutationFn: (until: string) => snoozeThread(threadId, until),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["threads"] });
+      router.push("/inbox");
+    },
+  });
+
+  const unsnoozeMutation = useMutation({
+    mutationFn: () => unsnoozeThread(threadId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["threads"] });
+      void queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+    },
+  });
 
   useEffect(() => {
     if (!thread) return;
@@ -80,6 +112,9 @@ export default function ThreadPage() {
   }
 
   const lastMessage = thread.messages[thread.messages.length - 1];
+  const isSnoozed = Boolean(
+    thread.snoozedUntil && new Date(thread.snoozedUntil) > new Date(),
+  );
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-zinc-50">
@@ -94,6 +129,48 @@ export default function ThreadPage() {
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-zinc-900">
           {thread.subject || "(no subject)"}
         </h1>
+        <span
+          title={`${providerLabel(thread.folder.account.provider)} · ${thread.folder.account.email}`}
+          className="hidden shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-500 sm:inline-block"
+        >
+          {thread.folder.account.email}
+        </span>
+        {isSnoozed ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => unsnoozeMutation.mutate()}
+            loading={unsnoozeMutation.isPending}
+          >
+            <ClockIcon className="h-4 w-4" />
+            Snoozed — unsnooze
+          </Button>
+        ) : (
+          <div className="relative">
+            <select
+              value=""
+              disabled={snoozeMutation.isPending}
+              onChange={(event) => {
+                const hours = Number(event.target.value);
+                if (!hours) return;
+                const until = new Date(
+                  Date.now() + hours * 60 * 60 * 1000,
+                ).toISOString();
+                snoozeMutation.mutate(until);
+              }}
+              aria-label="Snooze this thread"
+              className="appearance-none rounded-full border border-zinc-200 bg-zinc-50 py-1.5 pr-7 pl-3 text-xs font-medium text-zinc-600 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Snooze…</option>
+              {SNOOZE_PRESETS.map((preset) => (
+                <option key={preset.label} value={preset.hoursFromNow}>
+                  {preset.label}
+                </option>
+              ))}
+            </select>
+            <ClockIcon className="pointer-events-none absolute top-1/2 right-2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+          </div>
+        )}
         <Button
           variant="secondary"
           size="sm"

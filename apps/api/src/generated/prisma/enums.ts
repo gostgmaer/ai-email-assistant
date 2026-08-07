@@ -56,3 +56,28 @@ export const DocumentStatus = {
 } as const
 
 export type DocumentStatus = (typeof DocumentStatus)[keyof typeof DocumentStatus]
+
+
+export const CalendarProvider = {
+  GOOGLE: 'GOOGLE',
+  MICROSOFT: 'MICROSOFT'
+} as const
+
+export type CalendarProvider = (typeof CalendarProvider)[keyof typeof CalendarProvider]
+
+
+export const TaskType = {
+  ACTION_ITEM: 'ACTION_ITEM',
+  MEETING_REQUEST: 'MEETING_REQUEST'
+} as const
+
+export type TaskType = (typeof TaskType)[keyof typeof TaskType]
+
+
+export const TaskStatus = {
+  PENDING: 'PENDING',
+  DONE: 'DONE',
+  DISMISSED: 'DISMISSED'
+} as const
+
+export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus]

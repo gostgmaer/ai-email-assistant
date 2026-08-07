@@ -19,6 +19,13 @@ export const NotificationJobs = {
   SendEmail: 'send-email',
 } as const;
 
+export const DigestJobs = {
+  /** Repeatable job (cron, once daily): fans out a SendForUser job for
+   * every user with at least one active email account. */
+  BuildAll: 'build-all-digests',
+  SendForUser: 'send-digest-for-user',
+} as const;
+
 export const DocumentJobs = {
   /** Repeatable job: marks documents stuck at PROCESSING (a crashed or
    * never-finished upload) as FAILED once they're older than the stale

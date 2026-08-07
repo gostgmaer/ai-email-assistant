@@ -75,6 +75,14 @@ export interface EmailMessage {
   /** Set only on AI-generated replies (drafted or auto-sent) — null for
    * synced/manually-composed messages. */
   generationMetadata: GenerationMetadata | null;
+  /** Output of the classify AI capability. Null until AI processing has
+   * run for this message (see EmailMessage.aiProcessedAt). Loosely-typed
+   * strings, not fixed enums — mirrors the AI service's own classify
+   * response, which isn't constrained to a fixed value set. */
+  category: string | null;
+  priority: string | null;
+  sentiment: string | null;
+  isSpam: boolean;
 }
 
 export interface EmailThreadSummary {
@@ -84,6 +92,7 @@ export interface EmailThreadSummary {
   subject: string | null;
   snippet: string | null;
   lastMessageAt: string | null;
+  snoozedUntil: string | null;
   folder: {
     id: string;
     type: MailFolderType;
@@ -121,4 +130,37 @@ export interface Notification {
 
 export interface NotificationsPage extends Pagination {
   notifications: Notification[];
+}
+
+export type CalendarProvider = "GOOGLE" | "MICROSOFT";
+
+export interface CalendarAccount {
+  id: string;
+  provider: CalendarProvider;
+  email: string;
+  displayName: string | null;
+  isPrimary: boolean;
+  createdAt: string;
+}
+
+export interface BusyInterval {
+  start: string;
+  end: string;
+}
+
+export type TaskType = "ACTION_ITEM" | "MEETING_REQUEST";
+export type TaskStatus = "PENDING" | "DONE" | "DISMISSED";
+
+export interface Task {
+  id: string;
+  userId: string;
+  emailMessageId: string | null;
+  threadId: string | null;
+  type: TaskType;
+  description: string;
+  dueDate: string | null;
+  status: TaskStatus;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

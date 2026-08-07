@@ -403,9 +403,12 @@ export const ModelName = {
   RefreshToken: 'RefreshToken',
   EmailAccount: 'EmailAccount',
   EmailCredential: 'EmailCredential',
+  CalendarAccount: 'CalendarAccount',
+  CalendarCredential: 'CalendarCredential',
   MailFolder: 'MailFolder',
   EmailThread: 'EmailThread',
   EmailMessage: 'EmailMessage',
+  Task: 'Task',
   ContactMemory: 'ContactMemory',
   Document: 'Document',
   DocumentChunk: 'DocumentChunk'
@@ -424,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "emailCredential" | "mailFolder" | "emailThread" | "emailMessage" | "contactMemory" | "document" | "documentChunk"
+    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -872,6 +875,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CalendarAccount: {
+      payload: Prisma.$CalendarAccountPayload<ExtArgs>
+      fields: Prisma.CalendarAccountFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CalendarAccountFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CalendarAccountFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>
+        }
+        findFirst: {
+          args: Prisma.CalendarAccountFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CalendarAccountFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>
+        }
+        findMany: {
+          args: Prisma.CalendarAccountFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>[]
+        }
+        create: {
+          args: Prisma.CalendarAccountCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>
+        }
+        createMany: {
+          args: Prisma.CalendarAccountCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CalendarAccountCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>[]
+        }
+        delete: {
+          args: Prisma.CalendarAccountDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>
+        }
+        update: {
+          args: Prisma.CalendarAccountUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>
+        }
+        deleteMany: {
+          args: Prisma.CalendarAccountDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CalendarAccountUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CalendarAccountUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>[]
+        }
+        upsert: {
+          args: Prisma.CalendarAccountUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarAccountPayload>
+        }
+        aggregate: {
+          args: Prisma.CalendarAccountAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCalendarAccount>
+        }
+        groupBy: {
+          args: Prisma.CalendarAccountGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CalendarAccountGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CalendarAccountCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CalendarAccountCountAggregateOutputType> | number
+        }
+      }
+    }
+    CalendarCredential: {
+      payload: Prisma.$CalendarCredentialPayload<ExtArgs>
+      fields: Prisma.CalendarCredentialFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CalendarCredentialFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CalendarCredentialFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>
+        }
+        findFirst: {
+          args: Prisma.CalendarCredentialFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CalendarCredentialFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>
+        }
+        findMany: {
+          args: Prisma.CalendarCredentialFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>[]
+        }
+        create: {
+          args: Prisma.CalendarCredentialCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>
+        }
+        createMany: {
+          args: Prisma.CalendarCredentialCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CalendarCredentialCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>[]
+        }
+        delete: {
+          args: Prisma.CalendarCredentialDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>
+        }
+        update: {
+          args: Prisma.CalendarCredentialUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>
+        }
+        deleteMany: {
+          args: Prisma.CalendarCredentialDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CalendarCredentialUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CalendarCredentialUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>[]
+        }
+        upsert: {
+          args: Prisma.CalendarCredentialUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CalendarCredentialPayload>
+        }
+        aggregate: {
+          args: Prisma.CalendarCredentialAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCalendarCredential>
+        }
+        groupBy: {
+          args: Prisma.CalendarCredentialGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CalendarCredentialGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CalendarCredentialCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CalendarCredentialCountAggregateOutputType> | number
+        }
+      }
+    }
     MailFolder: {
       payload: Prisma.$MailFolderPayload<ExtArgs>
       fields: Prisma.MailFolderFieldRefs
@@ -1091,6 +1242,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EmailMessageCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EmailMessageCountAggregateOutputType> | number
+        }
+      }
+    }
+    Task: {
+      payload: Prisma.$TaskPayload<ExtArgs>
+      fields: Prisma.TaskFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TaskFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TaskFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>
+        }
+        findFirst: {
+          args: Prisma.TaskFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TaskFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>
+        }
+        findMany: {
+          args: Prisma.TaskFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>[]
+        }
+        create: {
+          args: Prisma.TaskCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>
+        }
+        createMany: {
+          args: Prisma.TaskCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TaskCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>[]
+        }
+        delete: {
+          args: Prisma.TaskDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>
+        }
+        update: {
+          args: Prisma.TaskUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>
+        }
+        deleteMany: {
+          args: Prisma.TaskDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TaskUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TaskUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>[]
+        }
+        upsert: {
+          args: Prisma.TaskUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskPayload>
+        }
+        aggregate: {
+          args: Prisma.TaskAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTask>
+        }
+        groupBy: {
+          args: Prisma.TaskGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TaskCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskCountAggregateOutputType> | number
         }
       }
     }
@@ -1454,6 +1679,34 @@ export const EmailCredentialScalarFieldEnum = {
 export type EmailCredentialScalarFieldEnum = (typeof EmailCredentialScalarFieldEnum)[keyof typeof EmailCredentialScalarFieldEnum]
 
 
+export const CalendarAccountScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  provider: 'provider',
+  email: 'email',
+  displayName: 'displayName',
+  isPrimary: 'isPrimary',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type CalendarAccountScalarFieldEnum = (typeof CalendarAccountScalarFieldEnum)[keyof typeof CalendarAccountScalarFieldEnum]
+
+
+export const CalendarCredentialScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CalendarCredentialScalarFieldEnum = (typeof CalendarCredentialScalarFieldEnum)[keyof typeof CalendarCredentialScalarFieldEnum]
+
+
 export const MailFolderScalarFieldEnum = {
   id: 'id',
   accountId: 'accountId',
@@ -1476,6 +1729,7 @@ export const EmailThreadScalarFieldEnum = {
   subject: 'subject',
   snippet: 'snippet',
   lastMessageAt: 'lastMessageAt',
+  snoozedUntil: 'snoozedUntil',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1499,11 +1753,32 @@ export const EmailMessageScalarFieldEnum = {
   inReplyToMessageId: 'inReplyToMessageId',
   aiProcessedAt: 'aiProcessedAt',
   generationMetadata: 'generationMetadata',
+  category: 'category',
+  priority: 'priority',
+  sentiment: 'sentiment',
+  isSpam: 'isSpam',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type EmailMessageScalarFieldEnum = (typeof EmailMessageScalarFieldEnum)[keyof typeof EmailMessageScalarFieldEnum]
+
+
+export const TaskScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  emailMessageId: 'emailMessageId',
+  threadId: 'threadId',
+  type: 'type',
+  description: 'description',
+  dueDate: 'dueDate',
+  status: 'status',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
 
 
 export const ContactMemoryScalarFieldEnum = {
@@ -1742,6 +2017,20 @@ export type ListEnumSyncStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
+ * Reference to a field of type 'CalendarProvider'
+ */
+export type EnumCalendarProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CalendarProvider'>
+    
+
+
+/**
+ * Reference to a field of type 'CalendarProvider[]'
+ */
+export type ListEnumCalendarProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CalendarProvider[]'>
+    
+
+
+/**
  * Reference to a field of type 'MailFolderType'
  */
 export type EnumMailFolderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MailFolderType'>
@@ -1752,6 +2041,34 @@ export type EnumMailFolderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$P
  * Reference to a field of type 'MailFolderType[]'
  */
 export type ListEnumMailFolderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MailFolderType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskType'
+ */
+export type EnumTaskTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskType'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskType[]'
+ */
+export type ListEnumTaskTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskStatus'
+ */
+export type EnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'TaskStatus[]'
+ */
+export type ListEnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus[]'>
     
 
 
@@ -1953,9 +2270,12 @@ export type GlobalOmitConfig = {
   refreshToken?: Prisma.RefreshTokenOmit
   emailAccount?: Prisma.EmailAccountOmit
   emailCredential?: Prisma.EmailCredentialOmit
+  calendarAccount?: Prisma.CalendarAccountOmit
+  calendarCredential?: Prisma.CalendarCredentialOmit
   mailFolder?: Prisma.MailFolderOmit
   emailThread?: Prisma.EmailThreadOmit
   emailMessage?: Prisma.EmailMessageOmit
+  task?: Prisma.TaskOmit
   contactMemory?: Prisma.ContactMemoryOmit
   document?: Prisma.DocumentOmit
   documentChunk?: Prisma.DocumentChunkOmit

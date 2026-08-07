@@ -6,14 +6,19 @@ import type { EmailThreadSummary } from "@/lib/api/types";
 import {
   formatRelativeDate,
   participantListLabel,
+  providerLabel,
 } from "@/lib/utils/format";
 
 export function ThreadRow({
   thread,
   active = false,
+  showAccountBadge = false,
 }: {
   thread: EmailThreadSummary;
   active?: boolean;
+  /** Only meaningful in the unified "all accounts" view — redundant noise
+   * once the list is already filtered to a single account. */
+  showAccountBadge?: boolean;
 }) {
   const latest = thread.messages[0];
   const unread = latest ? !latest.isRead : false;
@@ -25,6 +30,9 @@ export function ThreadRow({
   const senderLabel = participants?.length
     ? participantListLabel(participants)
     : thread.folder.account.email;
+  const priority = latest?.priority?.toLowerCase();
+  const isUrgent = priority === "urgent";
+  const isHighPriority = priority === "high";
 
   return (
     <Link
@@ -42,13 +50,25 @@ export function ThreadRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className={clsx(
-              "truncate text-sm",
-              unread ? "font-semibold text-zinc-900" : "text-zinc-700",
+          <span className="flex min-w-0 items-center gap-1.5">
+            {(isUrgent || isHighPriority) && (
+              <span
+                title={isUrgent ? "Urgent" : "High priority"}
+                className={clsx(
+                  "h-1.5 w-1.5 shrink-0 rounded-full",
+                  isUrgent ? "bg-red-500" : "bg-amber-500",
+                )}
+                aria-hidden="true"
+              />
             )}
-          >
-            {senderLabel}
+            <span
+              className={clsx(
+                "truncate text-sm",
+                unread ? "font-semibold text-zinc-900" : "text-zinc-700",
+              )}
+            >
+              {senderLabel}
+            </span>
           </span>
           <span className="shrink-0 text-[11px] text-zinc-400">
             {thread.lastMessageAt && formatRelativeDate(thread.lastMessageAt)}
@@ -70,6 +90,14 @@ export function ThreadRow({
           {thread._count.messages > 1 && (
             <span className="ml-1.5 rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
               {thread._count.messages}
+            </span>
+          )}
+          {showAccountBadge && (
+            <span
+              title={`${providerLabel(thread.folder.account.provider)} · ${thread.folder.account.email}`}
+              className="ml-1.5 rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500"
+            >
+              {thread.folder.account.email.split("@")[0]}
             </span>
           )}
         </p>

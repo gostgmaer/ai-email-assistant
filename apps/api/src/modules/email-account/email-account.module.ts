@@ -25,6 +25,6 @@ import { MicrosoftConnectStrategy } from './strategies/microsoft-connect.strateg
     MicrosoftConnectGuard,
   ],
 
-  exports: [EmailAccountService],
+  exports: [EmailAccountService, ConnectStateService],
 })
 export class EmailAccountModule {}

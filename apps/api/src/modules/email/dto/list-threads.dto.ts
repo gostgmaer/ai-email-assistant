@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -37,6 +38,26 @@ export class ListThreadsDto {
   @IsOptional()
   @IsString()
   q?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Restrict to threads with at least one message classified at this priority (low/medium/high/urgent — same values the classify AI capability returns, not a fixed enum)',
+  })
+  @IsOptional()
+  @IsString()
+  priority?: string;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Show only snoozed threads instead of the default view, which excludes them',
+  })
+  @IsOptional()
+  @Transform(
+    ({ value }: { value: unknown }) => value === 'true' || value === true,
+  )
+  @IsBoolean()
+  snoozed?: boolean = false;
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()

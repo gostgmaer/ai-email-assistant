@@ -32,6 +32,7 @@ export type EmailThreadMinAggregateOutputType = {
   subject: string | null
   snippet: string | null
   lastMessageAt: Date | null
+  snoozedUntil: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -44,6 +45,7 @@ export type EmailThreadMaxAggregateOutputType = {
   subject: string | null
   snippet: string | null
   lastMessageAt: Date | null
+  snoozedUntil: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -56,6 +58,7 @@ export type EmailThreadCountAggregateOutputType = {
   subject: number
   snippet: number
   lastMessageAt: number
+  snoozedUntil: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -70,6 +73,7 @@ export type EmailThreadMinAggregateInputType = {
   subject?: true
   snippet?: true
   lastMessageAt?: true
+  snoozedUntil?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +86,7 @@ export type EmailThreadMaxAggregateInputType = {
   subject?: true
   snippet?: true
   lastMessageAt?: true
+  snoozedUntil?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -94,6 +99,7 @@ export type EmailThreadCountAggregateInputType = {
   subject?: true
   snippet?: true
   lastMessageAt?: true
+  snoozedUntil?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -179,6 +185,7 @@ export type EmailThreadGroupByOutputType = {
   subject: string | null
   snippet: string | null
   lastMessageAt: Date | null
+  snoozedUntil: Date | null
   createdAt: Date
   updatedAt: Date
   _count: EmailThreadCountAggregateOutputType | null
@@ -212,11 +219,13 @@ export type EmailThreadWhereInput = {
   subject?: Prisma.StringNullableFilter<"EmailThread"> | string | null
   snippet?: Prisma.StringNullableFilter<"EmailThread"> | string | null
   lastMessageAt?: Prisma.DateTimeNullableFilter<"EmailThread"> | Date | string | null
+  snoozedUntil?: Prisma.DateTimeNullableFilter<"EmailThread"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"EmailThread"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EmailThread"> | Date | string
   account?: Prisma.XOR<Prisma.EmailAccountScalarRelationFilter, Prisma.EmailAccountWhereInput>
   folder?: Prisma.XOR<Prisma.MailFolderScalarRelationFilter, Prisma.MailFolderWhereInput>
   messages?: Prisma.EmailMessageListRelationFilter
+  tasks?: Prisma.TaskListRelationFilter
 }
 
 export type EmailThreadOrderByWithRelationInput = {
@@ -227,11 +236,13 @@ export type EmailThreadOrderByWithRelationInput = {
   subject?: Prisma.SortOrderInput | Prisma.SortOrder
   snippet?: Prisma.SortOrderInput | Prisma.SortOrder
   lastMessageAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  snoozedUntil?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   account?: Prisma.EmailAccountOrderByWithRelationInput
   folder?: Prisma.MailFolderOrderByWithRelationInput
   messages?: Prisma.EmailMessageOrderByRelationAggregateInput
+  tasks?: Prisma.TaskOrderByRelationAggregateInput
 }
 
 export type EmailThreadWhereUniqueInput = Prisma.AtLeast<{
@@ -246,11 +257,13 @@ export type EmailThreadWhereUniqueInput = Prisma.AtLeast<{
   subject?: Prisma.StringNullableFilter<"EmailThread"> | string | null
   snippet?: Prisma.StringNullableFilter<"EmailThread"> | string | null
   lastMessageAt?: Prisma.DateTimeNullableFilter<"EmailThread"> | Date | string | null
+  snoozedUntil?: Prisma.DateTimeNullableFilter<"EmailThread"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"EmailThread"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EmailThread"> | Date | string
   account?: Prisma.XOR<Prisma.EmailAccountScalarRelationFilter, Prisma.EmailAccountWhereInput>
   folder?: Prisma.XOR<Prisma.MailFolderScalarRelationFilter, Prisma.MailFolderWhereInput>
   messages?: Prisma.EmailMessageListRelationFilter
+  tasks?: Prisma.TaskListRelationFilter
 }, "id" | "accountId_providerThreadId">
 
 export type EmailThreadOrderByWithAggregationInput = {
@@ -261,6 +274,7 @@ export type EmailThreadOrderByWithAggregationInput = {
   subject?: Prisma.SortOrderInput | Prisma.SortOrder
   snippet?: Prisma.SortOrderInput | Prisma.SortOrder
   lastMessageAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  snoozedUntil?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.EmailThreadCountOrderByAggregateInput
@@ -279,6 +293,7 @@ export type EmailThreadScalarWhereWithAggregatesInput = {
   subject?: Prisma.StringNullableWithAggregatesFilter<"EmailThread"> | string | null
   snippet?: Prisma.StringNullableWithAggregatesFilter<"EmailThread"> | string | null
   lastMessageAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EmailThread"> | Date | string | null
+  snoozedUntil?: Prisma.DateTimeNullableWithAggregatesFilter<"EmailThread"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"EmailThread"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"EmailThread"> | Date | string
 }
@@ -289,11 +304,13 @@ export type EmailThreadCreateInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   account: Prisma.EmailAccountCreateNestedOneWithoutThreadsInput
   folder: Prisma.MailFolderCreateNestedOneWithoutThreadsInput
   messages?: Prisma.EmailMessageCreateNestedManyWithoutThreadInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadUncheckedCreateInput = {
@@ -304,9 +321,11 @@ export type EmailThreadUncheckedCreateInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutThreadInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadUpdateInput = {
@@ -315,11 +334,13 @@ export type EmailThreadUpdateInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   account?: Prisma.EmailAccountUpdateOneRequiredWithoutThreadsNestedInput
   folder?: Prisma.MailFolderUpdateOneRequiredWithoutThreadsNestedInput
   messages?: Prisma.EmailMessageUpdateManyWithoutThreadNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadUncheckedUpdateInput = {
@@ -330,9 +351,11 @@ export type EmailThreadUncheckedUpdateInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.EmailMessageUncheckedUpdateManyWithoutThreadNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadCreateManyInput = {
@@ -343,6 +366,7 @@ export type EmailThreadCreateManyInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -353,6 +377,7 @@ export type EmailThreadUpdateManyMutationInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -365,6 +390,7 @@ export type EmailThreadUncheckedUpdateManyInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -392,6 +418,7 @@ export type EmailThreadCountOrderByAggregateInput = {
   subject?: Prisma.SortOrder
   snippet?: Prisma.SortOrder
   lastMessageAt?: Prisma.SortOrder
+  snoozedUntil?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -404,6 +431,7 @@ export type EmailThreadMaxOrderByAggregateInput = {
   subject?: Prisma.SortOrder
   snippet?: Prisma.SortOrder
   lastMessageAt?: Prisma.SortOrder
+  snoozedUntil?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -416,6 +444,7 @@ export type EmailThreadMinOrderByAggregateInput = {
   subject?: Prisma.SortOrder
   snippet?: Prisma.SortOrder
   lastMessageAt?: Prisma.SortOrder
+  snoozedUntil?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -423,6 +452,11 @@ export type EmailThreadMinOrderByAggregateInput = {
 export type EmailThreadScalarRelationFilter = {
   is?: Prisma.EmailThreadWhereInput
   isNot?: Prisma.EmailThreadWhereInput
+}
+
+export type EmailThreadNullableScalarRelationFilter = {
+  is?: Prisma.EmailThreadWhereInput | null
+  isNot?: Prisma.EmailThreadWhereInput | null
 }
 
 export type EmailThreadCreateNestedManyWithoutAccountInput = {
@@ -523,16 +557,34 @@ export type EmailThreadUpdateOneRequiredWithoutMessagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EmailThreadUpdateToOneWithWhereWithoutMessagesInput, Prisma.EmailThreadUpdateWithoutMessagesInput>, Prisma.EmailThreadUncheckedUpdateWithoutMessagesInput>
 }
 
+export type EmailThreadCreateNestedOneWithoutTasksInput = {
+  create?: Prisma.XOR<Prisma.EmailThreadCreateWithoutTasksInput, Prisma.EmailThreadUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.EmailThreadCreateOrConnectWithoutTasksInput
+  connect?: Prisma.EmailThreadWhereUniqueInput
+}
+
+export type EmailThreadUpdateOneWithoutTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.EmailThreadCreateWithoutTasksInput, Prisma.EmailThreadUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.EmailThreadCreateOrConnectWithoutTasksInput
+  upsert?: Prisma.EmailThreadUpsertWithoutTasksInput
+  disconnect?: Prisma.EmailThreadWhereInput | boolean
+  delete?: Prisma.EmailThreadWhereInput | boolean
+  connect?: Prisma.EmailThreadWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmailThreadUpdateToOneWithWhereWithoutTasksInput, Prisma.EmailThreadUpdateWithoutTasksInput>, Prisma.EmailThreadUncheckedUpdateWithoutTasksInput>
+}
+
 export type EmailThreadCreateWithoutAccountInput = {
   id?: string
   providerThreadId: string
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   folder: Prisma.MailFolderCreateNestedOneWithoutThreadsInput
   messages?: Prisma.EmailMessageCreateNestedManyWithoutThreadInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadUncheckedCreateWithoutAccountInput = {
@@ -542,9 +594,11 @@ export type EmailThreadUncheckedCreateWithoutAccountInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutThreadInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadCreateOrConnectWithoutAccountInput = {
@@ -584,6 +638,7 @@ export type EmailThreadScalarWhereInput = {
   subject?: Prisma.StringNullableFilter<"EmailThread"> | string | null
   snippet?: Prisma.StringNullableFilter<"EmailThread"> | string | null
   lastMessageAt?: Prisma.DateTimeNullableFilter<"EmailThread"> | Date | string | null
+  snoozedUntil?: Prisma.DateTimeNullableFilter<"EmailThread"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"EmailThread"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EmailThread"> | Date | string
 }
@@ -594,10 +649,12 @@ export type EmailThreadCreateWithoutFolderInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   account: Prisma.EmailAccountCreateNestedOneWithoutThreadsInput
   messages?: Prisma.EmailMessageCreateNestedManyWithoutThreadInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadUncheckedCreateWithoutFolderInput = {
@@ -607,9 +664,11 @@ export type EmailThreadUncheckedCreateWithoutFolderInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutThreadInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadCreateOrConnectWithoutFolderInput = {
@@ -644,10 +703,12 @@ export type EmailThreadCreateWithoutMessagesInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   account: Prisma.EmailAccountCreateNestedOneWithoutThreadsInput
   folder: Prisma.MailFolderCreateNestedOneWithoutThreadsInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadUncheckedCreateWithoutMessagesInput = {
@@ -658,8 +719,10 @@ export type EmailThreadUncheckedCreateWithoutMessagesInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutThreadInput
 }
 
 export type EmailThreadCreateOrConnectWithoutMessagesInput = {
@@ -684,10 +747,12 @@ export type EmailThreadUpdateWithoutMessagesInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   account?: Prisma.EmailAccountUpdateOneRequiredWithoutThreadsNestedInput
   folder?: Prisma.MailFolderUpdateOneRequiredWithoutThreadsNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadUncheckedUpdateWithoutMessagesInput = {
@@ -698,8 +763,82 @@ export type EmailThreadUncheckedUpdateWithoutMessagesInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutThreadNestedInput
+}
+
+export type EmailThreadCreateWithoutTasksInput = {
+  id?: string
+  providerThreadId: string
+  subject?: string | null
+  snippet?: string | null
+  lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  account: Prisma.EmailAccountCreateNestedOneWithoutThreadsInput
+  folder: Prisma.MailFolderCreateNestedOneWithoutThreadsInput
+  messages?: Prisma.EmailMessageCreateNestedManyWithoutThreadInput
+}
+
+export type EmailThreadUncheckedCreateWithoutTasksInput = {
+  id?: string
+  accountId: string
+  folderId: string
+  providerThreadId: string
+  subject?: string | null
+  snippet?: string | null
+  lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  messages?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutThreadInput
+}
+
+export type EmailThreadCreateOrConnectWithoutTasksInput = {
+  where: Prisma.EmailThreadWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmailThreadCreateWithoutTasksInput, Prisma.EmailThreadUncheckedCreateWithoutTasksInput>
+}
+
+export type EmailThreadUpsertWithoutTasksInput = {
+  update: Prisma.XOR<Prisma.EmailThreadUpdateWithoutTasksInput, Prisma.EmailThreadUncheckedUpdateWithoutTasksInput>
+  create: Prisma.XOR<Prisma.EmailThreadCreateWithoutTasksInput, Prisma.EmailThreadUncheckedCreateWithoutTasksInput>
+  where?: Prisma.EmailThreadWhereInput
+}
+
+export type EmailThreadUpdateToOneWithWhereWithoutTasksInput = {
+  where?: Prisma.EmailThreadWhereInput
+  data: Prisma.XOR<Prisma.EmailThreadUpdateWithoutTasksInput, Prisma.EmailThreadUncheckedUpdateWithoutTasksInput>
+}
+
+export type EmailThreadUpdateWithoutTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  providerThreadId?: Prisma.StringFieldUpdateOperationsInput | string
+  subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  account?: Prisma.EmailAccountUpdateOneRequiredWithoutThreadsNestedInput
+  folder?: Prisma.MailFolderUpdateOneRequiredWithoutThreadsNestedInput
+  messages?: Prisma.EmailMessageUpdateManyWithoutThreadNestedInput
+}
+
+export type EmailThreadUncheckedUpdateWithoutTasksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  accountId?: Prisma.StringFieldUpdateOperationsInput | string
+  folderId?: Prisma.StringFieldUpdateOperationsInput | string
+  providerThreadId?: Prisma.StringFieldUpdateOperationsInput | string
+  subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.EmailMessageUncheckedUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadCreateManyAccountInput = {
@@ -709,6 +848,7 @@ export type EmailThreadCreateManyAccountInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -719,10 +859,12 @@ export type EmailThreadUpdateWithoutAccountInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   folder?: Prisma.MailFolderUpdateOneRequiredWithoutThreadsNestedInput
   messages?: Prisma.EmailMessageUpdateManyWithoutThreadNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadUncheckedUpdateWithoutAccountInput = {
@@ -732,9 +874,11 @@ export type EmailThreadUncheckedUpdateWithoutAccountInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.EmailMessageUncheckedUpdateManyWithoutThreadNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadUncheckedUpdateManyWithoutAccountInput = {
@@ -744,6 +888,7 @@ export type EmailThreadUncheckedUpdateManyWithoutAccountInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -755,6 +900,7 @@ export type EmailThreadCreateManyFolderInput = {
   subject?: string | null
   snippet?: string | null
   lastMessageAt?: Date | string | null
+  snoozedUntil?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -765,10 +911,12 @@ export type EmailThreadUpdateWithoutFolderInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   account?: Prisma.EmailAccountUpdateOneRequiredWithoutThreadsNestedInput
   messages?: Prisma.EmailMessageUpdateManyWithoutThreadNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadUncheckedUpdateWithoutFolderInput = {
@@ -778,9 +926,11 @@ export type EmailThreadUncheckedUpdateWithoutFolderInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.EmailMessageUncheckedUpdateManyWithoutThreadNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutThreadNestedInput
 }
 
 export type EmailThreadUncheckedUpdateManyWithoutFolderInput = {
@@ -790,6 +940,7 @@ export type EmailThreadUncheckedUpdateManyWithoutFolderInput = {
   subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   snippet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastMessageAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  snoozedUntil?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -801,10 +952,12 @@ export type EmailThreadUncheckedUpdateManyWithoutFolderInput = {
 
 export type EmailThreadCountOutputType = {
   messages: number
+  tasks: number
 }
 
 export type EmailThreadCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   messages?: boolean | EmailThreadCountOutputTypeCountMessagesArgs
+  tasks?: boolean | EmailThreadCountOutputTypeCountTasksArgs
 }
 
 /**
@@ -824,6 +977,13 @@ export type EmailThreadCountOutputTypeCountMessagesArgs<ExtArgs extends runtime.
   where?: Prisma.EmailMessageWhereInput
 }
 
+/**
+ * EmailThreadCountOutputType without action
+ */
+export type EmailThreadCountOutputTypeCountTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskWhereInput
+}
+
 
 export type EmailThreadSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -833,11 +993,13 @@ export type EmailThreadSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   subject?: boolean
   snippet?: boolean
   lastMessageAt?: boolean
+  snoozedUntil?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
   folder?: boolean | Prisma.MailFolderDefaultArgs<ExtArgs>
   messages?: boolean | Prisma.EmailThread$messagesArgs<ExtArgs>
+  tasks?: boolean | Prisma.EmailThread$tasksArgs<ExtArgs>
   _count?: boolean | Prisma.EmailThreadCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emailThread"]>
 
@@ -849,6 +1011,7 @@ export type EmailThreadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   subject?: boolean
   snippet?: boolean
   lastMessageAt?: boolean
+  snoozedUntil?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
@@ -863,6 +1026,7 @@ export type EmailThreadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   subject?: boolean
   snippet?: boolean
   lastMessageAt?: boolean
+  snoozedUntil?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
@@ -877,15 +1041,17 @@ export type EmailThreadSelectScalar = {
   subject?: boolean
   snippet?: boolean
   lastMessageAt?: boolean
+  snoozedUntil?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type EmailThreadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "accountId" | "folderId" | "providerThreadId" | "subject" | "snippet" | "lastMessageAt" | "createdAt" | "updatedAt", ExtArgs["result"]["emailThread"]>
+export type EmailThreadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "accountId" | "folderId" | "providerThreadId" | "subject" | "snippet" | "lastMessageAt" | "snoozedUntil" | "createdAt" | "updatedAt", ExtArgs["result"]["emailThread"]>
 export type EmailThreadInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
   folder?: boolean | Prisma.MailFolderDefaultArgs<ExtArgs>
   messages?: boolean | Prisma.EmailThread$messagesArgs<ExtArgs>
+  tasks?: boolean | Prisma.EmailThread$tasksArgs<ExtArgs>
   _count?: boolean | Prisma.EmailThreadCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmailThreadIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -903,6 +1069,7 @@ export type $EmailThreadPayload<ExtArgs extends runtime.Types.Extensions.Interna
     account: Prisma.$EmailAccountPayload<ExtArgs>
     folder: Prisma.$MailFolderPayload<ExtArgs>
     messages: Prisma.$EmailMessagePayload<ExtArgs>[]
+    tasks: Prisma.$TaskPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -912,6 +1079,7 @@ export type $EmailThreadPayload<ExtArgs extends runtime.Types.Extensions.Interna
     subject: string | null
     snippet: string | null
     lastMessageAt: Date | null
+    snoozedUntil: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["emailThread"]>
@@ -1311,6 +1479,7 @@ export interface Prisma__EmailThreadClient<T, Null = never, ExtArgs extends runt
   account<T extends Prisma.EmailAccountDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccountDefaultArgs<ExtArgs>>): Prisma.Prisma__EmailAccountClient<runtime.Types.Result.GetResult<Prisma.$EmailAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   folder<T extends Prisma.MailFolderDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MailFolderDefaultArgs<ExtArgs>>): Prisma.Prisma__MailFolderClient<runtime.Types.Result.GetResult<Prisma.$MailFolderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   messages<T extends Prisma.EmailThread$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailThread$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmailMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tasks<T extends Prisma.EmailThread$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailThread$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1347,6 +1516,7 @@ export interface EmailThreadFieldRefs {
   readonly subject: Prisma.FieldRef<"EmailThread", 'String'>
   readonly snippet: Prisma.FieldRef<"EmailThread", 'String'>
   readonly lastMessageAt: Prisma.FieldRef<"EmailThread", 'DateTime'>
+  readonly snoozedUntil: Prisma.FieldRef<"EmailThread", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"EmailThread", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"EmailThread", 'DateTime'>
 }
@@ -1771,6 +1941,30 @@ export type EmailThread$messagesArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.EmailMessageScalarFieldEnum | Prisma.EmailMessageScalarFieldEnum[]
+}
+
+/**
+ * EmailThread.tasks
+ */
+export type EmailThread$tasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Task
+   */
+  select?: Prisma.TaskSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Task
+   */
+  omit?: Prisma.TaskOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TaskInclude<ExtArgs> | null
+  where?: Prisma.TaskWhereInput
+  orderBy?: Prisma.TaskOrderByWithRelationInput | Prisma.TaskOrderByWithRelationInput[]
+  cursor?: Prisma.TaskWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TaskScalarFieldEnum | Prisma.TaskScalarFieldEnum[]
 }
 
 /**

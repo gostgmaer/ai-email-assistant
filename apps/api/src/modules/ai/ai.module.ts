@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../auth';
 import { DocumentsModule } from '../documents';
 import { EmailModule } from '../email';
+import { TasksModule } from '../tasks';
 import { AiController } from './controllers/ai.controller';
 import { AiProcessingProcessor } from './processors/ai-processing.processor';
 import { AiClientService } from './services/ai-client.service';
@@ -14,6 +15,7 @@ import { ContactMemoryService } from './services/contact-memory.service';
     ConfigModule,
     AuthModule,
     EmailModule,
+    TasksModule,
     forwardRef(() => DocumentsModule),
   ],
 

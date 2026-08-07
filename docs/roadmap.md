@@ -27,8 +27,8 @@ Build a modern AI-powered email assistant that unifies Gmail, Outlook, and IMAP/
 
 ### Inbox
 
-- Connect one email account per provider
-- Unified inbox
+- Connect multiple accounts per provider (Gmail, Outlook, IMAP)
+- Unified inbox across all connected accounts
 - Inbox synchronization
 - Read emails
 - Thread view

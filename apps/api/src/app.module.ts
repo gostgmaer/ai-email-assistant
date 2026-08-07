@@ -14,9 +14,12 @@ import { UsersModule } from './modules/users';
 import { EmailAccountModule } from './modules/email-account';
 import { EmailModule } from './modules/email';
 import { AiModule } from './modules/ai';
+import { CalendarModule } from './modules/calendar';
+import { DigestModule } from './modules/digest';
 import { DocumentsModule } from './modules/documents';
 import { JobsModule } from './modules/jobs';
 import { NotificationModule } from './modules/notification';
+import { TasksModule } from './modules/tasks';
 
 @Module({
   imports: [
@@ -38,10 +41,13 @@ import { NotificationModule } from './modules/notification';
     UsersModule,
     EmailAccountModule,
     EmailModule,
+    CalendarModule,
     AiModule,
     DocumentsModule,
     JobsModule,
     NotificationModule,
+    TasksModule,
+    DigestModule,
   ],
 })
 export class AppModule {}

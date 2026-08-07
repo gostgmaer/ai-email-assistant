@@ -4,10 +4,16 @@ import { JwtService } from '@nestjs/jwt';
 import { OAuthProviderName } from '../../oauth/interfaces';
 
 const CONNECT_STATE_TTL = '10m';
-const CONNECT_STATE_PURPOSE = 'email-connect';
+
+/** Shared CSRF-state infra for any "connect a third-party account" OAuth
+ * flow (mail, calendar, ...) — not specific to email despite living in
+ * this module. `purpose` keeps a calendar-connect state token from being
+ * replayed as an email-connect one (or vice versa): each flow passes its
+ * own literal string and both create/verify must agree on it. */
+export type ConnectPurpose = 'email-connect' | 'calendar-connect';
 
 interface ConnectStatePayload {
-  purpose: typeof CONNECT_STATE_PURPOSE;
+  purpose: ConnectPurpose;
   provider: OAuthProviderName;
   sub: string;
 }
@@ -17,11 +23,12 @@ export class ConnectStateService {
   constructor(private readonly jwtService: JwtService) {}
 
   async createState(
+    purpose: ConnectPurpose,
     provider: OAuthProviderName,
     userId: string,
   ): Promise<string> {
     const payload: ConnectStatePayload = {
-      purpose: CONNECT_STATE_PURPOSE,
+      purpose,
       provider,
       sub: userId,
     };
@@ -32,6 +39,7 @@ export class ConnectStateService {
   }
 
   async verifyState(
+    purpose: ConnectPurpose,
     token: string,
     provider: OAuthProviderName,
   ): Promise<string> {
@@ -47,10 +55,7 @@ export class ConnectStateService {
       throw new UnauthorizedException('Invalid or expired OAuth connect state');
     }
 
-    if (
-      payload.purpose !== CONNECT_STATE_PURPOSE ||
-      payload.provider !== provider
-    ) {
+    if (payload.purpose !== purpose || payload.provider !== provider) {
       throw new UnauthorizedException('Invalid OAuth connect state');
     }
 

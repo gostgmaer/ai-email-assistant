@@ -250,6 +250,23 @@ export type EnumSyncStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumSyncStatusFilter<$PrismaModel>
 }
 
+export type EnumCalendarProviderFilter<$PrismaModel = never> = {
+  equals?: $Enums.CalendarProvider | Prisma.EnumCalendarProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCalendarProviderFilter<$PrismaModel> | $Enums.CalendarProvider
+}
+
+export type EnumCalendarProviderWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CalendarProvider | Prisma.EnumCalendarProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCalendarProviderWithAggregatesFilter<$PrismaModel> | $Enums.CalendarProvider
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCalendarProviderFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCalendarProviderFilter<$PrismaModel>
+}
+
 export type EnumMailFolderTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.MailFolderType | Prisma.EnumMailFolderTypeFieldRefInput<$PrismaModel>
   in?: $Enums.MailFolderType[] | Prisma.ListEnumMailFolderTypeFieldRefInput<$PrismaModel>
@@ -316,6 +333,40 @@ export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedJsonFilter<$PrismaModel>
   _max?: Prisma.NestedJsonFilter<$PrismaModel>
+}
+
+export type EnumTaskTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskType | Prisma.EnumTaskTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskTypeFilter<$PrismaModel> | $Enums.TaskType
+}
+
+export type EnumTaskStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskStatus | Prisma.EnumTaskStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskStatusFilter<$PrismaModel> | $Enums.TaskStatus
+}
+
+export type EnumTaskTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskType | Prisma.EnumTaskTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskTypeWithAggregatesFilter<$PrismaModel> | $Enums.TaskType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTaskTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTaskTypeFilter<$PrismaModel>
+}
+
+export type EnumTaskStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskStatus | Prisma.EnumTaskStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskStatusWithAggregatesFilter<$PrismaModel> | $Enums.TaskStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTaskStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTaskStatusFilter<$PrismaModel>
 }
 
 export type IntFilter<$PrismaModel = never> = {
@@ -611,6 +662,23 @@ export type NestedEnumSyncStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumSyncStatusFilter<$PrismaModel>
 }
 
+export type NestedEnumCalendarProviderFilter<$PrismaModel = never> = {
+  equals?: $Enums.CalendarProvider | Prisma.EnumCalendarProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCalendarProviderFilter<$PrismaModel> | $Enums.CalendarProvider
+}
+
+export type NestedEnumCalendarProviderWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CalendarProvider | Prisma.EnumCalendarProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCalendarProviderWithAggregatesFilter<$PrismaModel> | $Enums.CalendarProvider
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCalendarProviderFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCalendarProviderFilter<$PrismaModel>
+}
+
 export type NestedEnumMailFolderTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.MailFolderType | Prisma.EnumMailFolderTypeFieldRefInput<$PrismaModel>
   in?: $Enums.MailFolderType[] | Prisma.ListEnumMailFolderTypeFieldRefInput<$PrismaModel>
@@ -650,6 +718,40 @@ export type NestedJsonFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumTaskTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskType | Prisma.EnumTaskTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskTypeFilter<$PrismaModel> | $Enums.TaskType
+}
+
+export type NestedEnumTaskStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskStatus | Prisma.EnumTaskStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskStatusFilter<$PrismaModel> | $Enums.TaskStatus
+}
+
+export type NestedEnumTaskTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskType | Prisma.EnumTaskTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskType[] | Prisma.ListEnumTaskTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskTypeWithAggregatesFilter<$PrismaModel> | $Enums.TaskType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTaskTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTaskTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumTaskStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskStatus | Prisma.EnumTaskStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskStatus[] | Prisma.ListEnumTaskStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskStatusWithAggregatesFilter<$PrismaModel> | $Enums.TaskStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTaskStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTaskStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumDocumentStatusFilter<$PrismaModel = never> = {

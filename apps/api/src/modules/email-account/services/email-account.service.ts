@@ -14,6 +14,7 @@ import { EncryptionService } from '../../../infrastructure/encryption';
 import { QueueService } from '../../../infrastructure/queue';
 import { EmailAccountModel } from '../../../generated/prisma/models';
 import type { InputJsonObject } from '../../../generated/prisma/internal/prismaNamespace';
+import { refreshOAuthToken } from '../../oauth';
 import { ConnectImapDto } from '../dto';
 import { ImapConfig, MailConnectResult } from '../interfaces';
 
@@ -284,9 +285,10 @@ export class EmailAccountService {
       account.credential.refreshToken,
     );
 
-    const refreshed = await this.refreshProviderToken(
+    const refreshed = await refreshOAuthToken(
       account.provider,
       refreshToken,
+      this.configService,
     );
 
     const encryptedAccessToken = this.encryptionService.encrypt(
@@ -385,57 +387,5 @@ export class EmailAccountService {
     } finally {
       await client.logout().catch(() => undefined);
     }
-  }
-
-  private async refreshProviderToken(
-    provider: 'GOOGLE' | 'MICROSOFT',
-    refreshToken: string,
-  ): Promise<{ accessToken: string; refreshToken?: string; expiresAt?: Date }> {
-    const tokenUrl =
-      provider === 'GOOGLE'
-        ? 'https://oauth2.googleapis.com/token'
-        : 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
-
-    const clientId = this.configService.getOrThrow<string>(
-      provider === 'GOOGLE' ? 'GOOGLE_CLIENT_ID' : 'MICROSOFT_CLIENT_ID',
-    );
-    const clientSecret = this.configService.getOrThrow<string>(
-      provider === 'GOOGLE'
-        ? 'GOOGLE_CLIENT_SECRET'
-        : 'MICROSOFT_CLIENT_SECRET',
-    );
-
-    const body = new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    });
-
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
-    });
-
-    if (!response.ok) {
-      throw new BadRequestException(
-        `Failed to refresh ${provider} access token; reconnect this account`,
-      );
-    }
-
-    const json = (await response.json()) as {
-      access_token: string;
-      refresh_token?: string;
-      expires_in?: number;
-    };
-
-    return {
-      accessToken: json.access_token,
-      refreshToken: json.refresh_token,
-      expiresAt: json.expires_in
-        ? new Date(Date.now() + json.expires_in * 1000)
-        : undefined,
-    };
   }
 }

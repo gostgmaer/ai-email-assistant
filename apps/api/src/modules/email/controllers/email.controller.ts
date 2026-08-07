@@ -25,6 +25,7 @@ import {
   ListThreadsDto,
   ReplyEmailDto,
   SaveDraftDto,
+  SnoozeThreadDto,
 } from '../dto';
 import { ComposeService } from '../services/compose.service';
 import { InboxService } from '../services/inbox.service';
@@ -51,11 +52,50 @@ export class EmailController {
     return this.inboxService.listThreads(user.sub, query);
   }
 
+  @Get('follow-ups')
+  @ApiOperation({
+    summary:
+      'Threads where the user sent the last message and nothing has come back yet',
+  })
+  @ApiResponse({ status: 200, description: 'Follow-up candidates' })
+  async followUps(@CurrentUser() user: JwtPayload) {
+    return this.inboxService.getFollowUpCandidates(user.sub);
+  }
+
   @Get('threads/:id')
   @ApiOperation({ summary: 'Get a thread with all of its messages' })
   @ApiResponse({ status: 200, description: 'The thread' })
   async getThread(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.inboxService.getThread(user.sub, id);
+  }
+
+  @Patch('threads/:id/snooze')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Hide a thread from the default inbox view until a given time',
+  })
+  @ApiResponse({ status: 204, description: 'Thread snoozed' })
+  @ApiResponse({ status: 404, description: 'Thread not found' })
+  async snoozeThread(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() body: SnoozeThreadDto,
+  ) {
+    await this.inboxService.snooze(user.sub, id, new Date(body.until));
+  }
+
+  @Patch('threads/:id/unsnooze')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Return a snoozed thread to the default inbox view',
+  })
+  @ApiResponse({ status: 204, description: 'Thread un-snoozed' })
+  @ApiResponse({ status: 404, description: 'Thread not found' })
+  async unsnoozeThread(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    await this.inboxService.unsnooze(user.sub, id);
   }
 
   @Get('messages/:id')

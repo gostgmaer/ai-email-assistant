@@ -22,6 +22,7 @@ export class MicrosoftConnectGuard extends AuthGuard('microsoft-connect') {
 
     const user = req.user as JwtPayload;
     const state = await this.connectStateService.createState(
+      'email-connect',
       'MICROSOFT',
       user.sub,
     );

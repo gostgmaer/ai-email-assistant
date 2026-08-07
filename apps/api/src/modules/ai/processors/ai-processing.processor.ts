@@ -14,9 +14,11 @@ import {
   ComposeService,
   GenerationMetadata,
 } from '../../email/services/compose.service';
+import { TasksService } from '../../tasks';
 import { EmailMessageDto } from '../dto';
 import {
   AiClientService,
+  ClassificationResult,
   ContactMemoryResponse,
 } from '../services/ai-client.service';
 import {
@@ -37,6 +39,7 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly aiClientService: AiClientService,
     private readonly contactMemoryService: ContactMemoryService,
     private readonly composeService: ComposeService,
+    private readonly tasksService: TasksService,
     @Inject(forwardRef(() => DocumentsService))
     private readonly documentsService: DocumentsService,
   ) {
@@ -95,11 +98,30 @@ export class AiProcessingProcessor extends WorkerHost {
     const classifyResult = await this.aiClientService.classify(subject, thread);
     const classification = classifyResult.classification;
 
+    // Persisted regardless of the spam branch below — the classification
+    // was already paid for, and Priority Inbox wants a record of it even
+    // for messages that get skipped past this point (see
+    // docs/v1.2-plan.md's "Priority Inbox" section, previously discarded).
+    await this.persistClassification(messageId, classification);
+
     if (classification.spam) {
       this.logger.log(`Message ${messageId} classified as spam, skipping.`);
       await this.markProcessed(messageId);
       return;
     }
+
+    // Best-effort, non-blocking: a failed/slow extraction call must never
+    // stop the reply from being generated. Not awaited alongside the
+    // pipeline below on purpose — kicked off here so it runs concurrently
+    // with contactMemory/reply generation rather than adding to the
+    // critical path.
+    const extractionPromise = this.extractTasks(
+      account.userId,
+      messageId,
+      message.threadId,
+      subject,
+      thread,
+    );
 
     const contactMemory = await this.aiClientService.contactMemory(
       subject,
@@ -157,7 +179,10 @@ export class AiProcessingProcessor extends WorkerHost {
 
     const isSafeToAutoSend =
       !classification.spam &&
-      classification.priority !== 'urgent' &&
+      // classify.md's prompt returns "Urgent" (capitalized) — this was
+      // comparing against lowercase 'urgent' and so never actually
+      // excluded urgent messages from auto-send.
+      classification.priority.toLowerCase() !== 'urgent' &&
       account.autoSendCategories.includes(classification.category);
 
     if (isSafeToAutoSend) {
@@ -188,7 +213,52 @@ export class AiProcessingProcessor extends WorkerHost {
       );
     }
 
+    // Awaited here (not earlier) so it runs concurrently with the reply
+    // pipeline above rather than serially in front of it, while still
+    // guaranteeing it finishes before the job is marked complete.
+    await extractionPromise;
+
     await this.markProcessed(messageId);
+  }
+
+  private async persistClassification(
+    messageId: string,
+    classification: ClassificationResult,
+  ): Promise<void> {
+    await this.prisma.emailMessage.update({
+      where: { id: messageId },
+      data: {
+        category: classification.category,
+        priority: classification.priority,
+        sentiment: classification.sentiment,
+        isSpam: classification.spam,
+      },
+    });
+  }
+
+  private async extractTasks(
+    userId: string,
+    messageId: string,
+    threadId: string,
+    subject: string,
+    thread: EmailMessageDto[],
+  ): Promise<void> {
+    try {
+      const { extraction } = await this.aiClientService.extract(
+        subject,
+        thread,
+      );
+      await this.tasksService.createFromExtraction(
+        userId,
+        messageId,
+        threadId,
+        extraction,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Task extraction failed for message ${messageId}, continuing without it: ${String(error)}`,
+      );
+    }
   }
 
   private async markProcessed(messageId: string): Promise<void> {

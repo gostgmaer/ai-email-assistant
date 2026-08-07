@@ -4,15 +4,22 @@ import { clsx } from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { DocumentIcon, InboxIcon, PlusIcon } from "@/components/icons";
+import {
+  DocumentIcon,
+  InboxIcon,
+  PlusIcon,
+  TaskIcon,
+} from "@/components/icons";
 
 const NAV_ITEMS = [
   { href: "/inbox", label: "Inbox", icon: InboxIcon },
+  { href: "/tasks", label: "Tasks", icon: TaskIcon },
   { href: "/documents", label: "Documents", icon: DocumentIcon },
 ];
 
 const SETTINGS_ITEMS = [
   { href: "/settings/email-accounts", label: "Accounts" },
+  { href: "/settings/calendar-accounts", label: "Calendars" },
   { href: "/settings/profile", label: "Profile" },
   { href: "/settings/security", label: "Security" },
 ];

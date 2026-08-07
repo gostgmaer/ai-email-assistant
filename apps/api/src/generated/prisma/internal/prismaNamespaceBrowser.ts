@@ -57,9 +57,12 @@ export const ModelName = {
   RefreshToken: 'RefreshToken',
   EmailAccount: 'EmailAccount',
   EmailCredential: 'EmailCredential',
+  CalendarAccount: 'CalendarAccount',
+  CalendarCredential: 'CalendarCredential',
   MailFolder: 'MailFolder',
   EmailThread: 'EmailThread',
   EmailMessage: 'EmailMessage',
+  Task: 'Task',
   ContactMemory: 'ContactMemory',
   Document: 'Document',
   DocumentChunk: 'DocumentChunk'
@@ -180,6 +183,34 @@ export const EmailCredentialScalarFieldEnum = {
 export type EmailCredentialScalarFieldEnum = (typeof EmailCredentialScalarFieldEnum)[keyof typeof EmailCredentialScalarFieldEnum]
 
 
+export const CalendarAccountScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  provider: 'provider',
+  email: 'email',
+  displayName: 'displayName',
+  isPrimary: 'isPrimary',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type CalendarAccountScalarFieldEnum = (typeof CalendarAccountScalarFieldEnum)[keyof typeof CalendarAccountScalarFieldEnum]
+
+
+export const CalendarCredentialScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CalendarCredentialScalarFieldEnum = (typeof CalendarCredentialScalarFieldEnum)[keyof typeof CalendarCredentialScalarFieldEnum]
+
+
 export const MailFolderScalarFieldEnum = {
   id: 'id',
   accountId: 'accountId',
@@ -202,6 +233,7 @@ export const EmailThreadScalarFieldEnum = {
   subject: 'subject',
   snippet: 'snippet',
   lastMessageAt: 'lastMessageAt',
+  snoozedUntil: 'snoozedUntil',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -225,11 +257,32 @@ export const EmailMessageScalarFieldEnum = {
   inReplyToMessageId: 'inReplyToMessageId',
   aiProcessedAt: 'aiProcessedAt',
   generationMetadata: 'generationMetadata',
+  category: 'category',
+  priority: 'priority',
+  sentiment: 'sentiment',
+  isSpam: 'isSpam',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type EmailMessageScalarFieldEnum = (typeof EmailMessageScalarFieldEnum)[keyof typeof EmailMessageScalarFieldEnum]
+
+
+export const TaskScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  emailMessageId: 'emailMessageId',
+  threadId: 'threadId',
+  type: 'type',
+  description: 'description',
+  dueDate: 'dueDate',
+  status: 'status',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
 
 
 export const ContactMemoryScalarFieldEnum = {
