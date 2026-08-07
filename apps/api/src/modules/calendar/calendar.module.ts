@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 
 import { AiModule } from '../ai';
 import { AuthModule } from '../auth';
+import { EmailModule } from '../email';
 import { EmailAccountModule } from '../email-account';
 import { TasksModule } from '../tasks';
 import { CalendarAccountController } from './controllers/calendar-account.controller';
@@ -27,6 +28,7 @@ import { MicrosoftCalendarConnectStrategy } from './strategies/microsoft-calenda
     PassportModule,
     forwardRef(() => AuthModule),
     EmailAccountModule,
+    EmailModule,
     TasksModule,
     AiModule,
   ],
