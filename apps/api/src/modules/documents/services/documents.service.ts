@@ -149,6 +149,13 @@ export interface DocumentChunkMatch extends DocumentChunkFields {
   distance: number;
 }
 
+/** A vector-search candidate before re-ranking — carries the raw embedding
+ * (as pgvector's text output, e.g. "[0.1,0.2,...]") so mmrRerank() can score
+ * diversity against chunks already selected. Never returned to callers. */
+interface CandidateChunkMatch extends DocumentChunkMatch {
+  embeddingText: string;
+}
+
 /** Metadata filters applied alongside the vector search — the "Metadata
  * Filtering" step between vector search and re-ranking. */
 export interface SearchFilters {
@@ -251,8 +258,9 @@ export class DocumentsService {
     }
 
     const contentType =
-      CANONICAL_MIME_TYPES[fileExtension as (typeof ALLOWED_DOCUMENT_EXTENSIONS)[number]] ??
-      file.mimetype;
+      CANONICAL_MIME_TYPES[
+        fileExtension as (typeof ALLOWED_DOCUMENT_EXTENSIONS)[number]
+      ] ?? file.mimetype;
 
     const contentHash = createHash('sha256').update(file.buffer).digest('hex');
 
@@ -524,7 +532,18 @@ export class DocumentsService {
       conditions.push(Prisma.sql`d."tags" && ${filters.tags}::text[]`);
     }
 
-    const matches = await this.prisma.$queryRaw<DocumentChunkMatch[]>(
+    // Re-ranking needs a wider candidate pool than the final result count —
+    // MMR can only trade relevance for diversity among chunks it's actually
+    // seen, so pulling exactly `limit` rows from the vector search would
+    // leave nothing to re-rank against. CANDIDATE_POOL_MULTIPLIER trades
+    // extra DB/CPU work for that headroom; the maxDistance cap above still
+    // keeps the pool from filling with irrelevant chunks on a sparse corpus.
+    const poolSize = Math.max(
+      limit * CANDIDATE_POOL_MULTIPLIER,
+      MIN_CANDIDATE_POOL,
+    );
+
+    const candidates = await this.prisma.$queryRaw<CandidateChunkMatch[]>(
       Prisma.sql`
         SELECT dc."id", dc."chunkIndex", dc."content", dc."contentHash", dc."metadata",
                dc."section", dc."page", dc."chunkType", dc."tokenCount", dc."wordCount",
@@ -533,14 +552,17 @@ export class DocumentsService {
                dc."embeddingModel", dc."embeddingDimension", dc."embeddingVersion",
                d."id" AS "documentId", d."filename", d."title", d."category", d."tags",
                d."documentType", d."sourceType",
-               (dc.embedding <=> ${vector}::vector) AS distance
+               (dc.embedding <=> ${vector}::vector) AS distance,
+               dc.embedding::text AS "embeddingText"
         FROM "DocumentChunk" dc
         JOIN "Document" d ON d."id" = dc."documentId"
         WHERE ${Prisma.join(conditions, ' AND ')}
         ORDER BY dc.embedding <=> ${vector}::vector
-        LIMIT ${limit}
+        LIMIT ${poolSize}
       `,
     );
+
+    const matches = mmrRerank(candidates, limit, MMR_LAMBDA);
 
     const documentIds = [...new Set(matches.map((match) => match.documentId))];
     if (documentIds.length > 0) {
@@ -562,6 +584,18 @@ export class DocumentsService {
 // corpus yet; callers needing tighter precision can pass a lower value.
 const DEFAULT_MAX_DISTANCE = 0.8;
 
+// Re-ranking (Maximal Marginal Relevance): how much wider than the final
+// result count the initial vector-search candidate pool should be.
+const CANDIDATE_POOL_MULTIPLIER = 4;
+const MIN_CANDIDATE_POOL = 20;
+
+// 0 = pure diversity (ignores relevance beyond breaking ties), 1 = pure
+// relevance (identical to the old top-K-by-distance behavior, no diversity
+// benefit). 0.7 keeps relevance dominant while still discounting chunks
+// that are near-duplicates of one already selected — e.g. the same
+// boilerplate paragraph repeated across a document's chunks.
+const MMR_LAMBDA = 0.7;
+
 // Uploads normally finish in low single-digit seconds (embedding calls,
 // then a handful of raw inserts). 15 minutes is generous headroom for a
 // slow AI service rather than a tuned value — the goal is catching crashed
@@ -570,6 +604,85 @@ const STALE_PROCESSING_TIMEOUT_MS = 15 * 60 * 1000;
 
 function toVectorLiteral(embedding: number[]): string {
   return `[${embedding.join(',')}]`;
+}
+
+/** Parses pgvector's text output ("[0.1,0.2,...]") back into a plain array. */
+function parseVectorLiteral(text: string): number[] {
+  return text
+    .slice(1, -1)
+    .split(',')
+    .map((value) => Number(value));
+}
+
+function dot(a: number[], b: number[]): number {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+  return sum;
+}
+
+function magnitude(a: number[]): number {
+  return Math.sqrt(dot(a, a));
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  const denom = magnitude(a) * magnitude(b);
+  return denom === 0 ? 0 : dot(a, b) / denom;
+}
+
+/** Re-ranks vector-search candidates by Maximal Marginal Relevance: greedily
+ * picks the chunk that best balances query relevance against dissimilarity
+ * from chunks already selected, instead of just taking the top-K by
+ * distance. Without this, a corpus with several near-duplicate chunks
+ * (e.g. boilerplate repeated across a document) can fill the entire result
+ * set with redundant matches instead of covering the query from multiple
+ * angles. `candidates` must already be sorted by ascending distance. */
+function mmrRerank(
+  candidates: CandidateChunkMatch[],
+  limit: number,
+  lambda: number,
+): DocumentChunkMatch[] {
+  if (candidates.length <= limit) {
+    return candidates;
+  }
+
+  const pool = candidates.map((candidate) => ({
+    candidate,
+    embedding: parseVectorLiteral(candidate.embeddingText),
+    relevance: 1 - candidate.distance,
+  }));
+
+  const selected: typeof pool = [];
+  const remaining = new Set(pool);
+
+  while (selected.length < limit && remaining.size > 0) {
+    let best: (typeof pool)[number] | null = null;
+    let bestScore = -Infinity;
+
+    for (const entry of remaining) {
+      const maxSimilarityToSelected = selected.reduce(
+        (max, s) =>
+          Math.max(max, cosineSimilarity(entry.embedding, s.embedding)),
+        0,
+      );
+      const score =
+        lambda * entry.relevance - (1 - lambda) * maxSimilarityToSelected;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = entry;
+      }
+    }
+
+    // remaining is non-empty here, so best is always assigned.
+    selected.push(best);
+    remaining.delete(best);
+  }
+
+  return selected.map(({ candidate }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure-to-omit
+    const { embeddingText, ...match } = candidate;
+    return match;
+  });
 }
 
 function extensionOf(filename: string): string {

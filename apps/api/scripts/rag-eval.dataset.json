@@ -1,0 +1,37 @@
+{
+  "description": "Starter golden set for apps/api/scripts/rag-eval.ts. Each case names the exact filename(s) a correct retrieval should surface for the given query. This set currently targets the synthetic documents uploaded while testing the async document-upload architecture (see conversation history) — several of them intentionally share near-identical wording ('async document processing pipeline', a Stage/Owner table) to exercise table extraction across formats, which makes them a weak test of *semantic* distinctness. Replace or extend this file with queries against real user documents as the corpus grows; keep the multi-file case (table-owners) as a template for queries where more than one document is a valid hit.",
+  "k": 5,
+  "cases": [
+    {
+      "id": "sdk-verify",
+      "query": "How does the AI service prove it downloads files through the real file-upload SDK instead of a hand-rolled HMAC client?",
+      "expectedFilenames": ["test-sdk-verify.txt"]
+    },
+    {
+      "id": "product-team",
+      "query": "What product is this, what version, and who is the team lead?",
+      "expectedFilenames": ["test.json"]
+    },
+    {
+      "id": "people-roles",
+      "query": "List people with their role and department.",
+      "expectedFilenames": ["test.csv"]
+    },
+    {
+      "id": "table-owners",
+      "query": "Which table lists Upload owned by the NestJS API and Parse+Embed owned by the AI service?",
+      "expectedFilenames": [
+        "test.html",
+        "test.docx",
+        "test.pdf",
+        "test.csv"
+      ],
+      "notes": "Multiple documents contain this exact table — any one of them counts as a hit. Template for queries with more than one valid answer."
+    },
+    {
+      "id": "markdown-headings",
+      "query": "Which markdown document explains chunking by heading?",
+      "expectedFilenames": ["test.md"]
+    }
+  ]
+}
