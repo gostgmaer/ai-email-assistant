@@ -179,6 +179,16 @@ export interface Task {
   dueDate: string | null;
   status: TaskStatus;
   completedAt: string | null;
+  calendarEventId: string | null;
+  calendarEventUrl: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MeetingTimeSuggestion {
+  start: string;
+  end: string;
+  title: string;
+  calendarAccountId: string;
+  suggestedAttendeeEmail?: string;
 }
