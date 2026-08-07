@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 
@@ -12,7 +12,10 @@ import { GoogleConnectStrategy } from './strategies/google-connect.strategy';
 import { MicrosoftConnectStrategy } from './strategies/microsoft-connect.strategy';
 
 @Module({
-  imports: [ConfigModule, PassportModule, AuthModule],
+  // AuthController (in AuthModule) auto-connects a mailbox from the login
+  // OAuth grant, so AuthModule imports this module too — forwardRef() on
+  // both sides breaks the resulting cycle.
+  imports: [ConfigModule, PassportModule, forwardRef(() => AuthModule)],
 
   controllers: [EmailAccountController],
 

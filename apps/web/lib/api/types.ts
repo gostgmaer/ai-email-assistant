@@ -104,7 +104,25 @@ export interface EmailThreadSummary {
   _count: { messages: number };
 }
 
-export interface EmailThreadDetail extends Omit<EmailThreadSummary, "messages"> {
+// Deliberately NOT `Omit<EmailThreadSummary, "messages">` — InboxService.getThread
+// (unlike listThreads) puts `account` at the top level and `folder` has no
+// nested `account`, a genuinely different shape from the list response.
+export interface EmailThreadDetail {
+  id: string;
+  folderId: string;
+  providerThreadId: string;
+  subject: string | null;
+  snippet: string | null;
+  lastMessageAt: string | null;
+  snoozedUntil: string | null;
+  account: { id: string; provider: EmailProvider; email: string; userId: string };
+  folder: {
+    id: string;
+    type: MailFolderType;
+    name: string;
+    accountId: string;
+    providerFolderId: string | null;
+  };
   messages: EmailMessage[];
 }
 

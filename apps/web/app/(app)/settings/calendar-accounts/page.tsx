@@ -16,7 +16,7 @@ import {
   listCalendarAccounts,
 } from "@/lib/services/calendar-accounts.service";
 import type { BusyInterval } from "@/lib/api/types";
-import { formatDateTime, providerLabel } from "@/lib/utils/format";
+import { calendarProviderLabel, formatDateTime } from "@/lib/utils/format";
 
 function CalendarAccountsContent() {
   const searchParams = useSearchParams();
@@ -118,7 +118,7 @@ function CalendarAccountsContent() {
                   )}
                 </div>
                 <p className="text-xs text-zinc-500">
-                  {providerLabel(account.provider)}
+                  {calendarProviderLabel(account.provider)}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">

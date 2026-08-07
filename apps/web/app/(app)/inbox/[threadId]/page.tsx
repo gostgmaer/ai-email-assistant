@@ -130,10 +130,10 @@ export default function ThreadPage() {
           {thread.subject || "(no subject)"}
         </h1>
         <span
-          title={`${providerLabel(thread.folder.account.provider)} · ${thread.folder.account.email}`}
+          title={`${providerLabel(thread.account.provider)} · ${thread.account.email}`}
           className="hidden shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-500 sm:inline-block"
         >
-          {thread.folder.account.email}
+          {thread.account.email}
         </span>
         {isSnoozed ? (
           <Button

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 
@@ -14,7 +14,15 @@ import { GoogleCalendarConnectStrategy } from './strategies/google-calendar-conn
 import { MicrosoftCalendarConnectStrategy } from './strategies/microsoft-calendar-connect.strategy';
 
 @Module({
-  imports: [ConfigModule, PassportModule, AuthModule, EmailAccountModule],
+  // AuthController (in AuthModule) auto-connects a calendar from the login
+  // OAuth grant, so AuthModule imports this module too — forwardRef() on
+  // both sides breaks the resulting cycle.
+  imports: [
+    ConfigModule,
+    PassportModule,
+    forwardRef(() => AuthModule),
+    EmailAccountModule,
+  ],
 
   controllers: [CalendarAccountController, CalendarController],
 

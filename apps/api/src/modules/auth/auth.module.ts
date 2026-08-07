@@ -1,10 +1,12 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 
 import { PrismaModule } from '../../database';
 import type { StringValue } from 'ms';
+import { CalendarModule } from '../calendar';
+import { EmailAccountModule } from '../email-account';
 import { OAuthModule } from '../oauth';
 import { AuthController } from './controllers/auth.controller';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -19,6 +21,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PrismaModule,
     PassportModule,
     OAuthModule,
+    // AuthController auto-connects a mailbox/calendar from the login OAuth
+    // grant (see auth.controller.ts's autoConnectMailAndCalendar) — both
+    // of these already import AuthModule (for JwtAuthGuard), hence
+    // forwardRef() on this side too.
+    forwardRef(() => EmailAccountModule),
+    forwardRef(() => CalendarModule),
 
     JwtModule.registerAsync({
       imports: [ConfigModule],

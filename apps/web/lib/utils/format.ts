@@ -1,4 +1,4 @@
-import type { EmailProvider, Participant } from "../api/types";
+import type { CalendarProvider, EmailProvider, Participant } from "../api/types";
 
 const PROVIDER_LABEL: Record<EmailProvider, string> = {
   GOOGLE: "Gmail",
@@ -8,6 +8,15 @@ const PROVIDER_LABEL: Record<EmailProvider, string> = {
 
 export function providerLabel(provider: EmailProvider): string {
   return PROVIDER_LABEL[provider];
+}
+
+const CALENDAR_PROVIDER_LABEL: Record<CalendarProvider, string> = {
+  GOOGLE: "Google Calendar",
+  MICROSOFT: "Outlook Calendar",
+};
+
+export function calendarProviderLabel(provider: CalendarProvider): string {
+  return CALENDAR_PROVIDER_LABEL[provider];
 }
 
 export function formatRelativeDate(iso: string): string {

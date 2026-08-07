@@ -5,11 +5,14 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
+  Logger,
   Param,
   Post,
   Req,
   Res,
   UseGuards,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -21,6 +24,8 @@ import {
 import { Request, Response } from 'express';
 
 import { toPublicUser } from '../../../common/utils/public-user';
+import { CalendarAccountService } from '../../calendar';
+import { EmailAccountService } from '../../email-account';
 import { GoogleAuthGuard, MicrosoftAuthGuard } from '../../oauth';
 import { OAuthValidationResult } from '../../oauth/interfaces';
 import { CurrentUser } from '../decorators/current-user.decorator';
@@ -40,10 +45,16 @@ import { DeviceMetadata, TokenService } from '../services/token.service';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly tokenService: TokenService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => EmailAccountService))
+    private readonly emailAccountService: EmailAccountService,
+    @Inject(forwardRef(() => CalendarAccountService))
+    private readonly calendarAccountService: CalendarAccountService,
   ) {}
 
   @Post('register')
@@ -219,12 +230,22 @@ export class AuthController {
     req: Request,
     res: Response,
   ): Promise<void> {
-    const { profile } = req.user as OAuthValidationResult;
+    const { profile, tokens: providerTokens } =
+      req.user as OAuthValidationResult;
 
-    const { tokens } = await this.authService.loginWithOAuth(
+    const { user, tokens } = await this.authService.loginWithOAuth(
       profile,
       this.extractDevice(req),
     );
+
+    // Best-effort: LOGIN_SCOPES (see google.strategy.ts/microsoft.strategy.ts)
+    // now request Gmail/Calendar access alongside identity in the same
+    // consent screen, so a successful OAuth login can connect the mailbox
+    // and calendar automatically — no separate manual "connect" step.
+    // Password-registered users never reach this method at all, so they
+    // still connect manually via the email-accounts/calendar-accounts
+    // settings pages. Must never fail the login itself.
+    await this.autoConnectMailAndCalendar(user.id, profile, providerTokens);
 
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const redirectUrl = new URL('/auth/callback', frontendUrl);
@@ -232,6 +253,47 @@ export class AuthController {
     redirectUrl.searchParams.set('refreshToken', tokens.refreshToken);
 
     res.redirect(redirectUrl.toString());
+  }
+
+  private async autoConnectMailAndCalendar(
+    userId: string,
+    profile: OAuthValidationResult['profile'],
+    tokens: OAuthValidationResult['tokens'],
+  ): Promise<void> {
+    const connectProfile = {
+      provider: profile.provider,
+      email: profile.email,
+      displayName: profile.displayName,
+    };
+    const connectTokens = {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt,
+    };
+
+    try {
+      await this.emailAccountService.connectOAuthAccount({
+        userId,
+        profile: connectProfile,
+        tokens: connectTokens,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Auto-connect mailbox failed for user ${userId} (${profile.provider}): ${String(error)}`,
+      );
+    }
+
+    try {
+      await this.calendarAccountService.connectOAuthAccount({
+        userId,
+        profile: connectProfile,
+        tokens: connectTokens,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Auto-connect calendar failed for user ${userId} (${profile.provider}): ${String(error)}`,
+      );
+    }
   }
 
   private extractDevice(req: Request): DeviceMetadata {

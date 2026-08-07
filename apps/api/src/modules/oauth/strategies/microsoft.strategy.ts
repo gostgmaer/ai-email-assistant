@@ -18,6 +18,22 @@ const AUTHORIZATION_URL =
 const TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
 const PROFILE_URL = 'https://graph.microsoft.com/v1.0/me';
 
+// Login requests the union of identity + Mail + Calendar scopes in one
+// consent screen, so AuthController.handleOAuthCallback can auto-connect a
+// mailbox and calendar from the same grant — see google.strategy.ts's
+// LOGIN_SCOPES comment for the full rationale.
+const LOGIN_SCOPES = [
+  'openid',
+  'profile',
+  'email',
+  'offline_access',
+  'User.Read',
+  'https://graph.microsoft.com/Mail.Read',
+  'https://graph.microsoft.com/Mail.Send',
+  'https://graph.microsoft.com/Mail.ReadWrite',
+  'https://graph.microsoft.com/Calendars.ReadWrite',
+];
+
 @Injectable()
 export class MicrosoftStrategy extends PassportStrategy(
   OAuth2Strategy,
@@ -30,7 +46,7 @@ export class MicrosoftStrategy extends PassportStrategy(
       clientID: configService.getOrThrow<string>('MICROSOFT_CLIENT_ID'),
       clientSecret: configService.getOrThrow<string>('MICROSOFT_CLIENT_SECRET'),
       callbackURL: configService.getOrThrow<string>('MICROSOFT_CALLBACK_URL'),
-      scope: ['openid', 'profile', 'email', 'User.Read'],
+      scope: LOGIN_SCOPES,
       state: true,
       store: stateStore,
     });
