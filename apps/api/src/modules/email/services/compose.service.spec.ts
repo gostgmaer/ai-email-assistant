@@ -50,6 +50,9 @@ describe('ComposeService', () => {
       getOwnedAccountOrThrow: jest
         .fn()
         .mockResolvedValue({ id: accountId, email: 'me@example.com' }),
+      getAccessibleAccountOrThrow: jest
+        .fn()
+        .mockResolvedValue({ id: accountId, email: 'me@example.com' }),
     } as unknown as EmailAccountService;
 
     const mailProviderFactory = {

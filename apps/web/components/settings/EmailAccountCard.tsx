@@ -1,8 +1,14 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clsx } from "clsx";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { EmailAccount } from "@/lib/api/types";
+import {
+  inviteAccountMember,
+  listAccountMembers,
+  removeAccountMember,
+} from "@/lib/services/email-accounts.service";
 import { providerLabel } from "@/lib/utils/format";
 
 const STATUS_STYLE: Record<EmailAccount["syncStatus"], string> = {
@@ -67,6 +73,8 @@ export function EmailAccountCard({
 }) {
   const [showAutoSend, setShowAutoSend] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+  const isOwner = account.myRole === "OWNER";
 
   function toggleCategory(category: string) {
     const next = account.autoSendCategories.includes(category)
@@ -96,6 +104,11 @@ export function EmailAccountCard({
                 Primary
               </span>
             )}
+            {!isOwner && (
+              <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-medium text-purple-700">
+                Shared with you
+              </span>
+            )}
             <span
               className={clsx(
                 "rounded-full px-2 py-0.5 text-[10px] font-medium",
@@ -122,47 +135,58 @@ export function EmailAccountCard({
           <Button
             variant="secondary"
             size="sm"
-            onClick={onToggleSync}
-            disabled={busy}
+            onClick={() => setShowMembers((v) => !v)}
           >
-            {account.syncEnabled ? "Pause sync" : "Resume sync"}
+            Members
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowAutoSend((v) => !v)}
-          >
-            Auto-send{" "}
-            {account.autoSendCategories.length > 0
-              ? `(${account.autoSendCategories.length})`
-              : "(off)"}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowFilters((v) => !v)}
-          >
-            Sync filters ({activeFilterCount})
-          </Button>
-          <Button
-            variant={account.autoScheduleMeetings ? "primary" : "secondary"}
-            size="sm"
-            disabled={busy}
-            onClick={() =>
-              onUpdateAutoScheduleMeetings(!account.autoScheduleMeetings)
-            }
-          >
-            Auto-schedule meetings{" "}
-            {account.autoScheduleMeetings ? "(on)" : "(off)"}
-          </Button>
-          {!account.isPrimary && (
-            <Button variant="secondary" size="sm" onClick={onMakePrimary} disabled={busy}>
-              Make primary
-            </Button>
+          {isOwner && (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onToggleSync}
+                disabled={busy}
+              >
+                {account.syncEnabled ? "Pause sync" : "Resume sync"}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowAutoSend((v) => !v)}
+              >
+                Auto-send{" "}
+                {account.autoSendCategories.length > 0
+                  ? `(${account.autoSendCategories.length})`
+                  : "(off)"}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowFilters((v) => !v)}
+              >
+                Sync filters ({activeFilterCount})
+              </Button>
+              <Button
+                variant={account.autoScheduleMeetings ? "primary" : "secondary"}
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  onUpdateAutoScheduleMeetings(!account.autoScheduleMeetings)
+                }
+              >
+                Auto-schedule meetings{" "}
+                {account.autoScheduleMeetings ? "(on)" : "(off)"}
+              </Button>
+              {!account.isPrimary && (
+                <Button variant="secondary" size="sm" onClick={onMakePrimary} disabled={busy}>
+                  Make primary
+                </Button>
+              )}
+              <Button variant="danger" size="sm" onClick={onDisconnect} disabled={busy}>
+                Disconnect
+              </Button>
+            </>
           )}
-          <Button variant="danger" size="sm" onClick={onDisconnect} disabled={busy}>
-            Disconnect
-          </Button>
         </div>
       </div>
 
@@ -229,6 +253,122 @@ export function EmailAccountCard({
           </div>
         </div>
       )}
+
+      {showMembers && (
+        <MembersPanel accountId={account.id} isOwner={isOwner} />
+      )}
+    </div>
+  );
+}
+
+function MembersPanel({
+  accountId,
+  isOwner,
+}: {
+  accountId: string;
+  isOwner: boolean;
+}) {
+  const [email, setEmail] = useState("");
+  const queryClient = useQueryClient();
+
+  const { data: members, isLoading } = useQuery({
+    queryKey: ["account-members", accountId],
+    queryFn: () => listAccountMembers(accountId),
+  });
+
+  function invalidate() {
+    return queryClient.invalidateQueries({
+      queryKey: ["account-members", accountId],
+    });
+  }
+
+  const inviteMutation = useMutation({
+    mutationFn: (inviteeEmail: string) =>
+      inviteAccountMember(accountId, inviteeEmail),
+    onSuccess: () => {
+      setEmail("");
+      void invalidate();
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (userId: string) => removeAccountMember(accountId, userId),
+    onSuccess: () => void invalidate(),
+  });
+
+  return (
+    <div className="mt-4 border-t border-zinc-100 pt-3">
+      <p className="mb-2 text-xs text-zinc-500">
+        Everyone listed here can view and reply from this account&apos;s
+        shared inbox.
+        {isOwner
+          ? " Invite an existing user by the email they signed up with."
+          : " Only the owner can invite or remove people."}
+      </p>
+
+      {isOwner && (
+        <form
+          className="mb-3 flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (email.trim()) inviteMutation.mutate(email.trim());
+          }}
+        >
+          <input
+            type="email"
+            required
+            placeholder="teammate@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full max-w-xs rounded-md border border-zinc-300 px-3 py-1.5 text-sm"
+          />
+          <Button type="submit" size="sm" loading={inviteMutation.isPending}>
+            Invite
+          </Button>
+        </form>
+      )}
+
+      {inviteMutation.isError && (
+        <p className="mb-2 text-xs text-red-600">
+          {inviteMutation.error instanceof Error
+            ? inviteMutation.error.message
+            : "Could not invite that user"}
+        </p>
+      )}
+
+      {isLoading && <p className="text-xs text-zinc-400">Loading members…</p>}
+
+      <ul className="divide-y divide-zinc-100">
+        {members?.map((member) => (
+          <li
+            key={member.id}
+            className="flex items-center justify-between py-2"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm text-zinc-900">
+                {member.user.displayName ?? member.user.email}
+              </p>
+              <p className="text-xs text-zinc-500">
+                {member.user.email} ·{" "}
+                {member.role === "OWNER" ? "Owner" : "Member"}
+              </p>
+            </div>
+            {isOwner && member.role !== "OWNER" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                loading={
+                  removeMutation.isPending &&
+                  removeMutation.variables === member.userId
+                }
+                onClick={() => removeMutation.mutate(member.userId)}
+              >
+                Remove
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -250,6 +250,23 @@ export type EnumSyncStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumSyncStatusFilter<$PrismaModel>
 }
 
+export type EnumAccountRoleFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountRole | Prisma.EnumAccountRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountRoleFilter<$PrismaModel> | $Enums.AccountRole
+}
+
+export type EnumAccountRoleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountRole | Prisma.EnumAccountRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountRoleWithAggregatesFilter<$PrismaModel> | $Enums.AccountRole
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAccountRoleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAccountRoleFilter<$PrismaModel>
+}
+
 export type EnumCalendarProviderFilter<$PrismaModel = never> = {
   equals?: $Enums.CalendarProvider | Prisma.EnumCalendarProviderFieldRefInput<$PrismaModel>
   in?: $Enums.CalendarProvider[] | Prisma.ListEnumCalendarProviderFieldRefInput<$PrismaModel>
@@ -660,6 +677,23 @@ export type NestedEnumSyncStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumSyncStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumSyncStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumAccountRoleFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountRole | Prisma.EnumAccountRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountRoleFilter<$PrismaModel> | $Enums.AccountRole
+}
+
+export type NestedEnumAccountRoleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AccountRole | Prisma.EnumAccountRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AccountRole[] | Prisma.ListEnumAccountRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAccountRoleWithAggregatesFilter<$PrismaModel> | $Enums.AccountRole
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAccountRoleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAccountRoleFilter<$PrismaModel>
 }
 
 export type NestedEnumCalendarProviderFilter<$PrismaModel = never> = {

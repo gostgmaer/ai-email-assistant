@@ -1,6 +1,6 @@
 import { apiFetch, apiUrl } from "../api/client";
 import { getAccessToken } from "../auth/token-storage";
-import type { EmailAccount } from "../api/types";
+import type { AccountMember, EmailAccount } from "../api/types";
 
 export async function listEmailAccounts(): Promise<EmailAccount[]> {
   return apiFetch<EmailAccount[]>("/email-accounts");
@@ -71,4 +71,29 @@ export async function disconnectEmailAccount(id: string): Promise<void> {
 
 export async function triggerSync(id: string): Promise<void> {
   await apiFetch(`/email-accounts/${id}/sync`, { method: "POST" });
+}
+
+export async function listAccountMembers(
+  accountId: string,
+): Promise<AccountMember[]> {
+  return apiFetch<AccountMember[]>(`/email-accounts/${accountId}/members`);
+}
+
+export async function inviteAccountMember(
+  accountId: string,
+  email: string,
+): Promise<AccountMember> {
+  return apiFetch<AccountMember>(`/email-accounts/${accountId}/members`, {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export async function removeAccountMember(
+  accountId: string,
+  userId: string,
+): Promise<void> {
+  await apiFetch(`/email-accounts/${accountId}/members/${userId}`, {
+    method: "DELETE",
+  });
 }

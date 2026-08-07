@@ -29,13 +29,34 @@ export class EmailAccountService {
     private readonly queueService: QueueService,
   ) {}
 
-  async listForUser(userId: string): Promise<EmailAccountModel[]> {
-    return this.prisma.emailAccount.findMany({
-      where: { userId, deletedAt: null },
+  /** Every account this user owns or has been granted Shared Inbox access
+   * to (see AccountMember) — the owner always has their own membership
+   * row (backfilled for pre-v2.0 accounts, created at connect-time for
+   * new ones), so this single query covers both. `myRole` lets the
+   * frontend gate owner-only actions (rename, filters, disconnect,
+   * inviting members) without a second round trip per account. */
+  async listForUser(
+    userId: string,
+  ): Promise<(EmailAccountModel & { myRole: 'OWNER' | 'MEMBER' })[]> {
+    const accounts = await this.prisma.emailAccount.findMany({
+      where: { deletedAt: null, members: { some: { userId } } },
       orderBy: { createdAt: 'asc' },
+      include: { members: { where: { userId }, select: { role: true } } },
     });
+
+    return accounts.map(({ members, ...account }) => ({
+      ...account,
+      // Always exactly one row — the where clause above guarantees a
+      // membership match for every account returned.
+      myRole: members[0].role,
+    }));
   }
 
+  /** Strict ownership — for account-level configuration (rename, filters,
+   * auto-send/auto-schedule, primary flag) and destructive actions
+   * (disconnect). Shared Inbox members can work threads on the account
+   * (see getAccessibleAccountOrThrow) but not change its settings or
+   * disconnect it. */
   async getOwnedAccountOrThrow(
     userId: string,
     accountId: string,
@@ -50,6 +71,31 @@ export class EmailAccountService {
 
     if (account.userId !== userId) {
       throw new ForbiddenException('You do not own this email account');
+    }
+
+    return account;
+  }
+
+  /** Owner OR Shared Inbox member — for operational actions (view/reply/
+   * send/draft/sync) that any account member should be able to do. */
+  async getAccessibleAccountOrThrow(
+    userId: string,
+    accountId: string,
+  ): Promise<EmailAccountModel> {
+    const account = await this.prisma.emailAccount.findUnique({
+      where: { id: accountId },
+    });
+
+    if (!account || account.deletedAt) {
+      throw new NotFoundException('Email account not found');
+    }
+
+    const membership = await this.prisma.accountMember.findUnique({
+      where: { accountId_userId: { accountId, userId } },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You do not have access to this account');
     }
 
     return account;
@@ -130,6 +176,7 @@ export class EmailAccountService {
       },
     });
 
+    await this.ensureOwnerMembership(account.id, userId);
     await this.queueService.enqueueInitialSync(account.id);
 
     return account;
@@ -202,9 +249,24 @@ export class EmailAccountService {
       update: { accessToken: encryptedPassword },
     });
 
+    await this.ensureOwnerMembership(account.id, userId);
     await this.queueService.enqueueInitialSync(account.id);
 
     return account;
+  }
+
+  /** Idempotent — matches the emailCredential.upsert pattern above rather
+   * than a nested write, so reconnecting an already-owned account never
+   * throws on the AccountMember unique constraint. */
+  private async ensureOwnerMembership(
+    accountId: string,
+    userId: string,
+  ): Promise<void> {
+    await this.prisma.accountMember.upsert({
+      where: { accountId_userId: { accountId, userId } },
+      create: { accountId, userId, role: 'OWNER' },
+      update: {},
+    });
   }
 
   async updateAccount(
@@ -249,6 +311,83 @@ export class EmailAccountService {
       }),
       this.prisma.emailCredential.deleteMany({ where: { accountId } }),
     ]);
+  }
+
+  /** Any member can see who else has access — matches how shared mailboxes
+   * work elsewhere (Front, Help Scout): visibility into the team isn't a
+   * privileged action, only inviting/removing people is. */
+  async listMembers(userId: string, accountId: string) {
+    await this.getAccessibleAccountOrThrow(userId, accountId);
+
+    return this.prisma.accountMember.findMany({
+      where: { accountId },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: { id: true, email: true, displayName: true, avatar: true },
+        },
+      },
+    });
+  }
+
+  /**
+   * Grants an existing registered user access to this account. Deliberately
+   * simple for v2.0: no invite-by-email-to-a-non-user flow with a signup
+   * token (that's the kind of thing full multi-tenancy in v3.0 would want
+   * to do properly) — the invitee must already have an account here.
+   */
+  async inviteMember(
+    ownerUserId: string,
+    accountId: string,
+    inviteeEmail: string,
+  ) {
+    await this.getOwnedAccountOrThrow(ownerUserId, accountId);
+
+    const invitee = await this.prisma.user.findUnique({
+      where: { email: inviteeEmail },
+    });
+
+    if (!invitee) {
+      throw new NotFoundException(
+        'No user with that email has an account here yet',
+      );
+    }
+
+    return this.prisma.accountMember.upsert({
+      where: { accountId_userId: { accountId, userId: invitee.id } },
+      create: {
+        accountId,
+        userId: invitee.id,
+        role: 'MEMBER',
+        invitedByUserId: ownerUserId,
+      },
+      // Already a member (including the owner themselves) — no-op rather
+      // than an error, so re-inviting isn't a footgun.
+      update: {},
+      include: {
+        user: {
+          select: { id: true, email: true, displayName: true, avatar: true },
+        },
+      },
+    });
+  }
+
+  async removeMember(
+    ownerUserId: string,
+    accountId: string,
+    targetUserId: string,
+  ): Promise<void> {
+    const account = await this.getOwnedAccountOrThrow(ownerUserId, accountId);
+
+    if (targetUserId === account.userId) {
+      throw new ForbiddenException(
+        'The account owner cannot be removed — disconnect the account instead',
+      );
+    }
+
+    await this.prisma.accountMember.deleteMany({
+      where: { accountId, userId: targetUserId },
+    });
   }
 
   /** Decrypted, refreshed-if-needed access token for GOOGLE/MICROSOFT accounts. */

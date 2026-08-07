@@ -24,8 +24,10 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import {
+  AssignThreadDto,
   ComposeEmailDto,
   CreateDraftDto,
+  CreateNoteDto,
   ListThreadsDto,
   ReplyEmailDto,
   SaveDraftDto,
@@ -100,6 +102,48 @@ export class EmailController {
     @Param('id') id: string,
   ) {
     await this.inboxService.unsnooze(user.sub, id);
+  }
+
+  @Patch('threads/:id/assign')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'Assign, reassign, or unassign a thread within a Shared Inbox account (omit/null assigneeUserId to unassign)',
+  })
+  @ApiResponse({ status: 204, description: 'Thread assignment updated' })
+  @ApiResponse({ status: 404, description: 'Thread not found' })
+  async assignThread(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: AssignThreadDto,
+  ) {
+    await this.inboxService.assignThread(user.sub, id, dto.assigneeUserId);
+  }
+
+  @Post('threads/:id/notes')
+  @ApiOperation({
+    summary:
+      "Add an internal note to a thread — visible only to the account's Shared Inbox members, never sent externally",
+  })
+  @ApiResponse({ status: 201, description: 'The created note' })
+  async addNote(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: CreateNoteDto,
+  ) {
+    return this.inboxService.addNote(user.sub, id, dto.body);
+  }
+
+  @Delete('threads/:id/notes/:noteId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete an internal note' })
+  @ApiResponse({ status: 204, description: 'Note deleted' })
+  async deleteNote(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Param('noteId') noteId: string,
+  ) {
+    await this.inboxService.deleteNote(user.sub, id, noteId);
   }
 
   @Get('messages/:id')

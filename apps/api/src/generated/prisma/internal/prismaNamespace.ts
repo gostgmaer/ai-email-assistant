@@ -402,11 +402,13 @@ export const ModelName = {
   Notification: 'Notification',
   RefreshToken: 'RefreshToken',
   EmailAccount: 'EmailAccount',
+  AccountMember: 'AccountMember',
   EmailCredential: 'EmailCredential',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
   MailFolder: 'MailFolder',
   EmailThread: 'EmailThread',
+  ThreadNote: 'ThreadNote',
   EmailMessage: 'EmailMessage',
   Task: 'Task',
   ContactMemory: 'ContactMemory',
@@ -427,7 +429,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
+    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "accountMember" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "threadNote" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -801,6 +803,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AccountMember: {
+      payload: Prisma.$AccountMemberPayload<ExtArgs>
+      fields: Prisma.AccountMemberFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AccountMemberFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AccountMemberFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>
+        }
+        findFirst: {
+          args: Prisma.AccountMemberFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AccountMemberFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>
+        }
+        findMany: {
+          args: Prisma.AccountMemberFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>[]
+        }
+        create: {
+          args: Prisma.AccountMemberCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>
+        }
+        createMany: {
+          args: Prisma.AccountMemberCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AccountMemberCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>[]
+        }
+        delete: {
+          args: Prisma.AccountMemberDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>
+        }
+        update: {
+          args: Prisma.AccountMemberUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>
+        }
+        deleteMany: {
+          args: Prisma.AccountMemberDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AccountMemberUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AccountMemberUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>[]
+        }
+        upsert: {
+          args: Prisma.AccountMemberUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountMemberPayload>
+        }
+        aggregate: {
+          args: Prisma.AccountMemberAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAccountMember>
+        }
+        groupBy: {
+          args: Prisma.AccountMemberGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AccountMemberGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AccountMemberCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AccountMemberCountAggregateOutputType> | number
+        }
+      }
+    }
     EmailCredential: {
       payload: Prisma.$EmailCredentialPayload<ExtArgs>
       fields: Prisma.EmailCredentialFieldRefs
@@ -1168,6 +1244,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EmailThreadCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EmailThreadCountAggregateOutputType> | number
+        }
+      }
+    }
+    ThreadNote: {
+      payload: Prisma.$ThreadNotePayload<ExtArgs>
+      fields: Prisma.ThreadNoteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ThreadNoteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ThreadNoteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>
+        }
+        findFirst: {
+          args: Prisma.ThreadNoteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ThreadNoteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>
+        }
+        findMany: {
+          args: Prisma.ThreadNoteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>[]
+        }
+        create: {
+          args: Prisma.ThreadNoteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>
+        }
+        createMany: {
+          args: Prisma.ThreadNoteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ThreadNoteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>[]
+        }
+        delete: {
+          args: Prisma.ThreadNoteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>
+        }
+        update: {
+          args: Prisma.ThreadNoteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>
+        }
+        deleteMany: {
+          args: Prisma.ThreadNoteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ThreadNoteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ThreadNoteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>[]
+        }
+        upsert: {
+          args: Prisma.ThreadNoteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ThreadNotePayload>
+        }
+        aggregate: {
+          args: Prisma.ThreadNoteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateThreadNote>
+        }
+        groupBy: {
+          args: Prisma.ThreadNoteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ThreadNoteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ThreadNoteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ThreadNoteCountAggregateOutputType> | number
         }
       }
     }
@@ -1667,6 +1817,18 @@ export const EmailAccountScalarFieldEnum = {
 export type EmailAccountScalarFieldEnum = (typeof EmailAccountScalarFieldEnum)[keyof typeof EmailAccountScalarFieldEnum]
 
 
+export const AccountMemberScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  userId: 'userId',
+  role: 'role',
+  invitedByUserId: 'invitedByUserId',
+  createdAt: 'createdAt'
+} as const
+
+export type AccountMemberScalarFieldEnum = (typeof AccountMemberScalarFieldEnum)[keyof typeof AccountMemberScalarFieldEnum]
+
+
 export const EmailCredentialScalarFieldEnum = {
   id: 'id',
   accountId: 'accountId',
@@ -1731,11 +1893,23 @@ export const EmailThreadScalarFieldEnum = {
   snippet: 'snippet',
   lastMessageAt: 'lastMessageAt',
   snoozedUntil: 'snoozedUntil',
+  assignedToUserId: 'assignedToUserId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type EmailThreadScalarFieldEnum = (typeof EmailThreadScalarFieldEnum)[keyof typeof EmailThreadScalarFieldEnum]
+
+
+export const ThreadNoteScalarFieldEnum = {
+  id: 'id',
+  threadId: 'threadId',
+  authorId: 'authorId',
+  body: 'body',
+  createdAt: 'createdAt'
+} as const
+
+export type ThreadNoteScalarFieldEnum = (typeof ThreadNoteScalarFieldEnum)[keyof typeof ThreadNoteScalarFieldEnum]
 
 
 export const EmailMessageScalarFieldEnum = {
@@ -2020,6 +2194,20 @@ export type ListEnumSyncStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
+ * Reference to a field of type 'AccountRole'
+ */
+export type EnumAccountRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountRole'>
+    
+
+
+/**
+ * Reference to a field of type 'AccountRole[]'
+ */
+export type ListEnumAccountRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountRole[]'>
+    
+
+
+/**
  * Reference to a field of type 'CalendarProvider'
  */
 export type EnumCalendarProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CalendarProvider'>
@@ -2272,11 +2460,13 @@ export type GlobalOmitConfig = {
   notification?: Prisma.NotificationOmit
   refreshToken?: Prisma.RefreshTokenOmit
   emailAccount?: Prisma.EmailAccountOmit
+  accountMember?: Prisma.AccountMemberOmit
   emailCredential?: Prisma.EmailCredentialOmit
   calendarAccount?: Prisma.CalendarAccountOmit
   calendarCredential?: Prisma.CalendarCredentialOmit
   mailFolder?: Prisma.MailFolderOmit
   emailThread?: Prisma.EmailThreadOmit
+  threadNote?: Prisma.ThreadNoteOmit
   emailMessage?: Prisma.EmailMessageOmit
   task?: Prisma.TaskOmit
   contactMemory?: Prisma.ContactMemoryOmit

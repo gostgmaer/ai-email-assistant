@@ -68,10 +68,24 @@ export class TasksService {
     }
   }
 
+  /** A task is visible to whoever it was extracted for (Task.userId,
+   * always the account owner — see createFromExtraction) *or* anyone with
+   * Shared Inbox access to the source thread's account. Tasks with no
+   * threadId (none currently, but the field is nullable) fall back to
+   * userId-only, same as before Shared Inbox existed. */
+  private accessibleTaskWhere(userId: string) {
+    return {
+      OR: [
+        { userId },
+        { thread: { account: { members: { some: { userId } } } } },
+      ],
+    };
+  }
+
   async listForUser(userId: string, filters?: TaskFilters): Promise<Task[]> {
     return this.prisma.task.findMany({
       where: {
-        userId,
+        ...this.accessibleTaskWhere(userId),
         ...(filters?.status ? { status: filters.status } : {}),
       },
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
@@ -83,11 +97,12 @@ export class TasksService {
     taskId: string,
     status: TaskStatus,
   ): Promise<Task> {
-    // updateMany scoped by userId avoids a check-then-update race and never
-    // throws for another user's task — it just matches zero rows, which we
-    // then report as 404 (same pattern as DocumentsService.remove()).
+    // updateMany scoped by accessibleTaskWhere avoids a check-then-update
+    // race and never throws for a task the user can't reach — it just
+    // matches zero rows, which we then report as 404 (same pattern as
+    // DocumentsService.remove()).
     const { count } = await this.prisma.task.updateMany({
-      where: { id: taskId, userId },
+      where: { id: taskId, ...this.accessibleTaskWhere(userId) },
       data: {
         status,
         completedAt: status === 'DONE' ? new Date() : null,
@@ -105,8 +120,8 @@ export class TasksService {
    * scheduling) can default the attendee to whoever sent the original
    * request, without a second round trip. */
   async getOwnedTaskWithMessage(userId: string, taskId: string) {
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
+    const task = await this.prisma.task.findFirst({
+      where: { id: taskId, ...this.accessibleTaskWhere(userId) },
       include: {
         emailMessage: {
           select: { from: true, subject: true, bodyText: true },
@@ -114,7 +129,7 @@ export class TasksService {
       },
     });
 
-    if (!task || task.userId !== userId) {
+    if (!task) {
       throw new NotFoundException('Task not found');
     }
 

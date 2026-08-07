@@ -56,11 +56,13 @@ export const ModelName = {
   Notification: 'Notification',
   RefreshToken: 'RefreshToken',
   EmailAccount: 'EmailAccount',
+  AccountMember: 'AccountMember',
   EmailCredential: 'EmailCredential',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
   MailFolder: 'MailFolder',
   EmailThread: 'EmailThread',
+  ThreadNote: 'ThreadNote',
   EmailMessage: 'EmailMessage',
   Task: 'Task',
   ContactMemory: 'ContactMemory',
@@ -171,6 +173,18 @@ export const EmailAccountScalarFieldEnum = {
 export type EmailAccountScalarFieldEnum = (typeof EmailAccountScalarFieldEnum)[keyof typeof EmailAccountScalarFieldEnum]
 
 
+export const AccountMemberScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  userId: 'userId',
+  role: 'role',
+  invitedByUserId: 'invitedByUserId',
+  createdAt: 'createdAt'
+} as const
+
+export type AccountMemberScalarFieldEnum = (typeof AccountMemberScalarFieldEnum)[keyof typeof AccountMemberScalarFieldEnum]
+
+
 export const EmailCredentialScalarFieldEnum = {
   id: 'id',
   accountId: 'accountId',
@@ -235,11 +249,23 @@ export const EmailThreadScalarFieldEnum = {
   snippet: 'snippet',
   lastMessageAt: 'lastMessageAt',
   snoozedUntil: 'snoozedUntil',
+  assignedToUserId: 'assignedToUserId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type EmailThreadScalarFieldEnum = (typeof EmailThreadScalarFieldEnum)[keyof typeof EmailThreadScalarFieldEnum]
+
+
+export const ThreadNoteScalarFieldEnum = {
+  id: 'id',
+  threadId: 'threadId',
+  authorId: 'authorId',
+  body: 'body',
+  createdAt: 'createdAt'
+} as const
+
+export type ThreadNoteScalarFieldEnum = (typeof ThreadNoteScalarFieldEnum)[keyof typeof ThreadNoteScalarFieldEnum]
 
 
 export const EmailMessageScalarFieldEnum = {

@@ -19,6 +19,8 @@ export interface User {
   updatedAt: string;
 }
 
+export type AccountRole = "OWNER" | "MEMBER";
+
 export interface EmailAccount {
   id: string;
   provider: EmailProvider;
@@ -38,6 +40,34 @@ export interface EmailAccount {
   filterShipping: boolean;
   filterCalendar: boolean;
   createdAt: string;
+  /** This user's Shared Inbox role on this account — OWNER can change
+   * settings/disconnect/invite members, MEMBER can only work threads. */
+  myRole: AccountRole;
+}
+
+export interface AccountMember {
+  id: string;
+  accountId: string;
+  userId: string;
+  role: AccountRole;
+  invitedByUserId: string | null;
+  createdAt: string;
+  user: { id: string; email: string; displayName: string | null; avatar: string | null };
+}
+
+export interface ThreadNote {
+  id: string;
+  threadId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  author: { id: string; email: string; displayName: string | null };
+}
+
+export interface ThreadAssignee {
+  id: string;
+  email: string;
+  displayName: string | null;
 }
 
 export interface Participant {
@@ -102,6 +132,7 @@ export interface EmailThreadSummary {
     account: { id: string; provider: EmailProvider; email: string };
   };
   messages: EmailMessage[];
+  assignedTo: ThreadAssignee | null;
   _count: { messages: number };
 }
 
@@ -125,6 +156,8 @@ export interface EmailThreadDetail {
     providerFolderId: string | null;
   };
   messages: EmailMessage[];
+  assignedTo: ThreadAssignee | null;
+  notes: ThreadNote[];
 }
 
 export interface Pagination {

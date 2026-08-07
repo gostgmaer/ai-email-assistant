@@ -45,7 +45,7 @@ export class ComposeService {
   ) {}
 
   async send(userId: string, dto: ComposeEmailDto) {
-    const account = await this.emailAccountService.getOwnedAccountOrThrow(
+    const account = await this.emailAccountService.getAccessibleAccountOrThrow(
       userId,
       dto.accountId,
     );
@@ -82,10 +82,14 @@ export class ComposeService {
     );
     const account = original.thread.account;
 
-    const fullAccount = await this.emailAccountService.getOwnedAccountOrThrow(
-      userId,
-      account.id,
-    );
+    // getMessageOwned() above already verified access — this second
+    // lookup just needs the full EmailAccount row (only id/provider/
+    // userId were selected there), not another permission check.
+    const fullAccount =
+      await this.emailAccountService.getAccessibleAccountOrThrow(
+        userId,
+        account.id,
+      );
 
     const client = await this.mailProviderFactory.createClient(fullAccount);
 
@@ -174,7 +178,7 @@ export class ComposeService {
   }
 
   async saveDraft(userId: string, dto: CreateDraftDto) {
-    const account = await this.emailAccountService.getOwnedAccountOrThrow(
+    const account = await this.emailAccountService.getAccessibleAccountOrThrow(
       userId,
       dto.accountId,
     );
@@ -279,9 +283,10 @@ export class ComposeService {
       throw new NotFoundException('Draft not found');
     }
 
-    if (message.thread.folder.account.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this draft');
-    }
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      message.thread.folder.account.id,
+    );
 
     return message;
   }

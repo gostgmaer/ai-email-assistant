@@ -2,6 +2,7 @@ import { apiFetch } from "../api/client";
 import type {
   EmailMessage,
   EmailThreadDetail,
+  ThreadNote,
   ThreadsPage,
 } from "../api/types";
 
@@ -43,6 +44,36 @@ export async function snoozeThread(id: string, until: string): Promise<void> {
 
 export async function unsnoozeThread(id: string): Promise<void> {
   await apiFetch(`/email/threads/${id}/unsnooze`, { method: "PATCH" });
+}
+
+/** Shared Inbox: assign a thread to a teammate, or pass null to unassign. */
+export async function assignThread(
+  id: string,
+  assigneeUserId: string | null,
+): Promise<void> {
+  await apiFetch(`/email/threads/${id}/assign`, {
+    method: "PATCH",
+    body: { assigneeUserId },
+  });
+}
+
+export async function addThreadNote(
+  id: string,
+  body: string,
+): Promise<ThreadNote> {
+  return apiFetch<ThreadNote>(`/email/threads/${id}/notes`, {
+    method: "POST",
+    body: { body },
+  });
+}
+
+export async function deleteThreadNote(
+  threadId: string,
+  noteId: string,
+): Promise<void> {
+  await apiFetch(`/email/threads/${threadId}/notes/${noteId}`, {
+    method: "DELETE",
+  });
 }
 
 export interface FollowUpCandidate {

@@ -43,6 +43,18 @@ enum DocumentStatus {
   FAILED
 }
 
+// OWNER is always the account's connecting user (EmailAccount.userId) and
+// gets an AccountMember row created alongside it — "who can access this
+// account" is then always exactly "SELECT * FROM AccountMember WHERE
+// accountId = X", with no special-casing of the owner at query sites.
+// MEMBER is everyone explicitly invited afterward. Two roles only for
+// v2.0; see docs/v2.0-plan.md's "Open decisions" for why a third
+// (read-only VIEWER) tier is deferred rather than added speculatively.
+enum AccountRole {
+  OWNER
+  MEMBER
+}
+
 model User {
   id          String  @id @default(uuid())
   email       String  @unique
@@ -68,6 +80,9 @@ model User {
   contactMemories    ContactMemory[]
   documents          Document[]
   tasks              Task[]
+  accountMemberships AccountMember[]
+  assignedThreads    EmailThread[]   @relation("ThreadAssignee")
+  threadNotes        ThreadNote[]
 
   @@index([createdAt])
 }
@@ -185,8 +200,38 @@ model EmailAccount {
 
   folders MailFolder[]
   threads EmailThread[]
+  members AccountMember[]
 
   @@unique([provider, email])
+  @@index([userId])
+}
+
+/**
+ * Shared Inbox access grant — deliberately scoped to one EmailAccount, not
+ * an org/workspace. See docs/v2.0-plan.md: v2.0 does account-level
+ * sharing, full multi-tenancy (organizations, cross-account RBAC, SSO) is
+ * v3.0. A row here (including the OWNER row, created alongside the
+ * account itself) is the single source of truth for "can this user act on
+ * this account" — see AccountRole's comment.
+ */
+model AccountMember {
+  id String @id @default(uuid())
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role AccountRole @default(MEMBER)
+
+  // Who sent the invite that created this row; null for the OWNER row
+  // (created by the connect flow itself, not an invite).
+  invitedByUserId String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([accountId, userId])
   @@index([userId])
 }
 
@@ -307,8 +352,18 @@ model EmailThread {
   // excluded once this timestamp passes. Null means not snoozed.
   snoozedUntil DateTime?
 
+  // Shared Inbox (v2.0): who on the account is responsible for this
+  // conversation. Must be an AccountMember of this thread's account —
+  // enforced in InboxService, not at the schema level (Prisma can't
+  // express "assignedTo must be a member of this.accountId"). Null means
+  // unassigned; assigning/unassigning doesn't change any AI pipeline
+  // behavior, it's purely a collaboration signal.
+  assignedToUserId String?
+  assignedTo       User?   @relation("ThreadAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+
   messages EmailMessage[]
   tasks    Task[]
+  notes    ThreadNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -316,6 +371,30 @@ model EmailThread {
   @@unique([accountId, providerThreadId])
   @@index([folderId])
   @@index([snoozedUntil])
+  @@index([assignedToUserId])
+}
+
+/**
+ * Shared Inbox (v2.0) internal note on a thread — visible only to the
+ * account's members, never sent to the external party or included in any
+ * AI prompt context. Deliberately its own model rather than reusing
+ * EmailMessage: a note isn't a message (no from/to/provider IDs, doesn't
+ * sync anywhere, can be deleted freely without touching provider state).
+ */
+model ThreadNote {
+  id String @id @default(uuid())
+
+  threadId String
+  thread   EmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  body String
+
+  createdAt DateTime @default(now())
+
+  @@index([threadId])
 }
 
 model EmailMessage {

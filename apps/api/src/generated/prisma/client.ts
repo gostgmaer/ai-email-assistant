@@ -65,6 +65,17 @@ export type RefreshToken = Prisma.RefreshTokenModel
  */
 export type EmailAccount = Prisma.EmailAccountModel
 /**
+ * Model AccountMember
+ * *
+ *  * Shared Inbox access grant — deliberately scoped to one EmailAccount, not
+ *  * an org/workspace. See docs/v2.0-plan.md: v2.0 does account-level
+ *  * sharing, full multi-tenancy (organizations, cross-account RBAC, SSO) is
+ *  * v3.0. A row here (including the OWNER row, created alongside the
+ *  * account itself) is the single source of truth for "can this user act on
+ *  * this account" — see AccountRole's comment.
+ */
+export type AccountMember = Prisma.AccountMemberModel
+/**
  * Model EmailCredential
  * 
  */
@@ -89,6 +100,16 @@ export type MailFolder = Prisma.MailFolderModel
  * 
  */
 export type EmailThread = Prisma.EmailThreadModel
+/**
+ * Model ThreadNote
+ * *
+ *  * Shared Inbox (v2.0) internal note on a thread — visible only to the
+ *  * account's members, never sent to the external party or included in any
+ *  * AI prompt context. Deliberately its own model rather than reusing
+ *  * EmailMessage: a note isn't a message (no from/to/provider IDs, doesn't
+ *  * sync anywhere, can be deleted freely without touching provider state).
+ */
+export type ThreadNote = Prisma.ThreadNoteModel
 /**
  * Model EmailMessage
  * 
