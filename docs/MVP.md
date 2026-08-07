@@ -337,9 +337,12 @@ A user should be able to:
 - [x] Opt-in full automation toggle (`EmailAccount.autoScheduleMeetings`, off by default)
 
 ## v2.0
-- [ ] Multi-tenancy
+- [ ] Client Deployment (real hosted environment — not just local Docker Compose)
 - [ ] Shared Inbox
 - [ ] Team Collaboration
 - [ ] Workflow Builder
 - [ ] AI Agents
-- [ ] Enterprise Features
+
+## v3.0
+- [ ] Multi-tenancy
+- [ ] Enterprise Features (moved from v2.0 — depends on multi-tenancy existing first)
