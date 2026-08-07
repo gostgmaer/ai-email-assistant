@@ -21,7 +21,15 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { CurrentUser, JwtAuthGuard, JwtPayload } from '../../auth';
+// Leaf-file imports rather than the '../../auth' barrel — that barrel
+// re-exports auth.module.ts, which sits in a forwardRef() cycle with
+// CalendarModule/AiModule/DocumentsModule. Nest's own bootstrap resolves
+// that cycle fine, but requiring this controller in isolation (e.g. a
+// unit test elsewhere in the graph) can hit auth/index.ts mid-load and
+// find these decorators undefined.
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import { SearchDocumentsDto } from '../dto';
 import {
   DocumentsService,

@@ -30,6 +30,7 @@ export interface EmailAccount {
   lastSyncedAt: string | null;
   lastSyncError: string | null;
   autoSendCategories: string[];
+  autoScheduleMeetings: boolean;
   filterMarketing: boolean;
   filterOtp: boolean;
   filterPasswordReset: boolean;

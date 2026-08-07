@@ -6,7 +6,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { CurrentUser, JwtAuthGuard, JwtPayload } from '../../auth';
+// Leaf-file imports rather than the '../../auth' barrel — see the comment
+// in documents.controller.ts for why.
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import { GetAvailabilityDto } from '../dto';
 import { CalendarAccountService } from '../services/calendar-account.service';
 import { CalendarService } from '../services/calendar.service';
@@ -41,6 +45,7 @@ export class CalendarController {
     return this.calendarService.getFreeBusy(
       accountId,
       account.provider,
+      account.email,
       new Date(query.timeMin),
       new Date(query.timeMax),
     );

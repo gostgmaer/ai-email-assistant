@@ -10,7 +10,8 @@ import { PrismaService } from '../../../database';
 import { MailerService } from '../../../infrastructure/mailer';
 import { UserModel } from '../../../generated/prisma/models';
 import { VerificationTokenType } from '../../../generated/prisma/enums';
-import { PasswordService, VerificationTokenService } from '../../auth';
+import { PasswordService } from '../../auth/services/password.service';
+import { VerificationTokenService } from '../../auth/services/verification-token.service';
 import { ChangeEmailDto, ChangePasswordDto, UpdateProfileDto } from '../dto';
 
 @Injectable()

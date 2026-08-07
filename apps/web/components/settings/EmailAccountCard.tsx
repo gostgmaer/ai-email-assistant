@@ -52,6 +52,7 @@ export function EmailAccountCard({
   onDisconnect,
   onUpdateAutoSend,
   onUpdateFilters,
+  onUpdateAutoScheduleMeetings,
   busy,
 }: {
   account: EmailAccount;
@@ -61,6 +62,7 @@ export function EmailAccountCard({
   onDisconnect: () => void;
   onUpdateAutoSend: (categories: string[]) => void;
   onUpdateFilters: (filters: Partial<Record<SyncFilterKey, boolean>>) => void;
+  onUpdateAutoScheduleMeetings: (enabled: boolean) => void;
   busy: boolean;
 }) {
   const [showAutoSend, setShowAutoSend] = useState(false);
@@ -141,6 +143,17 @@ export function EmailAccountCard({
             onClick={() => setShowFilters((v) => !v)}
           >
             Sync filters ({activeFilterCount})
+          </Button>
+          <Button
+            variant={account.autoScheduleMeetings ? "primary" : "secondary"}
+            size="sm"
+            disabled={busy}
+            onClick={() =>
+              onUpdateAutoScheduleMeetings(!account.autoScheduleMeetings)
+            }
+          >
+            Auto-schedule meetings{" "}
+            {account.autoScheduleMeetings ? "(on)" : "(off)"}
           </Button>
           {!account.isPrimary && (
             <Button variant="secondary" size="sm" onClick={onMakePrimary} disabled={busy}>

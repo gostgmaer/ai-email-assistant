@@ -215,6 +215,7 @@ export class EmailAccountService {
       isPrimary?: boolean;
       syncEnabled?: boolean;
       autoSendCategories?: string[];
+      autoScheduleMeetings?: boolean;
       filterMarketing?: boolean;
       filterOtp?: boolean;
       filterPasswordReset?: boolean;

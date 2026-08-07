@@ -27,7 +27,7 @@ export class TasksService {
     messageId: string,
     threadId: string,
     extraction: ExtractionResult,
-  ): Promise<void> {
+  ): Promise<Task[]> {
     const rows = [
       ...extraction.tasks.map((description) => ({
         type: 'ACTION_ITEM' as const,
@@ -40,23 +40,31 @@ export class TasksService {
     ].filter((row) => row.description.trim().length > 0);
 
     if (rows.length === 0) {
-      return;
+      return [];
     }
 
     try {
-      await this.prisma.task.createMany({
-        data: rows.map((row) => ({
-          userId,
-          emailMessageId: messageId,
-          threadId,
-          type: row.type,
-          description: row.description,
-        })),
-      });
+      // create (not createMany) so callers get back the created rows'
+      // IDs — the opt-in auto-schedule hook needs the MEETING_REQUEST
+      // task ID to act on immediately after extraction.
+      return await this.prisma.$transaction(
+        rows.map((row) =>
+          this.prisma.task.create({
+            data: {
+              userId,
+              emailMessageId: messageId,
+              threadId,
+              type: row.type,
+              description: row.description,
+            },
+          }),
+        ),
+      );
     } catch (error) {
       this.logger.warn(
         `Failed to persist extracted tasks for message ${messageId}: ${String(error)}`,
       );
+      return [];
     }
   }
 
@@ -99,7 +107,11 @@ export class TasksService {
   async getOwnedTaskWithMessage(userId: string, taskId: string) {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      include: { emailMessage: { select: { from: true } } },
+      include: {
+        emailMessage: {
+          select: { from: true, subject: true, bodyText: true },
+        },
+      },
     });
 
     if (!task || task.userId !== userId) {

@@ -1648,6 +1648,7 @@ export const EmailAccountScalarFieldEnum = {
   isPrimary: 'isPrimary',
   syncEnabled: 'syncEnabled',
   autoSendCategories: 'autoSendCategories',
+  autoScheduleMeetings: 'autoScheduleMeetings',
   filterMarketing: 'filterMarketing',
   filterOtp: 'filterOtp',
   filterPasswordReset: 'filterPasswordReset',

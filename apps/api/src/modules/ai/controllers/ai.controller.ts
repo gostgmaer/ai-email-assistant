@@ -6,7 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '../../auth';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   ClassifyDto,
   GenerateReplyDto,

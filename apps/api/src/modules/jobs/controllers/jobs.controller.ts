@@ -20,7 +20,7 @@ import {
   QueueNames,
   QueueService,
 } from '../../../infrastructure/queue';
-import { JwtAuthGuard } from '../../auth';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 const QUEUE_NAME_VALUES: string[] = Object.values(QueueNames);
 

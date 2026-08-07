@@ -35,6 +35,14 @@ export class UpdateEmailAccountDto {
   autoSendCategories?: string[];
 
   @ApiPropertyOptional({
+    description:
+      'Automatically schedule MEETING_REQUEST tasks extracted from this account (AI-suggested time, event created, confirmation reply sent) with no human review. Off by default.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  autoScheduleMeetings?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Exclude marketing/promotional mail from sync (default true).',
   })
   @IsOptional()

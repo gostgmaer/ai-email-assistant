@@ -32,6 +32,7 @@ export type EmailAccountMinAggregateOutputType = {
   displayName: string | null
   isPrimary: boolean | null
   syncEnabled: boolean | null
+  autoScheduleMeetings: boolean | null
   filterMarketing: boolean | null
   filterOtp: boolean | null
   filterPasswordReset: boolean | null
@@ -54,6 +55,7 @@ export type EmailAccountMaxAggregateOutputType = {
   displayName: string | null
   isPrimary: boolean | null
   syncEnabled: boolean | null
+  autoScheduleMeetings: boolean | null
   filterMarketing: boolean | null
   filterOtp: boolean | null
   filterPasswordReset: boolean | null
@@ -77,6 +79,7 @@ export type EmailAccountCountAggregateOutputType = {
   isPrimary: number
   syncEnabled: number
   autoSendCategories: number
+  autoScheduleMeetings: number
   filterMarketing: number
   filterOtp: number
   filterPasswordReset: number
@@ -102,6 +105,7 @@ export type EmailAccountMinAggregateInputType = {
   displayName?: true
   isPrimary?: true
   syncEnabled?: true
+  autoScheduleMeetings?: true
   filterMarketing?: true
   filterOtp?: true
   filterPasswordReset?: true
@@ -124,6 +128,7 @@ export type EmailAccountMaxAggregateInputType = {
   displayName?: true
   isPrimary?: true
   syncEnabled?: true
+  autoScheduleMeetings?: true
   filterMarketing?: true
   filterOtp?: true
   filterPasswordReset?: true
@@ -147,6 +152,7 @@ export type EmailAccountCountAggregateInputType = {
   isPrimary?: true
   syncEnabled?: true
   autoSendCategories?: true
+  autoScheduleMeetings?: true
   filterMarketing?: true
   filterOtp?: true
   filterPasswordReset?: true
@@ -244,6 +250,7 @@ export type EmailAccountGroupByOutputType = {
   isPrimary: boolean
   syncEnabled: boolean
   autoSendCategories: string[]
+  autoScheduleMeetings: boolean
   filterMarketing: boolean
   filterOtp: boolean
   filterPasswordReset: boolean
@@ -289,6 +296,7 @@ export type EmailAccountWhereInput = {
   isPrimary?: Prisma.BoolFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  autoScheduleMeetings?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterMarketing?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterOtp?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterPasswordReset?: Prisma.BoolFilter<"EmailAccount"> | boolean
@@ -317,6 +325,7 @@ export type EmailAccountOrderByWithRelationInput = {
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
   autoSendCategories?: Prisma.SortOrder
+  autoScheduleMeetings?: Prisma.SortOrder
   filterMarketing?: Prisma.SortOrder
   filterOtp?: Prisma.SortOrder
   filterPasswordReset?: Prisma.SortOrder
@@ -349,6 +358,7 @@ export type EmailAccountWhereUniqueInput = Prisma.AtLeast<{
   isPrimary?: Prisma.BoolFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  autoScheduleMeetings?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterMarketing?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterOtp?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterPasswordReset?: Prisma.BoolFilter<"EmailAccount"> | boolean
@@ -377,6 +387,7 @@ export type EmailAccountOrderByWithAggregationInput = {
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
   autoSendCategories?: Prisma.SortOrder
+  autoScheduleMeetings?: Prisma.SortOrder
   filterMarketing?: Prisma.SortOrder
   filterOtp?: Prisma.SortOrder
   filterPasswordReset?: Prisma.SortOrder
@@ -407,6 +418,7 @@ export type EmailAccountScalarWhereWithAggregatesInput = {
   isPrimary?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  autoScheduleMeetings?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   filterMarketing?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   filterOtp?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   filterPasswordReset?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
@@ -430,6 +442,7 @@ export type EmailAccountCreateInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -458,6 +471,7 @@ export type EmailAccountUncheckedCreateInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -484,6 +498,7 @@ export type EmailAccountUpdateInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -512,6 +527,7 @@ export type EmailAccountUncheckedUpdateInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -539,6 +555,7 @@ export type EmailAccountCreateManyInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -562,6 +579,7 @@ export type EmailAccountUpdateManyMutationInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -586,6 +604,7 @@ export type EmailAccountUncheckedUpdateManyInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -633,6 +652,7 @@ export type EmailAccountCountOrderByAggregateInput = {
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
   autoSendCategories?: Prisma.SortOrder
+  autoScheduleMeetings?: Prisma.SortOrder
   filterMarketing?: Prisma.SortOrder
   filterOtp?: Prisma.SortOrder
   filterPasswordReset?: Prisma.SortOrder
@@ -656,6 +676,7 @@ export type EmailAccountMaxOrderByAggregateInput = {
   displayName?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
+  autoScheduleMeetings?: Prisma.SortOrder
   filterMarketing?: Prisma.SortOrder
   filterOtp?: Prisma.SortOrder
   filterPasswordReset?: Prisma.SortOrder
@@ -678,6 +699,7 @@ export type EmailAccountMinOrderByAggregateInput = {
   displayName?: Prisma.SortOrder
   isPrimary?: Prisma.SortOrder
   syncEnabled?: Prisma.SortOrder
+  autoScheduleMeetings?: Prisma.SortOrder
   filterMarketing?: Prisma.SortOrder
   filterOtp?: Prisma.SortOrder
   filterPasswordReset?: Prisma.SortOrder
@@ -806,6 +828,7 @@ export type EmailAccountCreateWithoutUserInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -832,6 +855,7 @@ export type EmailAccountUncheckedCreateWithoutUserInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -888,6 +912,7 @@ export type EmailAccountScalarWhereInput = {
   isPrimary?: Prisma.BoolFilter<"EmailAccount"> | boolean
   syncEnabled?: Prisma.BoolFilter<"EmailAccount"> | boolean
   autoSendCategories?: Prisma.StringNullableListFilter<"EmailAccount">
+  autoScheduleMeetings?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterMarketing?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterOtp?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterPasswordReset?: Prisma.BoolFilter<"EmailAccount"> | boolean
@@ -911,6 +936,7 @@ export type EmailAccountCreateWithoutCredentialInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -938,6 +964,7 @@ export type EmailAccountUncheckedCreateWithoutCredentialInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -979,6 +1006,7 @@ export type EmailAccountUpdateWithoutCredentialInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1006,6 +1034,7 @@ export type EmailAccountUncheckedUpdateWithoutCredentialInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1031,6 +1060,7 @@ export type EmailAccountCreateWithoutFoldersInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1058,6 +1088,7 @@ export type EmailAccountUncheckedCreateWithoutFoldersInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1099,6 +1130,7 @@ export type EmailAccountUpdateWithoutFoldersInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1126,6 +1158,7 @@ export type EmailAccountUncheckedUpdateWithoutFoldersInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1151,6 +1184,7 @@ export type EmailAccountCreateWithoutThreadsInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1178,6 +1212,7 @@ export type EmailAccountUncheckedCreateWithoutThreadsInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1219,6 +1254,7 @@ export type EmailAccountUpdateWithoutThreadsInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1246,6 +1282,7 @@ export type EmailAccountUncheckedUpdateWithoutThreadsInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1271,6 +1308,7 @@ export type EmailAccountCreateManyUserInput = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: Prisma.EmailAccountCreateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1294,6 +1332,7 @@ export type EmailAccountUpdateWithoutUserInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1320,6 +1359,7 @@ export type EmailAccountUncheckedUpdateWithoutUserInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1346,6 +1386,7 @@ export type EmailAccountUncheckedUpdateManyWithoutUserInput = {
   isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
   syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   autoSendCategories?: Prisma.EmailAccountUpdateautoSendCategoriesInput | string[]
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1410,6 +1451,7 @@ export type EmailAccountSelect<ExtArgs extends runtime.Types.Extensions.Internal
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1439,6 +1481,7 @@ export type EmailAccountSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1464,6 +1507,7 @@ export type EmailAccountSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1489,6 +1533,7 @@ export type EmailAccountSelectScalar = {
   isPrimary?: boolean
   syncEnabled?: boolean
   autoSendCategories?: boolean
+  autoScheduleMeetings?: boolean
   filterMarketing?: boolean
   filterOtp?: boolean
   filterPasswordReset?: boolean
@@ -1504,7 +1549,7 @@ export type EmailAccountSelectScalar = {
   deletedAt?: boolean
 }
 
-export type EmailAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "provider" | "email" | "displayName" | "isPrimary" | "syncEnabled" | "autoSendCategories" | "filterMarketing" | "filterOtp" | "filterPasswordReset" | "filterBilling" | "filterShipping" | "filterCalendar" | "imapConfig" | "syncStatus" | "lastSyncedAt" | "lastSyncError" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["emailAccount"]>
+export type EmailAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "provider" | "email" | "displayName" | "isPrimary" | "syncEnabled" | "autoSendCategories" | "autoScheduleMeetings" | "filterMarketing" | "filterOtp" | "filterPasswordReset" | "filterBilling" | "filterShipping" | "filterCalendar" | "imapConfig" | "syncStatus" | "lastSyncedAt" | "lastSyncError" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["emailAccount"]>
 export type EmailAccountInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   credential?: boolean | Prisma.EmailAccount$credentialArgs<ExtArgs>
@@ -1536,6 +1581,7 @@ export type $EmailAccountPayload<ExtArgs extends runtime.Types.Extensions.Intern
     isPrimary: boolean
     syncEnabled: boolean
     autoSendCategories: string[]
+    autoScheduleMeetings: boolean
     filterMarketing: boolean
     filterOtp: boolean
     filterPasswordReset: boolean
@@ -1984,6 +2030,7 @@ export interface EmailAccountFieldRefs {
   readonly isPrimary: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly syncEnabled: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly autoSendCategories: Prisma.FieldRef<"EmailAccount", 'String[]'>
+  readonly autoScheduleMeetings: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly filterMarketing: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly filterOtp: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly filterPasswordReset: Prisma.FieldRef<"EmailAccount", 'Boolean'>

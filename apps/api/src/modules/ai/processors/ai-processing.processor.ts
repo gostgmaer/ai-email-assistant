@@ -4,6 +4,10 @@ import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
 import { AIJobs, QueueNames } from '../../../infrastructure/queue';
+// Leaf-file import rather than the '../../calendar' barrel — see the
+// comment in meeting-scheduling.service.ts for why (avoids a Jest-only
+// circular require through calendar.module.ts <-> ai.module.ts).
+import { MeetingSchedulingService } from '../../calendar/services/meeting-scheduling.service';
 import {
   DocumentChunkMatch,
   DocumentsService,
@@ -42,6 +46,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly tasksService: TasksService,
     @Inject(forwardRef(() => DocumentsService))
     private readonly documentsService: DocumentsService,
+    @Inject(forwardRef(() => MeetingSchedulingService))
+    private readonly meetingSchedulingService: MeetingSchedulingService,
   ) {
     super();
   }
@@ -121,6 +127,7 @@ export class AiProcessingProcessor extends WorkerHost {
       message.threadId,
       subject,
       thread,
+      account.autoScheduleMeetings,
     );
 
     const contactMemory = await this.aiClientService.contactMemory(
@@ -242,17 +249,35 @@ export class AiProcessingProcessor extends WorkerHost {
     threadId: string,
     subject: string,
     thread: EmailMessageDto[],
+    autoScheduleMeetings: boolean,
   ): Promise<void> {
     try {
       const { extraction } = await this.aiClientService.extract(
         subject,
         thread,
       );
-      await this.tasksService.createFromExtraction(
+      const created = await this.tasksService.createFromExtraction(
         userId,
         messageId,
         threadId,
         extraction,
+      );
+
+      if (!autoScheduleMeetings) {
+        return;
+      }
+
+      // Opt-in, off by default (EmailAccount.autoScheduleMeetings). Each
+      // meeting request is scheduled independently and best-effort —
+      // autoSchedule() already swallows its own errors, so one failure
+      // doesn't block the others.
+      const meetingRequests = created.filter(
+        (task) => task.type === 'MEETING_REQUEST',
+      );
+      await Promise.all(
+        meetingRequests.map((task) =>
+          this.meetingSchedulingService.autoSchedule(userId, task.id),
+        ),
       );
     } catch (error) {
       this.logger.warn(

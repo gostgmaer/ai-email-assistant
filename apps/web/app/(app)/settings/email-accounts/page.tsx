@@ -136,6 +136,12 @@ function EmailAccountsContent() {
                 data: filters,
               })
             }
+            onUpdateAutoScheduleMeetings={(autoScheduleMeetings) =>
+              updateMutation.mutate({
+                id: account.id,
+                data: { autoScheduleMeetings },
+              })
+            }
             onSyncNow={() => syncMutation.mutate(account.id)}
             onDisconnect={() => {
               if (window.confirm(`Disconnect ${account.email}?`)) {

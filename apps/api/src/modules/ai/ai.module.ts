@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from '../auth';
+import { CalendarModule } from '../calendar';
 import { DocumentsModule } from '../documents';
 import { EmailModule } from '../email';
 import { TasksModule } from '../tasks';
@@ -20,6 +21,11 @@ import { ContactMemoryService } from './services/contact-memory.service';
     EmailModule,
     TasksModule,
     forwardRef(() => DocumentsModule),
+    // AiProcessingProcessor's opt-in auto-schedule hook needs
+    // MeetingSchedulingService — CalendarModule already imports AiModule
+    // (for AiClientService), so this side of the cycle needs forwardRef()
+    // too.
+    forwardRef(() => CalendarModule),
   ],
 
   controllers: [AiController],

@@ -14,7 +14,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { CurrentUser, JwtAuthGuard, JwtPayload } from '../../auth';
+// Leaf-file imports rather than the '../../auth' barrel — see the comment
+// in documents.controller.ts for why.
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import { ListTasksDto, UpdateTaskDto } from '../dto';
 import { TasksService } from '../services/tasks.service';
 

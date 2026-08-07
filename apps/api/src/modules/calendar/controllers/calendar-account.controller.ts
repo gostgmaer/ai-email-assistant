@@ -16,7 +16,11 @@ import {
 } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
-import { CurrentUser, JwtAuthGuard, JwtPayload } from '../../auth';
+// Leaf-file imports rather than the '../../auth' barrel — see the comment
+// in documents.controller.ts for why.
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import { GoogleCalendarConnectGuard } from '../guards/google-calendar-connect.guard';
 import { MicrosoftCalendarConnectGuard } from '../guards/microsoft-calendar-connect.guard';
 import { CalendarConnectResult } from '../interfaces';

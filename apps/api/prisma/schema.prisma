@@ -151,6 +151,13 @@ model EmailAccount {
   // default: nothing auto-sends until explicitly configured.
   autoSendCategories String[] @default([])
 
+  // Opt-in: when true, a MEETING_REQUEST task extracted from this account's
+  // mail is scheduled automatically (AI-suggested time, event created, and
+  // a confirmation reply sent) with no human review — see
+  // MeetingSchedulingService.autoSchedule(). Off by default, same
+  // human-approval-first posture as autoSendCategories.
+  autoScheduleMeetings Boolean @default(false)
+
   // Per-category sync filters (see bulk-mail.util.ts). Default true means
   // "exclude by default" — the aggressive-filtering behavior most users
   // want out of the box. Flip to false to let that category sync anyway.
