@@ -224,6 +224,31 @@ export interface EmbedQueryResponse {
   model: string;
 }
 
+export interface BusyIntervalInput {
+  start: string;
+  end: string;
+}
+
+export interface MeetingTimeSuggestion {
+  start: string;
+  end: string;
+  title: string;
+}
+
+export interface SuggestMeetingTimeResponse {
+  suggestion: MeetingTimeSuggestion;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
+interface RawSuggestMeetingTimeResponse {
+  suggestion: MeetingTimeSuggestion;
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
 @Injectable()
 export class AiClientService {
   private readonly logger = new Logger(AiClientService.name);
@@ -386,6 +411,24 @@ export class AiClientService {
 
   async embedQuery(text: string): Promise<EmbedQueryResponse> {
     return this.post<EmbedQueryResponse>('/documents/embed', { text });
+  }
+
+  async suggestMeetingTime(
+    description: string,
+    referenceDate: string,
+    busy: BusyIntervalInput[],
+  ): Promise<SuggestMeetingTimeResponse> {
+    const res = await this.post<RawSuggestMeetingTimeResponse>(
+      '/calendar/suggest-meeting-time',
+      { description, reference_date: referenceDate, busy },
+    );
+
+    return {
+      suggestion: res.suggestion,
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
   }
 
   private async post<T>(

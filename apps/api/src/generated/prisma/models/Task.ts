@@ -34,6 +34,8 @@ export type TaskMinAggregateOutputType = {
   dueDate: Date | null
   status: $Enums.TaskStatus | null
   completedAt: Date | null
+  calendarEventId: string | null
+  calendarEventUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -48,6 +50,8 @@ export type TaskMaxAggregateOutputType = {
   dueDate: Date | null
   status: $Enums.TaskStatus | null
   completedAt: Date | null
+  calendarEventId: string | null
+  calendarEventUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -62,6 +66,8 @@ export type TaskCountAggregateOutputType = {
   dueDate: number
   status: number
   completedAt: number
+  calendarEventId: number
+  calendarEventUrl: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -78,6 +84,8 @@ export type TaskMinAggregateInputType = {
   dueDate?: true
   status?: true
   completedAt?: true
+  calendarEventId?: true
+  calendarEventUrl?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -92,6 +100,8 @@ export type TaskMaxAggregateInputType = {
   dueDate?: true
   status?: true
   completedAt?: true
+  calendarEventId?: true
+  calendarEventUrl?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -106,6 +116,8 @@ export type TaskCountAggregateInputType = {
   dueDate?: true
   status?: true
   completedAt?: true
+  calendarEventId?: true
+  calendarEventUrl?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -193,6 +205,8 @@ export type TaskGroupByOutputType = {
   dueDate: Date | null
   status: $Enums.TaskStatus
   completedAt: Date | null
+  calendarEventId: string | null
+  calendarEventUrl: string | null
   createdAt: Date
   updatedAt: Date
   _count: TaskCountAggregateOutputType | null
@@ -228,6 +242,8 @@ export type TaskWhereInput = {
   dueDate?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
   status?: Prisma.EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
   completedAt?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
+  calendarEventId?: Prisma.StringNullableFilter<"Task"> | string | null
+  calendarEventUrl?: Prisma.StringNullableFilter<"Task"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -245,6 +261,8 @@ export type TaskOrderByWithRelationInput = {
   dueDate?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  calendarEventId?: Prisma.SortOrderInput | Prisma.SortOrder
+  calendarEventUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
@@ -265,6 +283,8 @@ export type TaskWhereUniqueInput = Prisma.AtLeast<{
   dueDate?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
   status?: Prisma.EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
   completedAt?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
+  calendarEventId?: Prisma.StringNullableFilter<"Task"> | string | null
+  calendarEventUrl?: Prisma.StringNullableFilter<"Task"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -282,6 +302,8 @@ export type TaskOrderByWithAggregationInput = {
   dueDate?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  calendarEventId?: Prisma.SortOrderInput | Prisma.SortOrder
+  calendarEventUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.TaskCountOrderByAggregateInput
@@ -302,6 +324,8 @@ export type TaskScalarWhereWithAggregatesInput = {
   dueDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Task"> | Date | string | null
   status?: Prisma.EnumTaskStatusWithAggregatesFilter<"Task"> | $Enums.TaskStatus
   completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Task"> | Date | string | null
+  calendarEventId?: Prisma.StringNullableWithAggregatesFilter<"Task"> | string | null
+  calendarEventUrl?: Prisma.StringNullableWithAggregatesFilter<"Task"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Task"> | Date | string
 }
@@ -313,6 +337,8 @@ export type TaskCreateInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTasksInput
@@ -330,6 +356,8 @@ export type TaskUncheckedCreateInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -341,6 +369,8 @@ export type TaskUpdateInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTasksNestedInput
@@ -358,6 +388,8 @@ export type TaskUncheckedUpdateInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -372,6 +404,8 @@ export type TaskCreateManyInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -383,6 +417,8 @@ export type TaskUpdateManyMutationInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -397,6 +433,8 @@ export type TaskUncheckedUpdateManyInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -421,6 +459,8 @@ export type TaskCountOrderByAggregateInput = {
   dueDate?: Prisma.SortOrder
   status?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
+  calendarEventId?: Prisma.SortOrder
+  calendarEventUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -435,6 +475,8 @@ export type TaskMaxOrderByAggregateInput = {
   dueDate?: Prisma.SortOrder
   status?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
+  calendarEventId?: Prisma.SortOrder
+  calendarEventUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -449,6 +491,8 @@ export type TaskMinOrderByAggregateInput = {
   dueDate?: Prisma.SortOrder
   status?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
+  calendarEventId?: Prisma.SortOrder
+  calendarEventUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -594,6 +638,8 @@ export type TaskCreateWithoutUserInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   emailMessage?: Prisma.EmailMessageCreateNestedOneWithoutTasksInput
@@ -609,6 +655,8 @@ export type TaskUncheckedCreateWithoutUserInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -652,6 +700,8 @@ export type TaskScalarWhereInput = {
   dueDate?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
   status?: Prisma.EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
   completedAt?: Prisma.DateTimeNullableFilter<"Task"> | Date | string | null
+  calendarEventId?: Prisma.StringNullableFilter<"Task"> | string | null
+  calendarEventUrl?: Prisma.StringNullableFilter<"Task"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Task"> | Date | string
 }
@@ -663,6 +713,8 @@ export type TaskCreateWithoutThreadInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTasksInput
@@ -678,6 +730,8 @@ export type TaskUncheckedCreateWithoutThreadInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -715,6 +769,8 @@ export type TaskCreateWithoutEmailMessageInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTasksInput
@@ -730,6 +786,8 @@ export type TaskUncheckedCreateWithoutEmailMessageInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -769,6 +827,8 @@ export type TaskCreateManyUserInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -780,6 +840,8 @@ export type TaskUpdateWithoutUserInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   emailMessage?: Prisma.EmailMessageUpdateOneWithoutTasksNestedInput
@@ -795,6 +857,8 @@ export type TaskUncheckedUpdateWithoutUserInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -808,6 +872,8 @@ export type TaskUncheckedUpdateManyWithoutUserInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -821,6 +887,8 @@ export type TaskCreateManyThreadInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -832,6 +900,8 @@ export type TaskUpdateWithoutThreadInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTasksNestedInput
@@ -847,6 +917,8 @@ export type TaskUncheckedUpdateWithoutThreadInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -860,6 +932,8 @@ export type TaskUncheckedUpdateManyWithoutThreadInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -873,6 +947,8 @@ export type TaskCreateManyEmailMessageInput = {
   dueDate?: Date | string | null
   status?: $Enums.TaskStatus
   completedAt?: Date | string | null
+  calendarEventId?: string | null
+  calendarEventUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -884,6 +960,8 @@ export type TaskUpdateWithoutEmailMessageInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTasksNestedInput
@@ -899,6 +977,8 @@ export type TaskUncheckedUpdateWithoutEmailMessageInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -912,6 +992,8 @@ export type TaskUncheckedUpdateManyWithoutEmailMessageInput = {
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  calendarEventUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -928,6 +1010,8 @@ export type TaskSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   dueDate?: boolean
   status?: boolean
   completedAt?: boolean
+  calendarEventId?: boolean
+  calendarEventUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -945,6 +1029,8 @@ export type TaskSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   dueDate?: boolean
   status?: boolean
   completedAt?: boolean
+  calendarEventId?: boolean
+  calendarEventUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -962,6 +1048,8 @@ export type TaskSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   dueDate?: boolean
   status?: boolean
   completedAt?: boolean
+  calendarEventId?: boolean
+  calendarEventUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -979,11 +1067,13 @@ export type TaskSelectScalar = {
   dueDate?: boolean
   status?: boolean
   completedAt?: boolean
+  calendarEventId?: boolean
+  calendarEventUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type TaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "emailMessageId" | "threadId" | "type" | "description" | "dueDate" | "status" | "completedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["task"]>
+export type TaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "emailMessageId" | "threadId" | "type" | "description" | "dueDate" | "status" | "completedAt" | "calendarEventId" | "calendarEventUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["task"]>
 export type TaskInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   emailMessage?: boolean | Prisma.Task$emailMessageArgs<ExtArgs>
@@ -1017,6 +1107,8 @@ export type $TaskPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     dueDate: Date | null
     status: $Enums.TaskStatus
     completedAt: Date | null
+    calendarEventId: string | null
+    calendarEventUrl: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["task"]>
@@ -1454,6 +1546,8 @@ export interface TaskFieldRefs {
   readonly dueDate: Prisma.FieldRef<"Task", 'DateTime'>
   readonly status: Prisma.FieldRef<"Task", 'TaskStatus'>
   readonly completedAt: Prisma.FieldRef<"Task", 'DateTime'>
+  readonly calendarEventId: Prisma.FieldRef<"Task", 'String'>
+  readonly calendarEventUrl: Prisma.FieldRef<"Task", 'String'>
   readonly createdAt: Prisma.FieldRef<"Task", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Task", 'DateTime'>
 }

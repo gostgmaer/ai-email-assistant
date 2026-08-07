@@ -1,4 +1,4 @@
-import { Module, OnApplicationBootstrap } from '@nestjs/common';
+import { Module, OnApplicationBootstrap, forwardRef } from '@nestjs/common';
 
 import { QueueService } from '../../infrastructure/queue';
 import { AuthModule } from '../auth';
@@ -11,7 +11,10 @@ import { EmailSyncService } from './services/email-sync.service';
 import { InboxService } from './services/inbox.service';
 
 @Module({
-  imports: [AuthModule, EmailAccountModule],
+  // Reachable in a cycle back to AuthModule via CalendarModule
+  // (AuthModule -> CalendarModule -> AiModule -> EmailModule -> AuthModule,
+  // added for MeetingSchedulingController's AiClientService dependency).
+  imports: [forwardRef(() => AuthModule), EmailAccountModule],
 
   controllers: [EmailController],
 

@@ -13,13 +13,31 @@ export interface BusyInterval {
 }
 
 const GOOGLE_FREEBUSY_URL = 'https://www.googleapis.com/calendar/v3/freeBusy';
+const GOOGLE_EVENTS_URL =
+  'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+
+export interface CreateEventInput {
+  summary: string;
+  description?: string;
+  /** ISO 8601 datetime with timezone offset (e.g. from the AI meeting-time
+   * suggestion) — passed straight through to Google's `dateTime` field. */
+  start: string;
+  end: string;
+  attendeeEmail?: string;
+}
+
+export interface CreatedEvent {
+  id: string;
+  htmlLink: string;
+}
 
 /**
- * Phase 1 of Calendar Integration (see docs/v1.2-plan.md): connect flow +
- * read-only availability lookup. Meeting creation (the write path — needs
- * the same "human approval before sending" care already applied to AI
- * email replies) and the AI meeting-suggestions capability are Phase 2/3,
- * intentionally not built yet.
+ * Connect flow, read-only availability lookup, and event creation (the
+ * write path). Creation only ever happens on explicit user action —
+ * MeetingSchedulingController.scheduleMeeting is called after the user
+ * reviews/edits an AI-suggested time, never automatically — the same
+ * "human approval before sending" principle already applied to AI-drafted
+ * email replies. See docs/v1.2-plan.md's Calendar Integration section.
  */
 @Injectable()
 export class CalendarService {
@@ -72,5 +90,54 @@ export class CalendarService {
     };
 
     return json.calendars.primary?.busy ?? [];
+  }
+
+  async createEvent(
+    accountId: string,
+    provider: 'GOOGLE' | 'MICROSOFT',
+    event: CreateEventInput,
+  ): Promise<CreatedEvent> {
+    if (provider === 'MICROSOFT') {
+      // Microsoft Graph's equivalent isn't implemented yet — only Google
+      // Calendar's events API is wired up in this phase.
+      throw new NotImplementedException(
+        'Creating events is not yet implemented for Outlook calendars',
+      );
+    }
+
+    const accessToken =
+      await this.calendarAccountService.getValidAccessToken(accountId);
+
+    const body: Record<string, unknown> = {
+      summary: event.summary,
+      start: { dateTime: event.start },
+      end: { dateTime: event.end },
+    };
+    if (event.description) {
+      body.description = event.description;
+    }
+    if (event.attendeeEmail) {
+      body.attendees = [{ email: event.attendeeEmail }];
+    }
+
+    const response = await fetch(GOOGLE_EVENTS_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      this.logger.warn(
+        `Google calendar event creation failed (${response.status}): ${text}`,
+      );
+      throw new BadGatewayException('Could not create the calendar event');
+    }
+
+    const json = (await response.json()) as { id: string; htmlLink: string };
+    return { id: json.id, htmlLink: json.htmlLink };
   }
 }

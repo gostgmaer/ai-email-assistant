@@ -92,4 +92,35 @@ export class TasksService {
 
     return this.prisma.task.findUniqueOrThrow({ where: { id: taskId } });
   }
+
+  /** Includes the source EmailMessage's `from` field so callers (meeting
+   * scheduling) can default the attendee to whoever sent the original
+   * request, without a second round trip. */
+  async getOwnedTaskWithMessage(userId: string, taskId: string) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: { emailMessage: { select: { from: true } } },
+    });
+
+    if (!task || task.userId !== userId) {
+      throw new NotFoundException('Task not found');
+    }
+
+    return task;
+  }
+
+  async setScheduledEvent(
+    taskId: string,
+    event: { calendarEventId: string; calendarEventUrl: string },
+  ): Promise<Task> {
+    return this.prisma.task.update({
+      where: { id: taskId },
+      data: {
+        calendarEventId: event.calendarEventId,
+        calendarEventUrl: event.calendarEventUrl,
+        status: 'DONE',
+        completedAt: new Date(),
+      },
+    });
+  }
 }

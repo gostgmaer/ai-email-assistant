@@ -1,6 +1,4 @@
-from langchain_core.messages import HumanMessage
-from langchain_core.messages import SystemMessage
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
 
 class MessageBuilder:
@@ -39,6 +37,31 @@ Instruction:
     # Aliases used by per-capability nodes.py files.
     reply = email_thread
     summarize = email_thread
+
+    @staticmethod
+    def meeting_time(
+        *,
+        system_prompt: str,
+        description: str,
+        reference_date: str,
+        busy: list[dict],
+    ) -> list[BaseMessage]:
+        busy_lines = (
+            "\n".join(f"- {b['start']} to {b['end']}" for b in busy)
+            if busy
+            else "(none — the calendar is free for the lookup window)"
+        )
+        return [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"""
+Reference date/time: {reference_date}
+
+Meeting request: {description}
+
+Busy intervals:
+{busy_lines}
+""".strip()),
+        ]
 
     @staticmethod
     def email_draft(

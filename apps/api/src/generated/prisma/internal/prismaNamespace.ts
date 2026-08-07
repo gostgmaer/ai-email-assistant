@@ -1774,6 +1774,8 @@ export const TaskScalarFieldEnum = {
   dueDate: 'dueDate',
   status: 'status',
   completedAt: 'completedAt',
+  calendarEventId: 'calendarEventId',
+  calendarEventUrl: 'calendarEventUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

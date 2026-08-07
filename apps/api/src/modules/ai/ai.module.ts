@@ -13,7 +13,10 @@ import { ContactMemoryService } from './services/contact-memory.service';
 @Module({
   imports: [
     ConfigModule,
-    AuthModule,
+    // Reachable in a cycle back to AuthModule via CalendarModule
+    // (AuthModule -> CalendarModule -> AiModule -> AuthModule, added for
+    // MeetingSchedulingController's AiClientService dependency).
+    forwardRef(() => AuthModule),
     EmailModule,
     TasksModule,
     forwardRef(() => DocumentsModule),

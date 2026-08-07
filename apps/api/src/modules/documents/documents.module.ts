@@ -10,7 +10,12 @@ import { DocumentsService } from './services/documents.service';
 import { FileStorageService } from './services/file-storage.service';
 
 @Module({
-  imports: [ConfigModule, AuthModule, forwardRef(() => AiModule)],
+  // AuthModule import is also forwardRef()'d: DocumentsModule is now
+  // reachable in a cycle back to AuthModule via CalendarModule
+  // (AuthModule -> CalendarModule -> AiModule -> DocumentsModule ->
+  // AuthModule), added for MeetingSchedulingController's AiClientService
+  // dependency.
+  imports: [ConfigModule, forwardRef(() => AuthModule), forwardRef(() => AiModule)],
 
   controllers: [DocumentsController],
 

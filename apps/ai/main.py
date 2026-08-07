@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.routes.calendar import router as calendar_router
 from app.api.routes.documents import router as documents_router
 from app.api.routes.email import router as email_router
 from app.api.routes.health import router as health_router
@@ -35,6 +36,7 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(email_router)
 app.include_router(documents_router)
+app.include_router(calendar_router)
 
 
 @app.get("/")
