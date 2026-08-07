@@ -124,12 +124,6 @@ function EmailAccountsContent() {
                 data: { syncEnabled: !account.syncEnabled },
               })
             }
-            onUpdateAutoSend={(autoSendCategories) =>
-              updateMutation.mutate({
-                id: account.id,
-                data: { autoSendCategories },
-              })
-            }
             onUpdateFilters={(filters) =>
               updateMutation.mutate({
                 id: account.id,

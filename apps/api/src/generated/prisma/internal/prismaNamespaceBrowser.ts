@@ -57,6 +57,7 @@ export const ModelName = {
   RefreshToken: 'RefreshToken',
   EmailAccount: 'EmailAccount',
   AccountMember: 'AccountMember',
+  WorkflowRule: 'WorkflowRule',
   EmailCredential: 'EmailCredential',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
@@ -153,7 +154,6 @@ export const EmailAccountScalarFieldEnum = {
   displayName: 'displayName',
   isPrimary: 'isPrimary',
   syncEnabled: 'syncEnabled',
-  autoSendCategories: 'autoSendCategories',
   autoScheduleMeetings: 'autoScheduleMeetings',
   filterMarketing: 'filterMarketing',
   filterOtp: 'filterOtp',
@@ -183,6 +183,21 @@ export const AccountMemberScalarFieldEnum = {
 } as const
 
 export type AccountMemberScalarFieldEnum = (typeof AccountMemberScalarFieldEnum)[keyof typeof AccountMemberScalarFieldEnum]
+
+
+export const WorkflowRuleScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  name: 'name',
+  enabled: 'enabled',
+  order: 'order',
+  conditions: 'conditions',
+  actions: 'actions',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkflowRuleScalarFieldEnum = (typeof WorkflowRuleScalarFieldEnum)[keyof typeof WorkflowRuleScalarFieldEnum]
 
 
 export const EmailCredentialScalarFieldEnum = {

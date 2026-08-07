@@ -6,6 +6,7 @@ import { CalendarModule } from '../calendar';
 import { DocumentsModule } from '../documents';
 import { EmailModule } from '../email';
 import { TasksModule } from '../tasks';
+import { WorkflowModule } from '../workflow';
 import { AiController } from './controllers/ai.controller';
 import { AiProcessingProcessor } from './processors/ai-processing.processor';
 import { AiClientService } from './services/ai-client.service';
@@ -26,6 +27,10 @@ import { ContactMemoryService } from './services/contact-memory.service';
     // (for AiClientService), so this side of the cycle needs forwardRef()
     // too.
     forwardRef(() => CalendarModule),
+    // WorkflowModule -> EmailAccountModule -> AuthModule -> CalendarModule
+    // -> AiModule is already reachable (see above) — this new edge closes
+    // that back into a real cycle through AiModule itself.
+    forwardRef(() => WorkflowModule),
   ],
 
   controllers: [AiController],

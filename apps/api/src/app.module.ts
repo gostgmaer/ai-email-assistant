@@ -20,6 +20,7 @@ import { DocumentsModule } from './modules/documents';
 import { JobsModule } from './modules/jobs';
 import { NotificationModule } from './modules/notification';
 import { TasksModule } from './modules/tasks';
+import { WorkflowModule } from './modules/workflow';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { TasksModule } from './modules/tasks';
     NotificationModule,
     TasksModule,
     DigestModule,
+    WorkflowModule,
   ],
 })
 export class AppModule {}

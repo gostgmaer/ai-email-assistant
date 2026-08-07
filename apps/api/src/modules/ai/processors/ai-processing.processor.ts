@@ -19,6 +19,9 @@ import {
   GenerationMetadata,
 } from '../../email/services/compose.service';
 import { TasksService } from '../../tasks';
+// Leaf-file import rather than the '../../workflow' barrel — see the
+// comment above on MeetingSchedulingService for why.
+import { WorkflowRuleService } from '../../workflow/services/workflow-rule.service';
 import { EmailMessageDto } from '../dto';
 import {
   AiClientService,
@@ -48,6 +51,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly documentsService: DocumentsService,
     @Inject(forwardRef(() => MeetingSchedulingService))
     private readonly meetingSchedulingService: MeetingSchedulingService,
+    @Inject(forwardRef(() => WorkflowRuleService))
+    private readonly workflowRuleService: WorkflowRuleService,
   ) {
     super();
   }
@@ -184,13 +189,31 @@ export class AiProcessingProcessor extends WorkerHost {
       })),
     };
 
-    const isSafeToAutoSend =
-      !classification.spam &&
-      // classify.md's prompt returns "Urgent" (capitalized) — this was
-      // comparing against lowercase 'urgent' and so never actually
-      // excluded urgent messages from auto-send.
-      classification.priority.toLowerCase() !== 'urgent' &&
-      account.autoSendCategories.includes(classification.category);
+    // Workflow Builder (v2.0 §3): the account's WorkflowRule rows decide
+    // whether this reply auto-sends (and any other actions — assign,
+    // notify). No matching rule falls through to the existing default:
+    // draft for review.
+    const matchedActions = await this.workflowRuleService.evaluate(account.id, {
+      category: classification.category,
+      priority: classification.priority,
+      sender: sender.address,
+    });
+
+    let isSafeToAutoSend = false;
+    if (matchedActions) {
+      const { autoReply } = await this.workflowRuleService.executeActions(
+        matchedActions,
+        { accountId: account.id, threadId: message.threadId, messageId },
+      );
+      // Hard safety rail, not rule-overridable: classify.md's prompt
+      // returns "Urgent" (capitalized) — matched case-insensitively here.
+      // A past bug compared against lowercase 'urgent' directly and so
+      // never actually excluded urgent messages from auto-send; keeping
+      // the same guarantee even though the decision now otherwise comes
+      // from rules.
+      isSafeToAutoSend =
+        autoReply && classification.priority.toLowerCase() !== 'urgent';
+    }
 
     if (isSafeToAutoSend) {
       await this.composeService.reply(

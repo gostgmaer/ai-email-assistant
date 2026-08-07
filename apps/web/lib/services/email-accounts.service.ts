@@ -49,7 +49,6 @@ export async function updateEmailAccount(
     displayName?: string;
     isPrimary?: boolean;
     syncEnabled?: boolean;
-    autoSendCategories?: string[];
     autoScheduleMeetings?: boolean;
     filterMarketing?: boolean;
     filterOtp?: boolean;

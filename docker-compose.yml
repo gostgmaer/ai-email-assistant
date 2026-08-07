@@ -29,7 +29,11 @@ services:
     restart: unless-stopped
 
     ports:
-      - "6379:6379"
+      # Host port remapped to 6380 to avoid colliding with other projects'
+      # Redis containers on the default 6379 — internal container-to-
+      # container traffic (REDIS_HOST=redis, REDIS_PORT=6379 below) is
+      # unaffected, this only changes host-machine access.
+      - "6380:6379"
 
     command: redis-server --appendonly yes
 

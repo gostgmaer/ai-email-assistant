@@ -31,7 +31,6 @@ export interface EmailAccount {
   syncStatus: SyncStatus;
   lastSyncedAt: string | null;
   lastSyncError: string | null;
-  autoSendCategories: string[];
   autoScheduleMeetings: boolean;
   filterMarketing: boolean;
   filterOtp: boolean;
@@ -62,6 +61,35 @@ export interface ThreadNote {
   body: string;
   createdAt: string;
   author: { id: string; email: string; displayName: string | null };
+}
+
+export type WorkflowConditionField = "category" | "priority" | "sender";
+export type WorkflowConditionOperator = "equals" | "contains";
+
+export interface WorkflowCondition {
+  field: WorkflowConditionField;
+  operator: WorkflowConditionOperator;
+  value: string;
+}
+
+export type WorkflowAction =
+  | { type: "AUTO_REPLY" }
+  | { type: "ASSIGN_TO"; userId: string }
+  | { type: "NOTIFY"; userId: string; message?: string }
+  | { type: "REQUIRE_APPROVAL" };
+
+export type WorkflowActionType = WorkflowAction["type"];
+
+export interface WorkflowRule {
+  id: string;
+  accountId: string;
+  name: string;
+  enabled: boolean;
+  order: number;
+  conditions: WorkflowCondition[];
+  actions: WorkflowAction[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ThreadAssignee {

@@ -76,6 +76,26 @@ export type EmailAccount = Prisma.EmailAccountModel
  */
 export type AccountMember = Prisma.AccountMemberModel
 /**
+ * Model WorkflowRule
+ * *
+ *  * Workflow Builder (v2.0 §3) — a user-configurable generalization of what
+ *  * WAS three hardcoded checks (auto-send-by-category, and this same shape
+ *  * again for auto-schedule-meetings). Evaluated against NEW_MESSAGE
+ *  * classification only for now (see docs/v2.0-plan.md §3) — first
+ *  * enabled rule (ordered by `order`) whose `conditions` all match wins;
+ *  * its `actions` execute in order. No match falls through to today's
+ *  * default: draft the reply for human review.
+ *  *
+ *  * `conditions`/`actions` are typed at the application layer
+ *  * (WorkflowCondition[] / WorkflowAction[] in workflow-rule.types.ts) —
+ *  * kept as Json rather than normalized tables for the same reason
+ *  * `imapConfig`/`generationMetadata` are: the shape is genuinely
+ *  * heterogeneous (an ASSIGN_TO action carries a userId, a NOTIFY action
+ *  * carries a message) and this is a v1 rules engine, not a stable wire
+ *  * format other systems depend on yet.
+ */
+export type WorkflowRule = Prisma.WorkflowRuleModel
+/**
  * Model EmailCredential
  * 
  */

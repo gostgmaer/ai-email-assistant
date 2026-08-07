@@ -403,6 +403,7 @@ export const ModelName = {
   RefreshToken: 'RefreshToken',
   EmailAccount: 'EmailAccount',
   AccountMember: 'AccountMember',
+  WorkflowRule: 'WorkflowRule',
   EmailCredential: 'EmailCredential',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
@@ -429,7 +430,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "accountMember" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "threadNote" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
+    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "accountMember" | "workflowRule" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "threadNote" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -874,6 +875,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.AccountMemberCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.AccountMemberCountAggregateOutputType> | number
+        }
+      }
+    }
+    WorkflowRule: {
+      payload: Prisma.$WorkflowRulePayload<ExtArgs>
+      fields: Prisma.WorkflowRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WorkflowRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WorkflowRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>
+        }
+        findFirst: {
+          args: Prisma.WorkflowRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WorkflowRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>
+        }
+        findMany: {
+          args: Prisma.WorkflowRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>[]
+        }
+        create: {
+          args: Prisma.WorkflowRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>
+        }
+        createMany: {
+          args: Prisma.WorkflowRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WorkflowRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>[]
+        }
+        delete: {
+          args: Prisma.WorkflowRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>
+        }
+        update: {
+          args: Prisma.WorkflowRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.WorkflowRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WorkflowRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WorkflowRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.WorkflowRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowRulePayload>
+        }
+        aggregate: {
+          args: Prisma.WorkflowRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkflowRule>
+        }
+        groupBy: {
+          args: Prisma.WorkflowRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkflowRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WorkflowRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkflowRuleCountAggregateOutputType> | number
         }
       }
     }
@@ -1797,7 +1872,6 @@ export const EmailAccountScalarFieldEnum = {
   displayName: 'displayName',
   isPrimary: 'isPrimary',
   syncEnabled: 'syncEnabled',
-  autoSendCategories: 'autoSendCategories',
   autoScheduleMeetings: 'autoScheduleMeetings',
   filterMarketing: 'filterMarketing',
   filterOtp: 'filterOtp',
@@ -1827,6 +1901,21 @@ export const AccountMemberScalarFieldEnum = {
 } as const
 
 export type AccountMemberScalarFieldEnum = (typeof AccountMemberScalarFieldEnum)[keyof typeof AccountMemberScalarFieldEnum]
+
+
+export const WorkflowRuleScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  name: 'name',
+  enabled: 'enabled',
+  order: 'order',
+  conditions: 'conditions',
+  actions: 'actions',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkflowRuleScalarFieldEnum = (typeof WorkflowRuleScalarFieldEnum)[keyof typeof WorkflowRuleScalarFieldEnum]
 
 
 export const EmailCredentialScalarFieldEnum = {
@@ -2208,6 +2297,20 @@ export type ListEnumAccountRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$
 
 
 /**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
  * Reference to a field of type 'CalendarProvider'
  */
 export type EnumCalendarProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CalendarProvider'>
@@ -2260,20 +2363,6 @@ export type EnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
  * Reference to a field of type 'TaskStatus[]'
  */
 export type ListEnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Int'
- */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-/**
- * Reference to a field of type 'Int[]'
- */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -2461,6 +2550,7 @@ export type GlobalOmitConfig = {
   refreshToken?: Prisma.RefreshTokenOmit
   emailAccount?: Prisma.EmailAccountOmit
   accountMember?: Prisma.AccountMemberOmit
+  workflowRule?: Prisma.WorkflowRuleOmit
   emailCredential?: Prisma.EmailCredentialOmit
   calendarAccount?: Prisma.CalendarAccountOmit
   calendarCredential?: Prisma.CalendarCredentialOmit

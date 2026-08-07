@@ -3,12 +3,25 @@ import { clsx } from "clsx";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import type { EmailAccount } from "@/lib/api/types";
+import type {
+  EmailAccount,
+  WorkflowAction,
+  WorkflowActionType,
+  WorkflowCondition,
+  WorkflowConditionField,
+  WorkflowConditionOperator,
+} from "@/lib/api/types";
 import {
   inviteAccountMember,
   listAccountMembers,
   removeAccountMember,
 } from "@/lib/services/email-accounts.service";
+import {
+  createWorkflowRule,
+  deleteWorkflowRule,
+  listWorkflowRules,
+  updateWorkflowRule,
+} from "@/lib/services/workflow-rules.service";
 import { providerLabel } from "@/lib/utils/format";
 
 const STATUS_STYLE: Record<EmailAccount["syncStatus"], string> = {
@@ -16,19 +29,6 @@ const STATUS_STYLE: Record<EmailAccount["syncStatus"], string> = {
   SYNCING: "bg-amber-50 text-amber-700",
   ERROR: "bg-red-50 text-red-700",
 };
-
-// Matches the categories suggested in the classify prompt (apps/ai/app/prompts/classify.md).
-// "Spam" is deliberately excluded — spam never auto-sends regardless of this list.
-const CLASSIFICATION_CATEGORIES = [
-  "Support",
-  "Sales",
-  "HR",
-  "Finance",
-  "Meeting",
-  "Personal",
-  "Marketing",
-  "General",
-];
 
 type SyncFilterKey =
   | "filterMarketing"
@@ -56,7 +56,6 @@ export function EmailAccountCard({
   onToggleSync,
   onSyncNow,
   onDisconnect,
-  onUpdateAutoSend,
   onUpdateFilters,
   onUpdateAutoScheduleMeetings,
   busy,
@@ -66,22 +65,14 @@ export function EmailAccountCard({
   onToggleSync: () => void;
   onSyncNow: () => void;
   onDisconnect: () => void;
-  onUpdateAutoSend: (categories: string[]) => void;
   onUpdateFilters: (filters: Partial<Record<SyncFilterKey, boolean>>) => void;
   onUpdateAutoScheduleMeetings: (enabled: boolean) => void;
   busy: boolean;
 }) {
-  const [showAutoSend, setShowAutoSend] = useState(false);
+  const [showWorkflows, setShowWorkflows] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const isOwner = account.myRole === "OWNER";
-
-  function toggleCategory(category: string) {
-    const next = account.autoSendCategories.includes(category)
-      ? account.autoSendCategories.filter((c) => c !== category)
-      : [...account.autoSendCategories, category];
-    onUpdateAutoSend(next);
-  }
 
   function toggleFilter(key: SyncFilterKey) {
     onUpdateFilters({ [key]: !account[key] });
@@ -152,12 +143,9 @@ export function EmailAccountCard({
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setShowAutoSend((v) => !v)}
+                onClick={() => setShowWorkflows((v) => !v)}
               >
-                Auto-send{" "}
-                {account.autoSendCategories.length > 0
-                  ? `(${account.autoSendCategories.length})`
-                  : "(off)"}
+                Workflows
               </Button>
               <Button
                 variant="secondary"
@@ -190,35 +178,8 @@ export function EmailAccountCard({
         </div>
       </div>
 
-      {showAutoSend && (
-        <div className="mt-4 border-t border-zinc-100 pt-3">
-          <p className="mb-2 text-xs text-zinc-500">
-            AI-drafted replies in these categories are sent automatically.
-            Everything else — plus anything flagged spam or urgent — is
-            always held as a draft for you to review.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {CLASSIFICATION_CATEGORIES.map((category) => {
-              const active = account.autoSendCategories.includes(category);
-              return (
-                <button
-                  key={category}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => toggleCategory(category)}
-                  className={clsx(
-                    "rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset disabled:cursor-not-allowed disabled:opacity-50",
-                    active
-                      ? "bg-indigo-600 text-white ring-indigo-600"
-                      : "bg-white text-zinc-600 ring-zinc-300 hover:bg-zinc-50",
-                  )}
-                >
-                  {category}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      {showWorkflows && (
+        <WorkflowRulesPanel accountId={account.id} isOwner={isOwner} />
       )}
 
       {showFilters && (
@@ -369,6 +330,389 @@ function MembersPanel({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+const CONDITION_FIELDS: { value: WorkflowConditionField; label: string }[] = [
+  { value: "category", label: "Category" },
+  { value: "priority", label: "Priority" },
+  { value: "sender", label: "Sender address" },
+];
+
+const CONDITION_OPERATORS: {
+  value: WorkflowConditionOperator;
+  label: string;
+}[] = [
+  { value: "equals", label: "equals" },
+  { value: "contains", label: "contains" },
+];
+
+const ACTION_TYPES: { value: WorkflowActionType; label: string }[] = [
+  { value: "AUTO_REPLY", label: "Auto-send the AI reply" },
+  { value: "ASSIGN_TO", label: "Assign to teammate" },
+  { value: "NOTIFY", label: "Notify teammate" },
+  { value: "REQUIRE_APPROVAL", label: "Hold as draft (no auto-reply)" },
+];
+
+function emptyCondition(): WorkflowCondition {
+  return { field: "category", operator: "equals", value: "" };
+}
+
+function emptyAction(): WorkflowAction {
+  return { type: "AUTO_REPLY" };
+}
+
+function WorkflowRulesPanel({
+  accountId,
+  isOwner,
+}: {
+  accountId: string;
+  isOwner: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [conditions, setConditions] = useState<WorkflowCondition[]>([
+    emptyCondition(),
+  ]);
+  const [actions, setActions] = useState<WorkflowAction[]>([emptyAction()]);
+
+  const { data: rules, isLoading } = useQuery({
+    queryKey: ["workflow-rules", accountId],
+    queryFn: () => listWorkflowRules(accountId),
+  });
+
+  const { data: members } = useQuery({
+    queryKey: ["account-members", accountId],
+    queryFn: () => listAccountMembers(accountId),
+  });
+
+  function invalidate() {
+    return queryClient.invalidateQueries({
+      queryKey: ["workflow-rules", accountId],
+    });
+  }
+
+  const createMutation = useMutation({
+    mutationFn: () => createWorkflowRule(accountId, { name, conditions, actions }),
+    onSuccess: () => {
+      setName("");
+      setConditions([emptyCondition()]);
+      setActions([emptyAction()]);
+      setShowForm(false);
+      void invalidate();
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ ruleId, enabled }: { ruleId: string; enabled: boolean }) =>
+      updateWorkflowRule(accountId, ruleId, { enabled }),
+    onSuccess: () => void invalidate(),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (ruleId: string) => deleteWorkflowRule(accountId, ruleId),
+    onSuccess: () => void invalidate(),
+  });
+
+  function memberLabel(userId: string) {
+    const member = members?.find((m) => m.userId === userId);
+    return member ? (member.user.displayName ?? member.user.email) : userId;
+  }
+
+  function describeCondition(condition: WorkflowCondition) {
+    const fieldLabel =
+      CONDITION_FIELDS.find((f) => f.value === condition.field)?.label ??
+      condition.field;
+    return `${fieldLabel} ${condition.operator} "${condition.value}"`;
+  }
+
+  function describeAction(action: WorkflowAction) {
+    switch (action.type) {
+      case "AUTO_REPLY":
+        return "Auto-send reply";
+      case "ASSIGN_TO":
+        return `Assign to ${memberLabel(action.userId)}`;
+      case "NOTIFY":
+        return `Notify ${memberLabel(action.userId)}`;
+      case "REQUIRE_APPROVAL":
+        return "Hold as draft";
+    }
+  }
+
+  return (
+    <div className="mt-4 border-t border-zinc-100 pt-3">
+      <p className="mb-2 text-xs text-zinc-500">
+        Rules run in order on every new message, after AI classification.
+        The first rule whose conditions all match wins; its actions run. No
+        match falls back to holding the AI reply as a draft for you to
+        review.
+      </p>
+
+      {isLoading && <p className="text-xs text-zinc-400">Loading rules…</p>}
+
+      <ul className="mb-3 space-y-2">
+        {rules?.map((rule) => (
+          <li key={rule.id} className="rounded-md border border-zinc-200 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium text-zinc-900">{rule.name}</p>
+              {isOwner && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleMutation.mutate({
+                        ruleId: rule.id,
+                        enabled: !rule.enabled,
+                      })
+                    }
+                    className={clsx(
+                      "rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset",
+                      rule.enabled
+                        ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                        : "bg-zinc-100 text-zinc-500 ring-zinc-200",
+                    )}
+                  >
+                    {rule.enabled ? "Enabled" : "Disabled"}
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteMutation.mutate(rule.id)}
+                    loading={
+                      deleteMutation.isPending &&
+                      deleteMutation.variables === rule.id
+                    }
+                  >
+                    Delete
+                  </Button>
+                </div>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-zinc-500">
+              When{" "}
+              {rule.conditions.length === 0
+                ? "any message arrives"
+                : rule.conditions.map(describeCondition).join(" and ")}
+            </p>
+            <p className="text-xs text-zinc-500">
+              Then: {rule.actions.map(describeAction).join(", ")}
+            </p>
+          </li>
+        ))}
+        {rules?.length === 0 && !isLoading && (
+          <li className="text-xs text-zinc-400">
+            No rules yet — unmatched messages are always held as drafts.
+          </li>
+        )}
+      </ul>
+
+      {isOwner && !showForm && (
+        <Button variant="secondary" size="sm" onClick={() => setShowForm(true)}>
+          + Add rule
+        </Button>
+      )}
+
+      {isOwner && showForm && (
+        <form
+          className="space-y-3 rounded-md border border-zinc-200 p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            createMutation.mutate();
+          }}
+        >
+          <input
+            type="text"
+            required
+            placeholder="Rule name, e.g. Auto-reply to Support"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-md border border-zinc-300 px-3 py-1.5 text-sm"
+          />
+
+          <div>
+            <p className="mb-1 text-xs font-medium text-zinc-600">
+              When all of these match:
+            </p>
+            <div className="space-y-1.5">
+              {conditions.map((condition, i) => (
+                <div key={i} className="flex gap-1.5">
+                  <select
+                    value={condition.field}
+                    onChange={(e) =>
+                      setConditions(
+                        conditions.map((c, j) =>
+                          j === i
+                            ? {
+                                ...c,
+                                field: e.target.value as WorkflowConditionField,
+                              }
+                            : c,
+                        ),
+                      )
+                    }
+                    className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                  >
+                    {CONDITION_FIELDS.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={condition.operator}
+                    onChange={(e) =>
+                      setConditions(
+                        conditions.map((c, j) =>
+                          j === i
+                            ? {
+                                ...c,
+                                operator: e.target
+                                  .value as WorkflowConditionOperator,
+                              }
+                            : c,
+                        ),
+                      )
+                    }
+                    className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                  >
+                    {CONDITION_OPERATORS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    required
+                    placeholder="value"
+                    value={condition.value}
+                    onChange={(e) =>
+                      setConditions(
+                        conditions.map((c, j) =>
+                          j === i ? { ...c, value: e.target.value } : c,
+                        ),
+                      )
+                    }
+                    className="min-w-0 flex-1 rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                  />
+                  {conditions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConditions(conditions.filter((_, j) => j !== i))
+                      }
+                      className="px-1 text-xs text-zinc-400 hover:text-red-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setConditions([...conditions, emptyCondition()])}
+              className="mt-1 text-xs text-indigo-600 hover:underline"
+            >
+              + Add condition
+            </button>
+          </div>
+
+          <div>
+            <p className="mb-1 text-xs font-medium text-zinc-600">
+              Then do this:
+            </p>
+            <div className="space-y-1.5">
+              {actions.map((action, i) => (
+                <div key={i} className="flex flex-wrap gap-1.5">
+                  <select
+                    value={action.type}
+                    onChange={(e) => {
+                      const type = e.target.value as WorkflowActionType;
+                      const next: WorkflowAction =
+                        type === "ASSIGN_TO" || type === "NOTIFY"
+                          ? { type, userId: members?.[0]?.userId ?? "" }
+                          : { type };
+                      setActions(actions.map((a, j) => (j === i ? next : a)));
+                    }}
+                    className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                  >
+                    {ACTION_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  {(action.type === "ASSIGN_TO" || action.type === "NOTIFY") && (
+                    <select
+                      value={action.userId}
+                      onChange={(e) =>
+                        setActions(
+                          actions.map((a, j) =>
+                            j === i &&
+                            (a.type === "ASSIGN_TO" || a.type === "NOTIFY")
+                              ? { ...a, userId: e.target.value }
+                              : a,
+                          ),
+                        )
+                      }
+                      className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                    >
+                      {members?.map((m) => (
+                        <option key={m.userId} value={m.userId}>
+                          {m.user.displayName ?? m.user.email}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {actions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActions(actions.filter((_, j) => j !== i))
+                      }
+                      className="px-1 text-xs text-zinc-400 hover:text-red-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setActions([...actions, emptyAction()])}
+              className="mt-1 text-xs text-indigo-600 hover:underline"
+            >
+              + Add action
+            </button>
+          </div>
+
+          {createMutation.isError && (
+            <p className="text-xs text-red-600">
+              {createMutation.error instanceof Error
+                ? createMutation.error.message
+                : "Could not create rule"}
+            </p>
+          )}
+
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" loading={createMutation.isPending}>
+              Save rule
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowForm(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
