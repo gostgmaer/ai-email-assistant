@@ -12,11 +12,18 @@ import {
   WorkflowAction,
   WorkflowCondition,
 } from '../types/workflow-rule.types';
+import { passthroughArray } from './passthrough-array.transform';
 
 // conditions/actions are validated for real shape by
 // WorkflowRuleService.validateConditions/validateActions (a discriminated
 // union doesn't validate cleanly through class-validator's decorators) —
 // this DTO only checks "these are arrays" before it gets there.
+//
+// @passthroughArray() is required, not decorative — see its own comment
+// for the class-transformer behavior it works around. Found via live
+// testing (the created rule's conditions/actions silently came back as
+// `[[]]`), not something typecheck or the unit tests caught, since those
+// call the service directly and never go through the HTTP ValidationPipe.
 export class CreateWorkflowRuleDto {
   @ApiProperty()
   @IsString()
@@ -41,6 +48,7 @@ export class CreateWorkflowRuleDto {
     type: [Object],
   })
   @IsArray()
+  @passthroughArray()
   conditions!: WorkflowCondition[];
 
   @ApiProperty({
@@ -48,5 +56,6 @@ export class CreateWorkflowRuleDto {
     type: [Object],
   })
   @IsArray()
+  @passthroughArray()
   actions!: WorkflowAction[];
 }
