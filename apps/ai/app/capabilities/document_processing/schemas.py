@@ -17,6 +17,20 @@ class DocumentChunkSchema(BaseModel):
     line_end: int
 
 
+class ProcessDocumentRequest(BaseModel):
+    """File reference, not raw bytes — this service downloads the file
+    itself from file-upload-service using the same identity it was
+    uploaded under, rather than apps/api proxying the bytes through."""
+
+    file_id: str
+    filename: str
+    content_type: str
+    uploaded_by: str
+    user_email: str = ""
+    user_role: str = "anonymous"
+    tenant_id: str | None = None
+
+
 class ProcessDocumentResponse(BaseModel):
     chunks: list[DocumentChunkSchema]
     provider: str

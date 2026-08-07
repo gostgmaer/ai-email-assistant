@@ -4,8 +4,9 @@ export interface DocumentSummary {
   id: string;
   filename: string;
   contentType: string;
-  provider: string;
-  model: string;
+  /** Null until the AI service finishes processing (status PROCESSING/FAILED) — upload and processing are decoupled. */
+  provider: string | null;
+  model: string | null;
   title: string;
   category: string | null;
   tags: string[];

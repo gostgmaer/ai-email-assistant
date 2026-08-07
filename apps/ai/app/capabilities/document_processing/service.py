@@ -1,19 +1,34 @@
+import csv as csv_module
 import io
+import json as json_module
+import os
 import re
+import tempfile
 from dataclasses import dataclass, field
+from email import message_from_bytes
+from email.policy import default as email_default_policy
 
+import extract_msg
+import pdfplumber
+from bs4 import BeautifulSoup
 from docx import Document as DocxDocument
+from docx.table import Table as DocxTable
 from langchain_text_splitters import (
+    HTMLHeaderTextSplitter,
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-from pypdf import PdfReader
+from openpyxl import load_workbook
 
 from app.core.llm.embeddings import embedding_manager
 
 DOCX_CONTENT_TYPE = (
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 )
+XLSX_CONTENT_TYPE = (
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+MSG_CONTENT_TYPE = "application/vnd.ms-outlook"
 
 # Splitters below are sized in estimated tokens, not raw characters, so the
 # chunk_size/chunk_overlap values line up with the token-based chunking
@@ -25,17 +40,40 @@ def _estimate_tokens(text: str) -> int:
     return max(1, len(text) // _CHARS_PER_TOKEN)
 
 
+def _format_table_markdown(rows: list[list[str | None]]) -> str:
+    """Renders extracted table rows as a markdown table so row/column
+    structure survives into the chunk text instead of being flattened into
+    disordered inline text by plain extraction."""
+
+    rows = [row for row in rows if any((cell or "").strip() for cell in row)]
+    if not rows:
+        return ""
+
+    def cell(value: str | None) -> str:
+        return (value or "").strip().replace("\n", " ").replace("|", "/")
+
+    header, *body = rows
+    lines = ["| " + " | ".join(cell(c) for c in header) + " |"]
+    lines.append("| " + " | ".join("---" for _ in header) + " |")
+    for row in body:
+        lines.append("| " + " | ".join(cell(c) for c in row) + " |")
+    return "\n".join(lines)
+
+
 @dataclass
 class RawChunk:
     content: str
     metadata: dict[str, object] = field(default_factory=dict)
     # Character offsets relative to `unit_text` below — the structural unit
-    # (PDF page text, Markdown/DOCX section text, or the whole document for
-    # plain text), not the document as a whole.
+    # (PDF page text, Markdown/HTML/DOCX section text, or the whole document
+    # for plain text), not the document as a whole.
     start_char: int = 0
     # The text of that structural unit, used to turn start/end_char into
     # 1-based line numbers.
     unit_text: str = ""
+    # "text" or "table" — tables are kept as one atomic chunk (splitting a
+    # table mid-row would corrupt it) and never token-split.
+    chunk_type: str = "text"
 
 
 @dataclass
@@ -45,6 +83,16 @@ class DocumentMeta:
     chunk_size: int
     chunk_overlap: int
     page_count: int | None = None
+
+
+def _table_chunk(table_md: str, metadata: dict[str, object]) -> RawChunk:
+    return RawChunk(
+        content=table_md,
+        metadata=metadata,
+        start_char=0,
+        unit_text=table_md,
+        chunk_type="table",
+    )
 
 
 def _split_unit(
@@ -84,6 +132,20 @@ def _split_plain_text(text: str) -> tuple[list[RawChunk], DocumentMeta]:
 _MARKDOWN_HEADERS = [("#", "h1"), ("##", "h2"), ("###", "h3")]
 
 
+def _heading_metadata(section_metadata: dict[str, object]) -> dict[str, object]:
+    heading = (
+        section_metadata.get("h3")
+        or section_metadata.get("h2")
+        or section_metadata.get("h1")
+    )
+    path = " > ".join(
+        value
+        for key in ("h1", "h2", "h3")
+        if (value := section_metadata.get(key))
+    )
+    return {k: v for k, v in {"heading": heading, "section": path}.items() if v}
+
+
 def _split_markdown(text: str) -> tuple[list[RawChunk], DocumentMeta]:
     sections = MarkdownHeaderTextSplitter(
         headers_to_split_on=_MARKDOWN_HEADERS, strip_headers=False
@@ -99,18 +161,7 @@ def _split_markdown(text: str) -> tuple[list[RawChunk], DocumentMeta]:
 
     chunks: list[RawChunk] = []
     for section in sections:
-        heading = (
-            section.metadata.get("h3")
-            or section.metadata.get("h2")
-            or section.metadata.get("h1")
-        )
-        path = " > ".join(
-            value
-            for key in ("h1", "h2", "h3")
-            if (value := section.metadata.get(key))
-        )
-        metadata = {k: v for k, v in {"heading": heading, "section": path}.items() if v}
-
+        metadata = _heading_metadata(section.metadata)
         chunks.extend(_split_unit(secondary, section.page_content, metadata))
 
     return chunks, DocumentMeta(
@@ -121,8 +172,58 @@ def _split_markdown(text: str) -> tuple[list[RawChunk], DocumentMeta]:
     )
 
 
+_HTML_HEADERS = [("h1", "h1"), ("h2", "h2"), ("h3", "h3")]
+
+
+def _split_html(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
+    soup = BeautifulSoup(raw_bytes, "lxml")
+
+    # Tables get flattened into disordered inline text by any plain-text
+    # splitter, so pull them out as their own markdown-table chunks first —
+    # tagged with the nearest preceding heading, best-effort — before the
+    # remaining HTML goes through header-aware text splitting.
+    table_chunks: list[RawChunk] = []
+    for table_tag in soup.find_all("table"):
+        rows = [
+            [cell.get_text() for cell in tr.find_all(["td", "th"])]
+            for tr in table_tag.find_all("tr")
+        ]
+        table_md = _format_table_markdown(rows)
+        if table_md:
+            heading_tag = table_tag.find_previous(["h1", "h2", "h3"])
+            metadata = {"heading": heading_tag.get_text().strip()} if heading_tag else {}
+            table_chunks.append(_table_chunk(table_md, metadata))
+        table_tag.decompose()
+
+    chunk_size, chunk_overlap = 600, 90
+    secondary = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=_estimate_tokens,
+        add_start_index=True,
+    )
+
+    sections = HTMLHeaderTextSplitter(headers_to_split_on=_HTML_HEADERS).split_text(
+        str(soup)
+    )
+
+    text_chunks: list[RawChunk] = []
+    for section in sections:
+        text = section.page_content.strip()
+        if not text:
+            continue
+        metadata = _heading_metadata(section.metadata)
+        text_chunks.extend(_split_unit(secondary, text, metadata))
+
+    return text_chunks + table_chunks, DocumentMeta(
+        parser="html",
+        splitter="html_header_recursive",
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+
+
 def _split_pdf(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
-    reader = PdfReader(io.BytesIO(raw_bytes))
     chunk_size, chunk_overlap = 800, 140
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -132,18 +233,35 @@ def _split_pdf(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
     )
 
     chunks: list[RawChunk] = []
-    for page_number, page in enumerate(reader.pages, start=1):
-        page_text = (page.extract_text() or "").strip()
-        if not page_text:
-            continue
-        chunks.extend(_split_unit(splitter, page_text, {"page": page_number}))
+    with pdfplumber.open(io.BytesIO(raw_bytes)) as pdf:
+        page_count = len(pdf.pages)
+        for page_number, page in enumerate(pdf.pages, start=1):
+            # Tables first: extract_tables() finds ruled/aligned tables and
+            # returns them as structured rows — rendering those as markdown
+            # keeps column alignment instead of pdfplumber's plain
+            # extract_text() interleaving cell text with body text below.
+            # Deliberately uses the default "lines" (ruled-border) detection
+            # only — pdfplumber's "text"-alignment strategy was tried and
+            # produces false positives, mistaking wrapped paragraph text for
+            # table columns. An unruled table still isn't lost — it just
+            # flows into the ordinary page-text chunk below unformatted.
+            for table_rows in page.extract_tables():
+                table_md = _format_table_markdown(table_rows)
+                if table_md:
+                    chunks.append(_table_chunk(table_md, {"page": page_number}))
+
+            page_text = (page.extract_text() or "").strip()
+            if page_text:
+                chunks.extend(
+                    _split_unit(splitter, page_text, {"page": page_number})
+                )
 
     return chunks, DocumentMeta(
         parser="pdf",
         splitter="recursive",
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        page_count=len(reader.pages),
+        page_count=page_count,
     )
 
 
@@ -153,25 +271,34 @@ _HEADING_STYLE_RE = re.compile(r"^Heading\s*\d+$", re.IGNORECASE)
 def _split_docx(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
     doc = DocxDocument(io.BytesIO(raw_bytes))
 
-    sections: list[tuple[str | None, list[str]]] = []
+    # iter_inner_content() (not the separate .paragraphs/.tables lists)
+    # walks paragraphs and tables in true document order, so a table that
+    # falls between two paragraphs under the same heading stays associated
+    # with that heading instead of being bucketed separately at the end.
+    sections: list[tuple[str | None, list[str], list[DocxTable]]] = []
     heading: str | None = None
     body: list[str] = []
+    tables: list[DocxTable] = []
 
-    for para in doc.paragraphs:
-        text = para.text.strip()
+    for block in doc.iter_inner_content():
+        if isinstance(block, DocxTable):
+            tables.append(block)
+            continue
+
+        text = block.text.strip()
         if not text:
             continue
 
-        style_name = para.style.name if para.style else ""
+        style_name = block.style.name if block.style else ""
         if _HEADING_STYLE_RE.match(style_name):
-            if heading or body:
-                sections.append((heading, body))
-            heading, body = text, []
+            if heading or body or tables:
+                sections.append((heading, body, tables))
+            heading, body, tables = text, [], []
         else:
             body.append(text)
 
-    if heading or body:
-        sections.append((heading, body))
+    if heading or body or tables:
+        sections.append((heading, body, tables))
 
     chunk_size, chunk_overlap = 800, 120
     splitter = RecursiveCharacterTextSplitter(
@@ -182,18 +309,209 @@ def _split_docx(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
     )
 
     chunks: list[RawChunk] = []
-    for section_heading, paragraphs in sections:
-        section_text = "\n\n".join(paragraphs)
-        if not section_text.strip():
-            continue
+    for section_heading, paragraphs, section_tables in sections:
         metadata = {"heading": section_heading} if section_heading else {}
-        chunks.extend(_split_unit(splitter, section_text, metadata))
+
+        section_text = "\n\n".join(paragraphs)
+        if section_text.strip():
+            chunks.extend(_split_unit(splitter, section_text, metadata))
+
+        for table in section_tables:
+            rows = [[cell.text for cell in row.cells] for row in table.rows]
+            table_md = _format_table_markdown(rows)
+            if table_md:
+                chunks.append(_table_chunk(table_md, metadata))
 
     return chunks, DocumentMeta(
         parser="docx",
         splitter="recursive",
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
+    )
+
+
+def _split_csv(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
+    text = raw_bytes.decode("utf-8-sig", errors="replace")
+    rows = list(csv_module.reader(io.StringIO(text)))
+    rows = [row for row in rows if any(cell.strip() for cell in row)]
+
+    # Batched, not one giant table: a large CSV shouldn't become a single
+    # oversized chunk. The header repeats in every batch so each chunk is
+    # independently interpretable without the others.
+    batch_size = 50
+    chunks: list[RawChunk] = []
+    if rows:
+        header, body = rows[0], rows[1:]
+        for i in range(0, max(len(body), 1), batch_size):
+            batch = body[i : i + batch_size]
+            table_md = _format_table_markdown([header, *batch])
+            if table_md:
+                chunks.append(_table_chunk(table_md, {"page": (i // batch_size) + 1}))
+
+    return chunks, DocumentMeta(
+        parser="csv", splitter="table_batches", chunk_size=batch_size, chunk_overlap=0
+    )
+
+
+def _split_xlsx(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
+    workbook = load_workbook(io.BytesIO(raw_bytes), read_only=True, data_only=True)
+    batch_size = 50
+
+    chunks: list[RawChunk] = []
+    for sheet in workbook.worksheets:
+        rows = [
+            [("" if cell is None else str(cell)) for cell in row]
+            for row in sheet.iter_rows(values_only=True)
+        ]
+        rows = [row for row in rows if any(cell.strip() for cell in row)]
+        if not rows:
+            continue
+
+        header, body = rows[0], rows[1:]
+        for i in range(0, max(len(body), 1), batch_size):
+            batch = body[i : i + batch_size]
+            table_md = _format_table_markdown([header, *batch])
+            if table_md:
+                chunks.append(_table_chunk(table_md, {"section": sheet.title}))
+
+    return chunks, DocumentMeta(
+        parser="xlsx", splitter="table_batches", chunk_size=batch_size, chunk_overlap=0
+    )
+
+
+def _split_json(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
+    text = raw_bytes.decode("utf-8", errors="replace")
+    try:
+        data = json_module.loads(text)
+    except json_module.JSONDecodeError:
+        data = None
+
+    chunk_size, chunk_overlap = 650, 100
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=_estimate_tokens,
+        add_start_index=True,
+    )
+
+    if isinstance(data, list) and data and all(isinstance(item, dict) for item in data):
+        # A list of records (the common shape: an API export, a table dump)
+        # — one chunk per record instead of splitting mid-record, which
+        # would produce chunks that are half of one record and half of the
+        # next and meaningless on their own.
+        chunks: list[RawChunk] = []
+        for index, record in enumerate(data, start=1):
+            record_text = json_module.dumps(record, indent=2, ensure_ascii=False)
+            chunks.extend(_split_unit(splitter, record_text, {"page": index}))
+        return chunks, DocumentMeta(
+            parser="json",
+            splitter="json_records",
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+        )
+
+    pretty = (
+        json_module.dumps(data, indent=2, ensure_ascii=False) if data is not None else text
+    )
+    chunks = _split_unit(splitter, pretty, {})
+    return chunks, DocumentMeta(
+        parser="json", splitter="recursive", chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+
+
+def _split_xml(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
+    # No special structure-awareness beyond pretty-printing — XML schemas
+    # vary too widely (configs, feeds, SOAP payloads) to assume any
+    # consistent heading/table shape the way HTML/Markdown have.
+    soup = BeautifulSoup(raw_bytes, "xml")
+    text = soup.prettify()
+
+    chunk_size, chunk_overlap = 650, 100
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=_estimate_tokens,
+        add_start_index=True,
+    )
+    chunks = _split_unit(splitter, text, {})
+    return chunks, DocumentMeta(
+        parser="xml", splitter="recursive", chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+
+
+def _html_to_text(html: str) -> str:
+    return BeautifulSoup(html, "lxml").get_text("\n", strip=True)
+
+
+def _split_eml(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
+    msg = message_from_bytes(raw_bytes, policy=email_default_policy)
+
+    header_lines = [
+        f"From: {msg.get('From', '')}",
+        f"To: {msg.get('To', '')}",
+        f"Subject: {msg.get('Subject', '')}",
+        f"Date: {msg.get('Date', '')}",
+    ]
+
+    body = ""
+    plain_part = msg.get_body(preferencelist=("plain",))
+    if plain_part is not None:
+        body = plain_part.get_content()
+    else:
+        html_part = msg.get_body(preferencelist=("html",))
+        if html_part is not None:
+            body = _html_to_text(html_part.get_content())
+
+    text = "\n".join(header_lines) + "\n\n" + body.strip()
+
+    chunk_size, chunk_overlap = 650, 100
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=_estimate_tokens,
+        add_start_index=True,
+    )
+    chunks = _split_unit(splitter, text, {})
+    return chunks, DocumentMeta(
+        parser="eml", splitter="recursive", chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+
+
+def _split_msg(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
+    # extract_msg's Message needs a real path (the .msg format is an OLE
+    # compound file, not something it reads from an in-memory buffer), so
+    # round-trip through a temp file.
+    fd, tmp_path = tempfile.mkstemp(suffix=".msg")
+    try:
+        with os.fdopen(fd, "wb") as tmp_file:
+            tmp_file.write(raw_bytes)
+
+        msg = extract_msg.Message(tmp_path)
+        try:
+            header_lines = [
+                f"From: {msg.sender or ''}",
+                f"To: {msg.to or ''}",
+                f"Subject: {msg.subject or ''}",
+                f"Date: {msg.date or ''}",
+            ]
+            body = (msg.body or "").strip()
+        finally:
+            msg.close()
+    finally:
+        os.unlink(tmp_path)
+
+    text = "\n".join(header_lines) + "\n\n" + body
+
+    chunk_size, chunk_overlap = 650, 100
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=_estimate_tokens,
+        add_start_index=True,
+    )
+    chunks = _split_unit(splitter, text, {})
+    return chunks, DocumentMeta(
+        parser="msg", splitter="recursive", chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
 
 
@@ -209,12 +527,26 @@ def process_document(filename: str, content_type: str, raw_bytes: bytes) -> dict
         raw_chunks, doc_meta = _split_pdf(raw_bytes)
     elif ext == "docx" or content_type == DOCX_CONTENT_TYPE:
         raw_chunks, doc_meta = _split_docx(raw_bytes)
+    elif ext in ("html", "htm") or content_type == "text/html":
+        raw_chunks, doc_meta = _split_html(raw_bytes)
     elif ext == "md" or content_type == "text/markdown":
         text = raw_bytes.decode("utf-8", errors="replace").strip()
         raw_chunks, doc_meta = _split_markdown(text) if text else ([], None)
     elif ext == "txt" or content_type == "text/plain":
         text = raw_bytes.decode("utf-8", errors="replace").strip()
         raw_chunks, doc_meta = _split_plain_text(text) if text else ([], None)
+    elif ext == "csv" or content_type == "text/csv":
+        raw_chunks, doc_meta = _split_csv(raw_bytes)
+    elif ext == "xlsx" or content_type == XLSX_CONTENT_TYPE:
+        raw_chunks, doc_meta = _split_xlsx(raw_bytes)
+    elif ext == "json" or content_type == "application/json":
+        raw_chunks, doc_meta = _split_json(raw_bytes)
+    elif ext == "xml" or content_type in ("application/xml", "text/xml"):
+        raw_chunks, doc_meta = _split_xml(raw_bytes)
+    elif ext == "eml" or content_type == "message/rfc822":
+        raw_chunks, doc_meta = _split_eml(raw_bytes)
+    elif ext == "msg" or content_type == MSG_CONTENT_TYPE:
+        raw_chunks, doc_meta = _split_msg(raw_bytes)
     else:
         raise ValueError(f"Unsupported document type: {filename} ({content_type})")
 
@@ -244,7 +576,7 @@ def process_document(filename: str, content_type: str, raw_bytes: bytes) -> dict
                 # JSON.
                 "page": chunk.metadata.get("page"),
                 "section": chunk.metadata.get("heading") or chunk.metadata.get("section"),
-                "chunk_type": "text",
+                "chunk_type": chunk.chunk_type,
                 "token_count": _estimate_tokens(chunk.content),
                 "word_count": len(chunk.content.split()),
                 "character_count": len(chunk.content),

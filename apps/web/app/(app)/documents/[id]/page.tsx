@@ -57,8 +57,11 @@ export default function DocumentDetailPage() {
             {document.filename}
           </h1>
           <p className="text-sm text-zinc-500">
-            {document.contentType} · {document.provider}/{document.model} ·{" "}
-            {new Date(document.createdAt).toLocaleString()}
+            {document.contentType}
+            {document.provider &&
+              document.model &&
+              ` · ${document.provider}/${document.model}`}{" "}
+            · {new Date(document.createdAt).toLocaleString()}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">

@@ -70,8 +70,16 @@ services:
     env_file:
       - apps/ai/.env
 
+    environment:
+      # host.docker.internal reaches a file-upload-service run directly on
+      # the host (outside this compose stack) for local dev/testing.
+      FILE_SERVICE_URL: http://host.docker.internal:5000
+
     ports:
       - "8000:8000"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   api:
     build:
@@ -90,9 +98,13 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       AI_SERVICE_URL: http://ai:8000
+      FILE_SERVICE_URL: http://host.docker.internal:5000
 
     ports:
       - "3000:3000"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     depends_on:
       postgres:
@@ -126,8 +138,12 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       AI_SERVICE_URL: http://ai:8000
+      FILE_SERVICE_URL: http://host.docker.internal:5000
 
     command: ["node", "dist/main.worker.js"]
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     depends_on:
       postgres:

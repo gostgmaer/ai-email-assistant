@@ -44,6 +44,14 @@ export const envSchema = z.object({
   AI_SERVICE_URL: z.url(),
   AI_SERVICE_API_KEY: z.string().optional(),
 
+  // File Upload Service (@easydev_org/file-upload-sdk) — document uploads go
+  // here instead of being held in memory; the AI service downloads directly
+  // from it using the same HMAC scheme (see FILE_SERVICE_HMAC_SECRET below,
+  // which apps/ai also needs a copy of).
+  FILE_SERVICE_URL: z.url().default('http://localhost:4001'),
+  FILE_SERVICE_HMAC_SECRET: z.string().min(1),
+  FILE_SERVICE_TENANT_ID: z.string().default('easydev'),
+
   // Mailer (transactional emails: verification, password reset, email change).
   // All optional — when SMTP_HOST is unset, MailerService logs links to the
   // console instead of sending, so auth flows still work in local dev.

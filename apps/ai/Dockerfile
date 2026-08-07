@@ -2,6 +2,11 @@
 
 FROM python:3.14-slim AS base
 
+# git is needed at build time only: uv.lock pins easydev-file-upload-sdk to
+# a git+https source (not yet published to PyPI).
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN for i in 1 2 3 4 5; do pip install --no-cache-dir uv && break || sleep 5; done; \
     command -v uv
 

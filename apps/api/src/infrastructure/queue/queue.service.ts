@@ -4,12 +4,39 @@ import { Queue } from 'bullmq';
 
 import {
   AIJobs,
+  DocumentJobs,
   EmailSyncJobs,
   NotificationJobs,
 } from './constants/job.constants';
 import { QueueNames } from './constants/queue.constants';
 
 const BACKGROUND_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+const DOCUMENT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+
+/** Everything DocumentsProcessingProcessor needs to call the AI service and
+ * update the Document row, without re-querying the DB or re-deriving the
+ * uploader's identity for the file-upload-service HMAC headers.
+ *
+ * No workspaceId — this app has no workspace concept, and a fabricated one
+ * would carry zero real meaning. tenantId maps to the file-upload-service
+ * tenant (not a per-user tenant — this app remains single-tenant). */
+export interface DocumentProcessingJobPayload {
+  documentId: string;
+  tenantId: string;
+  uploadedBy: string;
+  userEmail: string;
+  userRole: string;
+  fileId: string;
+  originalFileName: string;
+  extension: string;
+  mimeType: string;
+  fileSize: number;
+  checksum: string;
+  uploadTimestamp: string;
+  language?: string;
+  metadata?: Record<string, unknown>;
+  priority?: number;
+}
 
 @Injectable()
 export class QueueService {
@@ -18,6 +45,8 @@ export class QueueService {
     @InjectQueue(QueueNames.AI) private readonly aiQueue: Queue,
     @InjectQueue(QueueNames.Notification)
     private readonly notificationQueue: Queue,
+    @InjectQueue(QueueNames.Documents)
+    private readonly documentsQueue: Queue,
   ) {}
 
   async enqueueInitialSync(accountId: string): Promise<void> {
@@ -66,6 +95,26 @@ export class QueueService {
     );
   }
 
+  /** Idempotent: registers the recurring stale-document cleanup scan if not
+   * already scheduled. Redis-backed, so this is safe to call from every
+   * process (api + worker) on startup without double-scheduling. */
+  async scheduleDocumentCleanup(): Promise<void> {
+    await this.documentsQueue.upsertJobScheduler(
+      'document-cleanup-scan',
+      { every: DOCUMENT_CLEANUP_INTERVAL_MS },
+      { name: DocumentJobs.CleanupStale, data: {} },
+    );
+  }
+
+  async enqueueDocumentProcessing(
+    payload: DocumentProcessingJobPayload,
+  ): Promise<void> {
+    await this.documentsQueue.add(DocumentJobs.Process, payload, {
+      jobId: `${DocumentJobs.Process}-${payload.documentId}`,
+      priority: payload.priority,
+    });
+  }
+
   async enqueueNotification(
     userId: string,
     title: string,
@@ -88,6 +137,8 @@ export class QueueService {
         return this.aiQueue;
       case QueueNames.Notification:
         return this.notificationQueue;
+      case QueueNames.Documents:
+        return this.documentsQueue;
     }
   }
 }

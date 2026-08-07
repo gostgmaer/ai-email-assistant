@@ -5,11 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "easydev-file-upload-sdk",
     "email-validator>=2.3.0",
+    "extract-msg>=0.56.0",
     "fastapi>=0.141.1",
     "httpx>=0.28.1",
     "langchain>=1.3.14",
     "langchain-anthropic>=1.5.3",
+    "langchain-community>=0.4.2",
     "langchain-google-genai>=4.3.2",
     "langchain-groq>=1.1.3",
     "langchain-ollama>=1.1.0",
@@ -17,6 +21,9 @@ dependencies = [
     "langchain-text-splitters>=1.1.2",
     "langgraph>=1.2.10",
     "loguru>=0.7.3",
+    "lxml>=6.1.1",
+    "openpyxl>=3.1.5",
+    "pdfplumber>=0.11.10",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.14.2",
     "pypdf>=6.14.2",
@@ -36,3 +43,6 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.uv.sources]
+easydev-file-upload-sdk = { git = "https://github.com/gostgmaer/file-upload-service.git", subdirectory = "sdk-python", rev = "main" }

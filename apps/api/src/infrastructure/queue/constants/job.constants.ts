@@ -18,3 +18,14 @@ export const AIJobs = {
 export const NotificationJobs = {
   SendEmail: 'send-email',
 } as const;
+
+export const DocumentJobs = {
+  /** Repeatable job: marks documents stuck at PROCESSING (a crashed or
+   * never-finished upload) as FAILED once they're older than the stale
+   * threshold. */
+  CleanupStale: 'cleanup-stale-documents',
+  /** Upload has finished (apps/api only stored metadata + uploaded the raw
+   * file to file-upload-service) — the AI service downloads the file
+   * itself and does the actual parsing/chunking/embedding work. */
+  Process: 'process-document',
+} as const;

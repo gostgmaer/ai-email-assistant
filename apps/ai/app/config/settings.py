@@ -78,6 +78,16 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    # ============================================================
+    # File Upload Service — documents are uploaded there by apps/api;
+    # this service downloads them directly using the same HMAC scheme
+    # as @easydev_org/file-upload-sdk (see app/core/file_service_client.py).
+    # ============================================================
+
+    file_service_url: str = "http://localhost:4001"
+    file_service_hmac_secret: str = ""
+    file_service_tenant_id: str = "easydev"
+
 
 @lru_cache
 def get_settings() -> Settings:

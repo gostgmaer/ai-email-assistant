@@ -132,6 +132,18 @@ export interface ProcessedDocumentChunk {
   lineEnd: number;
 }
 
+export interface ProcessDocumentFileRef {
+  /** file-upload-service's file id — this service downloads the file
+   * itself, apps/api never touches the bytes. */
+  fileId: string;
+  filename: string;
+  contentType: string;
+  uploadedBy: string;
+  userEmail: string;
+  userRole: string;
+  tenantId: string;
+}
+
 export interface ProcessDocumentResponse {
   chunks: ProcessedDocumentChunk[];
   provider: string;
@@ -269,20 +281,19 @@ export class AiClientService {
   }
 
   async processDocument(
-    buffer: Buffer,
-    filename: string,
-    contentType: string,
+    fileRef: ProcessDocumentFileRef,
   ): Promise<ProcessDocumentResponse> {
-    const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([new Uint8Array(buffer)], { type: contentType }),
-      filename,
-    );
-
-    const res = await this.postMultipart<RawProcessDocumentResponse>(
+    const res = await this.post<RawProcessDocumentResponse>(
       '/documents/process',
-      formData,
+      {
+        file_id: fileRef.fileId,
+        filename: fileRef.filename,
+        content_type: fileRef.contentType,
+        uploaded_by: fileRef.uploadedBy,
+        user_email: fileRef.userEmail,
+        user_role: fileRef.userRole,
+        tenant_id: fileRef.tenantId,
+      },
     );
 
     return {
@@ -340,47 +351,15 @@ export class AiClientService {
       throw new BadGatewayException('AI service is unreachable');
     }
 
-    if (!response.ok) {
-      const text = await response.text();
-      this.logger.warn(
-        `AI service error (${response.status}) at ${path}: ${text}`,
-      );
-      throw new BadGatewayException(`AI service error (${response.status})`);
-    }
-
-    return (await response.json()) as T;
-  }
-
-  private async postMultipart<T>(path: string, formData: FormData): Promise<T> {
-    const baseUrl = this.configService.getOrThrow<string>('AI_SERVICE_URL');
-    const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
-
-    let response: Response;
-
-    try {
-      response = await fetch(`${baseUrl}${path}`, {
-        method: 'POST',
-        headers: {
-          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-        },
-        body: formData,
-      });
-    } catch (error) {
-      this.logger.error(
-        `AI service request to ${path} failed: ${String(error)}`,
-      );
-      throw new BadGatewayException('AI service is unreachable');
-    }
-
-    // The document-processing endpoint uses 422 specifically to mean
-    // "unsupported file type" — surface that distinctly instead of the
-    // generic 502 so the frontend can show the AI service's own message.
+    // 422 means "well-formed request, semantically invalid" (e.g.
+    // documents/process rejecting an unsupported file type) — surface that
+    // distinctly instead of the generic 502 so callers can react to it.
     if (response.status === 422) {
-      const body = (await response.json().catch(() => null)) as {
+      const errorBody = (await response.json().catch(() => null)) as {
         detail?: string;
       } | null;
       throw new UnprocessableEntityException(
-        body?.detail ?? 'Unsupported document',
+        errorBody?.detail ?? 'Unprocessable request',
       );
     }
 

@@ -52,6 +52,12 @@ export default () => {
       apiKey: env.AI_SERVICE_API_KEY,
     },
 
+    fileService: {
+      url: env.FILE_SERVICE_URL,
+      hmacSecret: env.FILE_SERVICE_HMAC_SECRET,
+      tenantId: env.FILE_SERVICE_TENANT_ID,
+    },
+
     mailer: {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,

@@ -62,8 +62,8 @@ export default function DocumentsPage() {
       <div>
         <h1 className="text-lg font-semibold text-zinc-900">Documents</h1>
         <p className="text-sm text-zinc-500">
-          Upload a PDF, DOCX, TXT, or Markdown file to extract, chunk, and
-          embed its text.
+          Upload a PDF, DOCX, TXT, Markdown, HTML, CSV, XLSX, JSON, XML,
+          EML, or MSG file — processing happens in the background.
         </p>
       </div>
 
@@ -78,7 +78,7 @@ export default function DocumentsPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.docx,.txt,.md"
+            accept=".pdf,.docx,.txt,.md,.html,.htm,.csv,.xlsx,.json,.xml,.eml,.msg"
             onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
             className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200"
           />
@@ -251,7 +251,7 @@ export default function DocumentsPage() {
                 <p className="text-xs text-zinc-500">
                   {doc.chunkCount} chunk{doc.chunkCount === 1 ? "" : "s"} ·{" "}
                   {doc.documentType.toUpperCase()} ·{" "}
-                  {doc.provider}/{doc.model} ·{" "}
+                  {doc.provider && doc.model && `${doc.provider}/${doc.model} · `}
                   {new Date(doc.createdAt).toLocaleString()}
                 </p>
               </Link>

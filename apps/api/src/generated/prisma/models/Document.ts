@@ -420,8 +420,8 @@ export type DocumentGroupByOutputType = {
   contentType: string
   contentHash: string | null
   chunkContentHash: string | null
-  provider: string
-  model: string
+  provider: string | null
+  model: string | null
   title: string
   description: string | null
   summary: string | null
@@ -486,8 +486,8 @@ export type DocumentWhereInput = {
   contentType?: Prisma.StringFilter<"Document"> | string
   contentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   chunkContentHash?: Prisma.StringNullableFilter<"Document"> | string | null
-  provider?: Prisma.StringFilter<"Document"> | string
-  model?: Prisma.StringFilter<"Document"> | string
+  provider?: Prisma.StringNullableFilter<"Document"> | string | null
+  model?: Prisma.StringNullableFilter<"Document"> | string | null
   title?: Prisma.StringFilter<"Document"> | string
   description?: Prisma.StringNullableFilter<"Document"> | string | null
   summary?: Prisma.StringNullableFilter<"Document"> | string | null
@@ -531,8 +531,8 @@ export type DocumentOrderByWithRelationInput = {
   contentType?: Prisma.SortOrder
   contentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   chunkContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  provider?: Prisma.SortOrder
-  model?: Prisma.SortOrder
+  provider?: Prisma.SortOrderInput | Prisma.SortOrder
+  model?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   summary?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -572,7 +572,6 @@ export type DocumentOrderByWithRelationInput = {
 export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   userId_contentHash?: Prisma.DocumentUserIdContentHashCompoundUniqueInput
-  userId_chunkContentHash?: Prisma.DocumentUserIdChunkContentHashCompoundUniqueInput
   AND?: Prisma.DocumentWhereInput | Prisma.DocumentWhereInput[]
   OR?: Prisma.DocumentWhereInput[]
   NOT?: Prisma.DocumentWhereInput | Prisma.DocumentWhereInput[]
@@ -581,8 +580,8 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   contentType?: Prisma.StringFilter<"Document"> | string
   contentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   chunkContentHash?: Prisma.StringNullableFilter<"Document"> | string | null
-  provider?: Prisma.StringFilter<"Document"> | string
-  model?: Prisma.StringFilter<"Document"> | string
+  provider?: Prisma.StringNullableFilter<"Document"> | string | null
+  model?: Prisma.StringNullableFilter<"Document"> | string | null
   title?: Prisma.StringFilter<"Document"> | string
   description?: Prisma.StringNullableFilter<"Document"> | string | null
   summary?: Prisma.StringNullableFilter<"Document"> | string | null
@@ -617,7 +616,7 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   lastAccessedAt?: Prisma.DateTimeNullableFilter<"Document"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   chunks?: Prisma.DocumentChunkListRelationFilter
-}, "id" | "userId_contentHash" | "userId_chunkContentHash">
+}, "id" | "userId_contentHash">
 
 export type DocumentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -626,8 +625,8 @@ export type DocumentOrderByWithAggregationInput = {
   contentType?: Prisma.SortOrder
   contentHash?: Prisma.SortOrderInput | Prisma.SortOrder
   chunkContentHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  provider?: Prisma.SortOrder
-  model?: Prisma.SortOrder
+  provider?: Prisma.SortOrderInput | Prisma.SortOrder
+  model?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   summary?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -677,8 +676,8 @@ export type DocumentScalarWhereWithAggregatesInput = {
   contentType?: Prisma.StringWithAggregatesFilter<"Document"> | string
   contentHash?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   chunkContentHash?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
-  provider?: Prisma.StringWithAggregatesFilter<"Document"> | string
-  model?: Prisma.StringWithAggregatesFilter<"Document"> | string
+  provider?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
+  model?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   title?: Prisma.StringWithAggregatesFilter<"Document"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
   summary?: Prisma.StringNullableWithAggregatesFilter<"Document"> | string | null
@@ -719,8 +718,8 @@ export type DocumentCreateInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -764,8 +763,8 @@ export type DocumentUncheckedCreateInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -807,8 +806,8 @@ export type DocumentUpdateInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -852,8 +851,8 @@ export type DocumentUncheckedUpdateInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -896,8 +895,8 @@ export type DocumentCreateManyInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -938,8 +937,8 @@ export type DocumentUpdateManyMutationInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -981,8 +980,8 @@ export type DocumentUncheckedUpdateManyInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1030,11 +1029,6 @@ export type DocumentOrderByRelationAggregateInput = {
 export type DocumentUserIdContentHashCompoundUniqueInput = {
   userId: string
   contentHash: string
-}
-
-export type DocumentUserIdChunkContentHashCompoundUniqueInput = {
-  userId: string
-  chunkContentHash: string
 }
 
 export type DocumentCountOrderByAggregateInput = {
@@ -1282,8 +1276,8 @@ export type DocumentCreateWithoutUserInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -1325,8 +1319,8 @@ export type DocumentUncheckedCreateWithoutUserInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -1398,8 +1392,8 @@ export type DocumentScalarWhereInput = {
   contentType?: Prisma.StringFilter<"Document"> | string
   contentHash?: Prisma.StringNullableFilter<"Document"> | string | null
   chunkContentHash?: Prisma.StringNullableFilter<"Document"> | string | null
-  provider?: Prisma.StringFilter<"Document"> | string
-  model?: Prisma.StringFilter<"Document"> | string
+  provider?: Prisma.StringNullableFilter<"Document"> | string | null
+  model?: Prisma.StringNullableFilter<"Document"> | string | null
   title?: Prisma.StringFilter<"Document"> | string
   description?: Prisma.StringNullableFilter<"Document"> | string | null
   summary?: Prisma.StringNullableFilter<"Document"> | string | null
@@ -1440,8 +1434,8 @@ export type DocumentCreateWithoutChunksInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -1484,8 +1478,8 @@ export type DocumentUncheckedCreateWithoutChunksInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -1542,8 +1536,8 @@ export type DocumentUpdateWithoutChunksInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1586,8 +1580,8 @@ export type DocumentUncheckedUpdateWithoutChunksInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1628,8 +1622,8 @@ export type DocumentCreateManyUserInput = {
   contentType: string
   contentHash?: string | null
   chunkContentHash?: string | null
-  provider: string
-  model: string
+  provider?: string | null
+  model?: string | null
   title: string
   description?: string | null
   summary?: string | null
@@ -1670,8 +1664,8 @@ export type DocumentUpdateWithoutUserInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1713,8 +1707,8 @@ export type DocumentUncheckedUpdateWithoutUserInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1756,8 +1750,8 @@ export type DocumentUncheckedUpdateManyWithoutUserInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   contentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chunkContentHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  provider?: Prisma.StringFieldUpdateOperationsInput | string
-  model?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2034,15 +2028,14 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     contentHash: string | null
     /**
      * SHA-256 of the ordered, concatenated chunk text produced by the AI
-     * service. Checked AFTER processing, as a fallback for cases the raw
-     * byte hash can't catch: two files with different bytes that extract to
-     * identical text (re-saved PDF, different line endings, a pre-existing
-     * row that has no contentHash yet). Same nullability rationale as
-     * contentHash.
+     * service. Informational only (not unique, not checked) — upload and
+     * processing are decoupled, so by the time this is known the AI call
+     * has already happened and there's nothing left to skip. Kept for
+     * finding likely-duplicate content across differently-named files later.
      */
     chunkContentHash: string | null
-    provider: string
-    model: string
+    provider: string | null
+    model: string | null
     title: string
     description: string | null
     summary: string | null

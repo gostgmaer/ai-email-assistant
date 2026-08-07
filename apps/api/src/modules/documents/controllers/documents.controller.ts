@@ -23,7 +23,10 @@ import {
 
 import { CurrentUser, JwtAuthGuard, JwtPayload } from '../../auth';
 import { SearchDocumentsDto } from '../dto';
-import { DocumentsService } from '../services/documents.service';
+import {
+  DocumentsService,
+  MAX_DOCUMENT_SIZE_BYTES,
+} from '../services/documents.service';
 
 @ApiTags('documents')
 @ApiBearerAuth('access-token')
@@ -33,19 +36,28 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @HttpCode(HttpStatus.ACCEPTED)
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_DOCUMENT_SIZE_BYTES } }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary: 'Upload and process a document (PDF/DOCX/TXT/MD)',
+    summary:
+      'Upload a document for processing. This endpoint only validates, ' +
+      'stores the file, and enqueues a background job — it never parses ' +
+      'the document itself. Poll GET /documents/:id for status.',
   })
-  @ApiResponse({ status: 201, description: 'The processed document' })
   @ApiResponse({
-    status: 422,
-    description: 'Unsupported document type, or no extractable text found',
+    status: 202,
+    description: 'Upload accepted; processing happens in the background',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unsupported file extension or file too large',
   })
   @ApiResponse({
     status: 502,
-    description: 'The AI service failed or is unreachable',
+    description: 'file-upload-service is unreachable',
   })
   async upload(
     @CurrentUser() user: JwtPayload,
@@ -55,7 +67,7 @@ export class DocumentsController {
       throw new BadRequestException('No file uploaded');
     }
 
-    return this.documentsService.processAndStore(user.sub, file);
+    return this.documentsService.upload(user.sub, user.email, file);
   }
 
   @Get()

@@ -44,6 +44,9 @@ import { QueueService } from './queue.service';
       {
         name: QueueNames.Notification,
       },
+      {
+        name: QueueNames.Documents,
+      },
     ),
   ],
 

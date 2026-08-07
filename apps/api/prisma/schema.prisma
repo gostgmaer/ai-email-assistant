@@ -349,17 +349,19 @@ model Document {
   contentHash String?
 
   /// SHA-256 of the ordered, concatenated chunk text produced by the AI
-  /// service. Checked AFTER processing, as a fallback for cases the raw
-  /// byte hash can't catch: two files with different bytes that extract to
-  /// identical text (re-saved PDF, different line endings, a pre-existing
-  /// row that has no contentHash yet). Same nullability rationale as
-  /// contentHash.
+  /// service. Informational only (not unique, not checked) — upload and
+  /// processing are decoupled, so by the time this is known the AI call
+  /// has already happened and there's nothing left to skip. Kept for
+  /// finding likely-duplicate content across differently-named files later.
   chunkContentHash String?
 
   // Echoed back from the AI service's document_processing capability for
-  // the run that produced this document's chunks.
-  provider String
-  model    String
+  // the run that produced this document's chunks. Null until that run
+  // completes — upload and processing are now decoupled (upload enqueues a
+  // job; a worker calls the AI service later), so neither is known yet at
+  // Document-creation time.
+  provider String?
+  model    String?
 
   // --- Identification & organization (title defaults to filename; the
   // rest are nullable/empty until a real AI-enrichment step populates
@@ -436,7 +438,6 @@ model Document {
   lastAccessedAt DateTime?
 
   @@unique([userId, contentHash])
-  @@unique([userId, chunkContentHash])
   @@index([userId])
   @@index([status])
   @@index([category])
