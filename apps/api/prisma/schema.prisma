@@ -707,7 +707,9 @@ model Document {
   /// Team/owner distinct from author — no ownership model exists yet
   /// (single-tenant uploads), so always null until one does.
   owner       String?
-  /// BCP-47 / ISO language code — no language detection runs yet.
+  /// BCP-47 / ISO 639-1 code from langdetect (see process_document in
+  /// apps/ai). Null when undetectable or the document had no
+  /// extractable text.
   language    String?
 
   /// Origin channel. Always "upload" today (the only ingestion path); kept

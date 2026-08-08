@@ -12,6 +12,7 @@ import extract_msg
 import pdfplumber
 import pytesseract
 from bs4 import BeautifulSoup
+from langdetect import LangDetectException, detect as detect_language
 from docx import Document as DocxDocument
 from docx.table import Table as DocxTable
 from langchain_text_splitters import (
@@ -582,7 +583,20 @@ def process_document(filename: str, content_type: str, raw_bytes: bytes) -> dict
             "chunk_size": doc_meta.chunk_size if doc_meta else None,
             "chunk_overlap": doc_meta.chunk_overlap if doc_meta else None,
             "page_count": doc_meta.page_count if doc_meta else None,
+            "language": None,
         }
+
+    # BCP-47/ISO 639-1 code from the first ~1000 chars — enough for
+    # langdetect's statistical model without paying to scan the whole
+    # document. Best-effort: langdetect raises on text with no detectable
+    # language features (e.g. a document that's almost entirely numbers/
+    # symbols), which just means "not detectable," not an error worth
+    # failing the whole upload over.
+    sample_text = " ".join(chunk.content for chunk in raw_chunks[:3])[:1000]
+    try:
+        language = detect_language(sample_text)
+    except LangDetectException:
+        language = None
 
     embeddings = embedding_manager.embed_batch([chunk.content for chunk in raw_chunks])
 
@@ -617,4 +631,5 @@ def process_document(filename: str, content_type: str, raw_bytes: bytes) -> dict
         "chunk_size": doc_meta.chunk_size,
         "chunk_overlap": doc_meta.chunk_overlap,
         "page_count": doc_meta.page_count,
+        "language": language,
     }

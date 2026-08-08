@@ -40,6 +40,10 @@ class ProcessDocumentResponse(BaseModel):
     chunk_size: int | None = None
     chunk_overlap: int | None = None
     page_count: int | None = None
+    # BCP-47/ISO 639-1 code, best-effort from langdetect. None when
+    # undetectable (e.g. too little text) or the document had no
+    # extractable text at all.
+    language: str | None = None
 
 
 class EmbedQueryRequest(BaseModel):

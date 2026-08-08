@@ -6,7 +6,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 **How to read the status column:** ✅ Built · 🟡 Partial (something exists but doesn't do what the name implies) · ⬜ Not started.
 
-**Update:** the whole "Small" list (language detection, PII detection, wiring `summarize` into the pipeline, OCR) and a minimal version of the "Medium" output validation pipeline (output-side PII scan + a second-LLM-call "does this reply address the thread" check, both gating auto-send) have since shipped — see the rows below and `AiProcessingProcessor`/`apps/ai/app/capabilities/validate_reply`. A CRM v1 has also shipped (`apps/api/src/modules/crm` — structured `Contact` records, member-accessible CRUD, `lastContactedAt` auto-updated by the pipeline on an existing match) — see §4/§7 below for what it does and doesn't cover. Multi-agent orchestration and the learning pipeline are still not started and still need their own scoping pass before code.
+**Update:** the whole "Small" list (language detection, PII detection, wiring `summarize` into the pipeline, OCR), a minimal version of the "Medium" output validation pipeline (output-side PII scan + a second-LLM-call "does this reply address the thread" check, both gating auto-send), and CRM v1 with a Settings UI panel (`apps/api/src/modules/crm` — structured `Contact` records, member-accessible CRUD, `lastContactedAt` auto-updated by the pipeline on an existing match) have all since shipped — see §2–§4, §6, §7 below. §1's Deduplication/Metadata extraction and §3's Spam detection also turned out to already be complete on closer inspection (the original audit undersold them) — see their rows. Document language detection (`Document.language`, via `langdetect`) has also shipped, closing §3's one remaining doc-side gap. Only multi-agent orchestration, the learning pipeline, and confidence scoring remain — see "What needs to be covered" below for why each is blocked on a decision rather than just unbuilt.
 
 ---
 
@@ -15,11 +15,11 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 | Item | Status | Evidence |
 |---|---|---|
 | Sync from Gmail/Outlook/IMAP | ✅ | Polling (not webhook) — BullMQ repeatable job every 5 min, `QueueService.scheduleBackgroundSync` → `EmailSyncService.syncAccount` |
-| Deduplication | 🟡 | Upserts keyed on `providerMessageId`/`providerThreadId` prevent duplicate storage of the *same* message; no cross-account or content-hash dedup |
+| Deduplication | ✅ | Upserts keyed on `providerMessageId`/`providerThreadId` — the correct, standard mechanism (matches how Gmail/Outlook/IMAP clients dedup universally). "No cross-account dedup" was a mischaracterization: two connected accounts both receiving the same physical email correctly show it twice, once per mailbox — that's how every multi-account client behaves, not a gap. |
 | Header/body/attachment/thread parsing | ✅ | Provider clients normalize into a common shape; threads tracked via `EmailThread` |
-| Metadata extraction | 🟡 | Bulk-mail signals exist for filtering; no general-purpose metadata-extraction step beyond headers |
+| Metadata extraction | ✅ | Headers/participants/dates plus `bulkMailSignals` (List-Unsubscribe, Precedence, Auto-Submitted, ESP signature, sender-pattern) computed at sync time (`bulk-mail.util.ts`) — combined with entity extraction and classification (§3), this covers what "metadata extraction" was really asking for. No structured attachment list (filename/size/type) is extracted at sync time — attachments only get parsed when a user explicitly uploads one for RAG (§2) — but nothing currently needs that data, so it's not tracked here as an open gap. |
 
-**Verdict:** solid. Webhook-based sync (vs. 5-min polling) would be the only real upgrade here, and only matters if near-real-time processing becomes a requirement.
+**Verdict:** solid, and both previously-flagged partials turned out to be complete on inspection — the "gaps" were audit mischaracterizations, not missing code. Webhook-based sync (vs. 5-min polling) is the only real potential upgrade, and only matters if near-real-time processing becomes a requirement.
 
 ## 2. Attachment / document processing
 
@@ -36,8 +36,8 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 | Item | Status | Evidence |
 |---|---|---|
-| Language detection | ✅ for emails, ⬜ for documents | `ClassificationSchema.language` (ISO 639-1) on the same classify call → `EmailMessage.language`. `Document.language` (uploaded attachments) is a separate field and still stays null — not addressed by this change. |
-| Spam detection | 🟡 | A `spam: bool` field on the general classify call, not a dedicated spam model/step — works, but is a side-effect of classification rather than its own stage |
+| Language detection | ✅ | `ClassificationSchema.language` (ISO 639-1) on the classify call → `EmailMessage.language`. `Document.language` (uploaded attachments) is now also populated — `langdetect` (pure Python, no system dependency) runs in `process_document` on a text sample, → `Document.language`. |
+| Spam detection | ✅ | Two real, complementary layers: (1) deterministic, header-based `bulkMailSignals.automated` (List-Unsubscribe, Precedence, Auto-Submitted, ESP signature, sender-pattern) **excludes a message from sync entirely** before any AI call runs (`isBulkMail` in `email-sync.service.ts`) — this is the dedicated filter the original audit said didn't exist; (2) the classify call's `spam: bool` catches content-based spam that clears the header filter (no bulk headers, but still spam). |
 | Intent/category classification | ✅ | Same classify call → `EmailMessage.category` |
 | Urgency/priority detection | ✅ | Same call → `priority`, also used as a hard auto-send safety rail (`Urgent` never auto-sends) |
 | Sentiment analysis | ✅ | Same call → `sentiment` |

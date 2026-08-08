@@ -94,9 +94,12 @@ export interface DocumentSummary {
   duplicate?: boolean;
 }
 
-/** Fields that stay null until a real enrichment/connector step exists —
- * broken out from DocumentSummary so the list view isn't cluttered with
- * always-empty columns. */
+/** Mostly fields that stay null until a real enrichment/connector step
+ * exists — broken out from DocumentSummary so the list view isn't
+ * cluttered with always-empty columns. `language` is the one exception:
+ * populated by langdetect in completeProcessing() (see AI service's
+ * process_document), null only when undetectable or the document had no
+ * extractable text. */
 export interface DocumentDetail extends DocumentSummary {
   description: string | null;
   summary: string | null;
@@ -382,6 +385,7 @@ export class DocumentsService {
         chunkSize: result.chunkSize,
         chunkOverlap: result.chunkOverlap,
         pageCount: result.pageCount,
+        language: result.language,
         embeddingDimension: result.chunks[0].embedding.length,
         totalChunks: stats.totalChunks,
         totalTokens: stats.totalTokens,

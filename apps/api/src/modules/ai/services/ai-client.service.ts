@@ -226,6 +226,7 @@ export interface ProcessDocumentResponse {
   chunkSize: number | null;
   chunkOverlap: number | null;
   pageCount: number | null;
+  language: string | null;
 }
 
 interface RawProcessedDocumentChunk {
@@ -253,6 +254,7 @@ interface RawProcessDocumentResponse {
   chunk_size: number | null;
   chunk_overlap: number | null;
   page_count: number | null;
+  language: string | null;
 }
 
 export interface EmbedQueryResponse {
@@ -465,6 +467,7 @@ export class AiClientService {
       chunkSize: res.chunk_size,
       chunkOverlap: res.chunk_overlap,
       pageCount: res.page_count,
+      language: res.language,
       chunks: res.chunks.map((chunk) => ({
         content: chunk.content,
         embedding: chunk.embedding,
