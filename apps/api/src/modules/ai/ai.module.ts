@@ -4,8 +4,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AgentModule } from '../agent';
 import { AuthModule } from '../auth';
 import { CalendarModule } from '../calendar';
+import { CrmModule } from '../crm';
 import { DocumentsModule } from '../documents';
 import { EmailModule } from '../email';
+import { NotificationModule } from '../notification';
 import { TasksModule } from '../tasks';
 import { WorkflowModule } from '../workflow';
 import { AiController } from './controllers/ai.controller';
@@ -35,6 +37,13 @@ import { ContactMemoryService } from './services/contact-memory.service';
     // Same reasoning as WorkflowModule above — AgentModule -> EmailAccountModule
     // -> AuthModule -> CalendarModule -> AiModule closes another cycle.
     forwardRef(() => AgentModule),
+    // Same reasoning again — CrmModule -> EmailAccountModule -> AuthModule
+    // -> CalendarModule -> AiModule closes the same cycle a third time.
+    forwardRef(() => CrmModule),
+    // NotificationModule -> AuthModule -> CalendarModule -> AiModule closes
+    // the same cycle again, for AiProcessingProcessor's auto-send
+    // notification (§7 — see docs/enterprise-ai-pipeline-plan.md).
+    forwardRef(() => NotificationModule),
   ],
 
   controllers: [AiController],

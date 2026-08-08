@@ -59,6 +59,7 @@ export const ModelName = {
   AccountMember: 'AccountMember',
   WorkflowRule: 'WorkflowRule',
   Agent: 'Agent',
+  Contact: 'Contact',
   EmailCredential: 'EmailCredential',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
@@ -162,6 +163,7 @@ export const EmailAccountScalarFieldEnum = {
   filterBilling: 'filterBilling',
   filterShipping: 'filterShipping',
   filterCalendar: 'filterCalendar',
+  prohibitedPhrases: 'prohibitedPhrases',
   imapConfig: 'imapConfig',
   syncStatus: 'syncStatus',
   lastSyncedAt: 'lastSyncedAt',
@@ -212,6 +214,24 @@ export const AgentScalarFieldEnum = {
 } as const
 
 export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
+
+
+export const ContactScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  email: 'email',
+  name: 'name',
+  company: 'company',
+  phone: 'phone',
+  notes: 'notes',
+  tags: 'tags',
+  status: 'status',
+  lastContactedAt: 'lastContactedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum]
 
 
 export const EmailCredentialScalarFieldEnum = {

@@ -22,6 +22,7 @@ import { NotificationModule } from './modules/notification';
 import { TasksModule } from './modules/tasks';
 import { WorkflowModule } from './modules/workflow';
 import { AgentModule } from './modules/agent';
+import { CrmModule } from './modules/crm';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { AgentModule } from './modules/agent';
     DigestModule,
     WorkflowModule,
     AgentModule,
+    CrmModule,
   ],
 })
 export class AppModule {}

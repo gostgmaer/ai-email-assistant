@@ -136,6 +136,12 @@ function EmailAccountsContent() {
                 data: { autoScheduleMeetings },
               })
             }
+            onUpdateProhibitedPhrases={(prohibitedPhrases) =>
+              updateMutation.mutate({
+                id: account.id,
+                data: { prohibitedPhrases },
+              })
+            }
             onSyncNow={() => syncMutation.mutate(account.id)}
             onDisconnect={() => {
               if (window.confirm(`Disconnect ${account.email}?`)) {

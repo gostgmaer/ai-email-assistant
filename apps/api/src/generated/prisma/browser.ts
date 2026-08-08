@@ -86,6 +86,21 @@ export type WorkflowRule = Prisma.WorkflowRuleModel
  */
 export type Agent = Prisma.AgentModel
 /**
+ * Model Contact
+ * *
+ *  * CRM v1 — a structured contact record per account, distinct from
+ *  * ContactMemoryService's AI-inferred embedding "facts" (which stays as
+ *  * unstructured, per-sender context for reply generation, not a CRM).
+ *  * Deliberately NOT auto-populated by the AI pipeline — a Contact only
+ *  * ever gets created by an explicit user action, so the CRM doesn't
+ *  * silently fill up with every marketing sender or notification address
+ *  * that happens to email the account. The pipeline only updates
+ *  * lastContactedAt on an EXISTING match (see AiProcessingProcessor).
+ *  * Pipeline/deal stages, lead qualification, and pricing lookup are
+ *  * out of scope for this pass — see docs/enterprise-ai-pipeline-plan.md §4.
+ */
+export type Contact = Prisma.ContactModel
+/**
  * Model EmailCredential
  * 
  */

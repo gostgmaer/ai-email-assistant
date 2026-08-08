@@ -24,6 +24,7 @@ import { InboxService } from './inbox.service';
 export interface GenerationMetadata {
   ragUsed: boolean;
   contactMemoryUsed: boolean;
+  crmContactUsed: boolean;
   provider: string;
   model: string;
   usage: { inputTokens: number; outputTokens: number; totalTokens: number };

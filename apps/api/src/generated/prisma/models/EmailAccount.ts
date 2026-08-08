@@ -85,6 +85,7 @@ export type EmailAccountCountAggregateOutputType = {
   filterBilling: number
   filterShipping: number
   filterCalendar: number
+  prohibitedPhrases: number
   imapConfig: number
   syncStatus: number
   lastSyncedAt: number
@@ -157,6 +158,7 @@ export type EmailAccountCountAggregateInputType = {
   filterBilling?: true
   filterShipping?: true
   filterCalendar?: true
+  prohibitedPhrases?: true
   imapConfig?: true
   syncStatus?: true
   lastSyncedAt?: true
@@ -254,6 +256,7 @@ export type EmailAccountGroupByOutputType = {
   filterBilling: boolean
   filterShipping: boolean
   filterCalendar: boolean
+  prohibitedPhrases: string[]
   imapConfig: runtime.JsonValue | null
   syncStatus: $Enums.SyncStatus
   lastSyncedAt: Date | null
@@ -299,6 +302,7 @@ export type EmailAccountWhereInput = {
   filterBilling?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterShipping?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterCalendar?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  prohibitedPhrases?: Prisma.StringNullableListFilter<"EmailAccount">
   imapConfig?: Prisma.JsonNullableFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableFilter<"EmailAccount"> | Date | string | null
@@ -313,6 +317,7 @@ export type EmailAccountWhereInput = {
   members?: Prisma.AccountMemberListRelationFilter
   workflowRules?: Prisma.WorkflowRuleListRelationFilter
   agents?: Prisma.AgentListRelationFilter
+  contacts?: Prisma.ContactListRelationFilter
 }
 
 export type EmailAccountOrderByWithRelationInput = {
@@ -330,6 +335,7 @@ export type EmailAccountOrderByWithRelationInput = {
   filterBilling?: Prisma.SortOrder
   filterShipping?: Prisma.SortOrder
   filterCalendar?: Prisma.SortOrder
+  prohibitedPhrases?: Prisma.SortOrder
   imapConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -344,6 +350,7 @@ export type EmailAccountOrderByWithRelationInput = {
   members?: Prisma.AccountMemberOrderByRelationAggregateInput
   workflowRules?: Prisma.WorkflowRuleOrderByRelationAggregateInput
   agents?: Prisma.AgentOrderByRelationAggregateInput
+  contacts?: Prisma.ContactOrderByRelationAggregateInput
 }
 
 export type EmailAccountWhereUniqueInput = Prisma.AtLeast<{
@@ -365,6 +372,7 @@ export type EmailAccountWhereUniqueInput = Prisma.AtLeast<{
   filterBilling?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterShipping?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterCalendar?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  prohibitedPhrases?: Prisma.StringNullableListFilter<"EmailAccount">
   imapConfig?: Prisma.JsonNullableFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableFilter<"EmailAccount"> | Date | string | null
@@ -379,6 +387,7 @@ export type EmailAccountWhereUniqueInput = Prisma.AtLeast<{
   members?: Prisma.AccountMemberListRelationFilter
   workflowRules?: Prisma.WorkflowRuleListRelationFilter
   agents?: Prisma.AgentListRelationFilter
+  contacts?: Prisma.ContactListRelationFilter
 }, "id" | "provider_email">
 
 export type EmailAccountOrderByWithAggregationInput = {
@@ -396,6 +405,7 @@ export type EmailAccountOrderByWithAggregationInput = {
   filterBilling?: Prisma.SortOrder
   filterShipping?: Prisma.SortOrder
   filterCalendar?: Prisma.SortOrder
+  prohibitedPhrases?: Prisma.SortOrder
   imapConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -426,6 +436,7 @@ export type EmailAccountScalarWhereWithAggregatesInput = {
   filterBilling?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   filterShipping?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
   filterCalendar?: Prisma.BoolWithAggregatesFilter<"EmailAccount"> | boolean
+  prohibitedPhrases?: Prisma.StringNullableListFilter<"EmailAccount">
   imapConfig?: Prisma.JsonNullableWithAggregatesFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusWithAggregatesFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"EmailAccount"> | Date | string | null
@@ -449,6 +460,7 @@ export type EmailAccountCreateInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -463,6 +475,7 @@ export type EmailAccountCreateInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateInput = {
@@ -480,6 +493,7 @@ export type EmailAccountUncheckedCreateInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -493,6 +507,7 @@ export type EmailAccountUncheckedCreateInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUpdateInput = {
@@ -509,6 +524,7 @@ export type EmailAccountUpdateInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -523,6 +539,7 @@ export type EmailAccountUpdateInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateInput = {
@@ -540,6 +557,7 @@ export type EmailAccountUncheckedUpdateInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -553,6 +571,7 @@ export type EmailAccountUncheckedUpdateInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateManyInput = {
@@ -570,6 +589,7 @@ export type EmailAccountCreateManyInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -593,6 +613,7 @@ export type EmailAccountUpdateManyMutationInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -617,6 +638,7 @@ export type EmailAccountUncheckedUpdateManyInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -634,6 +656,14 @@ export type EmailAccountListRelationFilter = {
 
 export type EmailAccountOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type EmailAccountProviderEmailCompoundUniqueInput = {
@@ -656,6 +686,7 @@ export type EmailAccountCountOrderByAggregateInput = {
   filterBilling?: Prisma.SortOrder
   filterShipping?: Prisma.SortOrder
   filterCalendar?: Prisma.SortOrder
+  prohibitedPhrases?: Prisma.SortOrder
   imapConfig?: Prisma.SortOrder
   syncStatus?: Prisma.SortOrder
   lastSyncedAt?: Prisma.SortOrder
@@ -758,8 +789,17 @@ export type EmailAccountUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.EmailAccountScalarWhereInput | Prisma.EmailAccountScalarWhereInput[]
 }
 
+export type EmailAccountCreateprohibitedPhrasesInput = {
+  set: string[]
+}
+
 export type EnumEmailProviderFieldUpdateOperationsInput = {
   set?: $Enums.EmailProvider
+}
+
+export type EmailAccountUpdateprohibitedPhrasesInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 export type EnumSyncStatusFieldUpdateOperationsInput = {
@@ -806,6 +846,20 @@ export type EmailAccountUpdateOneRequiredWithoutAgentsNestedInput = {
   upsert?: Prisma.EmailAccountUpsertWithoutAgentsInput
   connect?: Prisma.EmailAccountWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.EmailAccountUpdateToOneWithWhereWithoutAgentsInput, Prisma.EmailAccountUpdateWithoutAgentsInput>, Prisma.EmailAccountUncheckedUpdateWithoutAgentsInput>
+}
+
+export type EmailAccountCreateNestedOneWithoutContactsInput = {
+  create?: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+  connectOrCreate?: Prisma.EmailAccountCreateOrConnectWithoutContactsInput
+  connect?: Prisma.EmailAccountWhereUniqueInput
+}
+
+export type EmailAccountUpdateOneRequiredWithoutContactsNestedInput = {
+  create?: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+  connectOrCreate?: Prisma.EmailAccountCreateOrConnectWithoutContactsInput
+  upsert?: Prisma.EmailAccountUpsertWithoutContactsInput
+  connect?: Prisma.EmailAccountWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmailAccountUpdateToOneWithWhereWithoutContactsInput, Prisma.EmailAccountUpdateWithoutContactsInput>, Prisma.EmailAccountUncheckedUpdateWithoutContactsInput>
 }
 
 export type EmailAccountCreateNestedOneWithoutCredentialInput = {
@@ -864,6 +918,7 @@ export type EmailAccountCreateWithoutUserInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -877,6 +932,7 @@ export type EmailAccountCreateWithoutUserInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutUserInput = {
@@ -893,6 +949,7 @@ export type EmailAccountUncheckedCreateWithoutUserInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -906,6 +963,7 @@ export type EmailAccountUncheckedCreateWithoutUserInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutUserInput = {
@@ -952,6 +1010,7 @@ export type EmailAccountScalarWhereInput = {
   filterBilling?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterShipping?: Prisma.BoolFilter<"EmailAccount"> | boolean
   filterCalendar?: Prisma.BoolFilter<"EmailAccount"> | boolean
+  prohibitedPhrases?: Prisma.StringNullableListFilter<"EmailAccount">
   imapConfig?: Prisma.JsonNullableFilter<"EmailAccount">
   syncStatus?: Prisma.EnumSyncStatusFilter<"EmailAccount"> | $Enums.SyncStatus
   lastSyncedAt?: Prisma.DateTimeNullableFilter<"EmailAccount"> | Date | string | null
@@ -975,6 +1034,7 @@ export type EmailAccountCreateWithoutMembersInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -988,6 +1048,7 @@ export type EmailAccountCreateWithoutMembersInput = {
   threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutMembersInput = {
@@ -1005,6 +1066,7 @@ export type EmailAccountUncheckedCreateWithoutMembersInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1017,6 +1079,7 @@ export type EmailAccountUncheckedCreateWithoutMembersInput = {
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutMembersInput = {
@@ -1049,6 +1112,7 @@ export type EmailAccountUpdateWithoutMembersInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1062,6 +1126,7 @@ export type EmailAccountUpdateWithoutMembersInput = {
   threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutMembersInput = {
@@ -1079,6 +1144,7 @@ export type EmailAccountUncheckedUpdateWithoutMembersInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1091,6 +1157,7 @@ export type EmailAccountUncheckedUpdateWithoutMembersInput = {
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutWorkflowRulesInput = {
@@ -1107,6 +1174,7 @@ export type EmailAccountCreateWithoutWorkflowRulesInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1120,6 +1188,7 @@ export type EmailAccountCreateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutWorkflowRulesInput = {
@@ -1137,6 +1206,7 @@ export type EmailAccountUncheckedCreateWithoutWorkflowRulesInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1149,6 +1219,7 @@ export type EmailAccountUncheckedCreateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutWorkflowRulesInput = {
@@ -1181,6 +1252,7 @@ export type EmailAccountUpdateWithoutWorkflowRulesInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1194,6 +1266,7 @@ export type EmailAccountUpdateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutWorkflowRulesInput = {
@@ -1211,6 +1284,7 @@ export type EmailAccountUncheckedUpdateWithoutWorkflowRulesInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1223,6 +1297,7 @@ export type EmailAccountUncheckedUpdateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutAgentsInput = {
@@ -1239,6 +1314,7 @@ export type EmailAccountCreateWithoutAgentsInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1252,6 +1328,7 @@ export type EmailAccountCreateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutAgentsInput = {
@@ -1269,6 +1346,7 @@ export type EmailAccountUncheckedCreateWithoutAgentsInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1281,6 +1359,7 @@ export type EmailAccountUncheckedCreateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutAgentsInput = {
@@ -1313,6 +1392,7 @@ export type EmailAccountUpdateWithoutAgentsInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1326,6 +1406,7 @@ export type EmailAccountUpdateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutAgentsInput = {
@@ -1343,6 +1424,7 @@ export type EmailAccountUncheckedUpdateWithoutAgentsInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1355,6 +1437,147 @@ export type EmailAccountUncheckedUpdateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
+}
+
+export type EmailAccountCreateWithoutContactsInput = {
+  id?: string
+  provider: $Enums.EmailProvider
+  email: string
+  displayName?: string | null
+  isPrimary?: boolean
+  syncEnabled?: boolean
+  autoScheduleMeetings?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: $Enums.SyncStatus
+  lastSyncedAt?: Date | string | null
+  lastSyncError?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  user: Prisma.UserCreateNestedOneWithoutEmailAccountsInput
+  credential?: Prisma.EmailCredentialCreateNestedOneWithoutAccountInput
+  folders?: Prisma.MailFolderCreateNestedManyWithoutAccountInput
+  threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
+  members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
+  workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
+  agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+}
+
+export type EmailAccountUncheckedCreateWithoutContactsInput = {
+  id?: string
+  userId: string
+  provider: $Enums.EmailProvider
+  email: string
+  displayName?: string | null
+  isPrimary?: boolean
+  syncEnabled?: boolean
+  autoScheduleMeetings?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: $Enums.SyncStatus
+  lastSyncedAt?: Date | string | null
+  lastSyncError?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  credential?: Prisma.EmailCredentialUncheckedCreateNestedOneWithoutAccountInput
+  folders?: Prisma.MailFolderUncheckedCreateNestedManyWithoutAccountInput
+  threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
+  members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
+  workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+}
+
+export type EmailAccountCreateOrConnectWithoutContactsInput = {
+  where: Prisma.EmailAccountWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+}
+
+export type EmailAccountUpsertWithoutContactsInput = {
+  update: Prisma.XOR<Prisma.EmailAccountUpdateWithoutContactsInput, Prisma.EmailAccountUncheckedUpdateWithoutContactsInput>
+  create: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+  where?: Prisma.EmailAccountWhereInput
+}
+
+export type EmailAccountUpdateToOneWithWhereWithoutContactsInput = {
+  where?: Prisma.EmailAccountWhereInput
+  data: Prisma.XOR<Prisma.EmailAccountUpdateWithoutContactsInput, Prisma.EmailAccountUncheckedUpdateWithoutContactsInput>
+}
+
+export type EmailAccountUpdateWithoutContactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.EnumEmailProviderFieldUpdateOperationsInput | $Enums.EmailProvider
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
+  lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastSyncError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  user?: Prisma.UserUpdateOneRequiredWithoutEmailAccountsNestedInput
+  credential?: Prisma.EmailCredentialUpdateOneWithoutAccountNestedInput
+  folders?: Prisma.MailFolderUpdateManyWithoutAccountNestedInput
+  threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
+  members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
+  workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
+  agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+}
+
+export type EmailAccountUncheckedUpdateWithoutContactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.EnumEmailProviderFieldUpdateOperationsInput | $Enums.EmailProvider
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
+  lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastSyncError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  credential?: Prisma.EmailCredentialUncheckedUpdateOneWithoutAccountNestedInput
+  folders?: Prisma.MailFolderUncheckedUpdateManyWithoutAccountNestedInput
+  threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
+  members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
+  workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutCredentialInput = {
@@ -1371,6 +1594,7 @@ export type EmailAccountCreateWithoutCredentialInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1384,6 +1608,7 @@ export type EmailAccountCreateWithoutCredentialInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutCredentialInput = {
@@ -1401,6 +1626,7 @@ export type EmailAccountUncheckedCreateWithoutCredentialInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1413,6 +1639,7 @@ export type EmailAccountUncheckedCreateWithoutCredentialInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutCredentialInput = {
@@ -1445,6 +1672,7 @@ export type EmailAccountUpdateWithoutCredentialInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1458,6 +1686,7 @@ export type EmailAccountUpdateWithoutCredentialInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutCredentialInput = {
@@ -1475,6 +1704,7 @@ export type EmailAccountUncheckedUpdateWithoutCredentialInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1487,6 +1717,7 @@ export type EmailAccountUncheckedUpdateWithoutCredentialInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutFoldersInput = {
@@ -1503,6 +1734,7 @@ export type EmailAccountCreateWithoutFoldersInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1516,6 +1748,7 @@ export type EmailAccountCreateWithoutFoldersInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutFoldersInput = {
@@ -1533,6 +1766,7 @@ export type EmailAccountUncheckedCreateWithoutFoldersInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1545,6 +1779,7 @@ export type EmailAccountUncheckedCreateWithoutFoldersInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutFoldersInput = {
@@ -1577,6 +1812,7 @@ export type EmailAccountUpdateWithoutFoldersInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1590,6 +1826,7 @@ export type EmailAccountUpdateWithoutFoldersInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutFoldersInput = {
@@ -1607,6 +1844,7 @@ export type EmailAccountUncheckedUpdateWithoutFoldersInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1619,6 +1857,7 @@ export type EmailAccountUncheckedUpdateWithoutFoldersInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutThreadsInput = {
@@ -1635,6 +1874,7 @@ export type EmailAccountCreateWithoutThreadsInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1648,6 +1888,7 @@ export type EmailAccountCreateWithoutThreadsInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutThreadsInput = {
@@ -1665,6 +1906,7 @@ export type EmailAccountUncheckedCreateWithoutThreadsInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1677,6 +1919,7 @@ export type EmailAccountUncheckedCreateWithoutThreadsInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutThreadsInput = {
@@ -1709,6 +1952,7 @@ export type EmailAccountUpdateWithoutThreadsInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1722,6 +1966,7 @@ export type EmailAccountUpdateWithoutThreadsInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutThreadsInput = {
@@ -1739,6 +1984,7 @@ export type EmailAccountUncheckedUpdateWithoutThreadsInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1751,6 +1997,7 @@ export type EmailAccountUncheckedUpdateWithoutThreadsInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateManyUserInput = {
@@ -1767,6 +2014,7 @@ export type EmailAccountCreateManyUserInput = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: Prisma.EmailAccountCreateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: $Enums.SyncStatus
   lastSyncedAt?: Date | string | null
@@ -1790,6 +2038,7 @@ export type EmailAccountUpdateWithoutUserInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1803,6 +2052,7 @@ export type EmailAccountUpdateWithoutUserInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutUserInput = {
@@ -1819,6 +2069,7 @@ export type EmailAccountUncheckedUpdateWithoutUserInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1832,6 +2083,7 @@ export type EmailAccountUncheckedUpdateWithoutUserInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateManyWithoutUserInput = {
@@ -1848,6 +2100,7 @@ export type EmailAccountUncheckedUpdateManyWithoutUserInput = {
   filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
   filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  prohibitedPhrases?: Prisma.EmailAccountUpdateprohibitedPhrasesInput | string[]
   imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
   lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1868,6 +2121,7 @@ export type EmailAccountCountOutputType = {
   members: number
   workflowRules: number
   agents: number
+  contacts: number
 }
 
 export type EmailAccountCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1876,6 +2130,7 @@ export type EmailAccountCountOutputTypeSelect<ExtArgs extends runtime.Types.Exte
   members?: boolean | EmailAccountCountOutputTypeCountMembersArgs
   workflowRules?: boolean | EmailAccountCountOutputTypeCountWorkflowRulesArgs
   agents?: boolean | EmailAccountCountOutputTypeCountAgentsArgs
+  contacts?: boolean | EmailAccountCountOutputTypeCountContactsArgs
 }
 
 /**
@@ -1923,6 +2178,13 @@ export type EmailAccountCountOutputTypeCountAgentsArgs<ExtArgs extends runtime.T
   where?: Prisma.AgentWhereInput
 }
 
+/**
+ * EmailAccountCountOutputType without action
+ */
+export type EmailAccountCountOutputTypeCountContactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ContactWhereInput
+}
+
 
 export type EmailAccountSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1939,6 +2201,7 @@ export type EmailAccountSelect<ExtArgs extends runtime.Types.Extensions.Internal
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -1953,6 +2216,7 @@ export type EmailAccountSelect<ExtArgs extends runtime.Types.Extensions.Internal
   members?: boolean | Prisma.EmailAccount$membersArgs<ExtArgs>
   workflowRules?: boolean | Prisma.EmailAccount$workflowRulesArgs<ExtArgs>
   agents?: boolean | Prisma.EmailAccount$agentsArgs<ExtArgs>
+  contacts?: boolean | Prisma.EmailAccount$contactsArgs<ExtArgs>
   _count?: boolean | Prisma.EmailAccountCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emailAccount"]>
 
@@ -1971,6 +2235,7 @@ export type EmailAccountSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -1996,6 +2261,7 @@ export type EmailAccountSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -2021,6 +2287,7 @@ export type EmailAccountSelectScalar = {
   filterBilling?: boolean
   filterShipping?: boolean
   filterCalendar?: boolean
+  prohibitedPhrases?: boolean
   imapConfig?: boolean
   syncStatus?: boolean
   lastSyncedAt?: boolean
@@ -2030,7 +2297,7 @@ export type EmailAccountSelectScalar = {
   deletedAt?: boolean
 }
 
-export type EmailAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "provider" | "email" | "displayName" | "isPrimary" | "syncEnabled" | "autoScheduleMeetings" | "filterMarketing" | "filterOtp" | "filterPasswordReset" | "filterBilling" | "filterShipping" | "filterCalendar" | "imapConfig" | "syncStatus" | "lastSyncedAt" | "lastSyncError" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["emailAccount"]>
+export type EmailAccountOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "provider" | "email" | "displayName" | "isPrimary" | "syncEnabled" | "autoScheduleMeetings" | "filterMarketing" | "filterOtp" | "filterPasswordReset" | "filterBilling" | "filterShipping" | "filterCalendar" | "prohibitedPhrases" | "imapConfig" | "syncStatus" | "lastSyncedAt" | "lastSyncError" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["emailAccount"]>
 export type EmailAccountInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   credential?: boolean | Prisma.EmailAccount$credentialArgs<ExtArgs>
@@ -2039,6 +2306,7 @@ export type EmailAccountInclude<ExtArgs extends runtime.Types.Extensions.Interna
   members?: boolean | Prisma.EmailAccount$membersArgs<ExtArgs>
   workflowRules?: boolean | Prisma.EmailAccount$workflowRulesArgs<ExtArgs>
   agents?: boolean | Prisma.EmailAccount$agentsArgs<ExtArgs>
+  contacts?: boolean | Prisma.EmailAccount$contactsArgs<ExtArgs>
   _count?: boolean | Prisma.EmailAccountCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmailAccountIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2058,6 +2326,7 @@ export type $EmailAccountPayload<ExtArgs extends runtime.Types.Extensions.Intern
     members: Prisma.$AccountMemberPayload<ExtArgs>[]
     workflowRules: Prisma.$WorkflowRulePayload<ExtArgs>[]
     agents: Prisma.$AgentPayload<ExtArgs>[]
+    contacts: Prisma.$ContactPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2074,6 +2343,7 @@ export type $EmailAccountPayload<ExtArgs extends runtime.Types.Extensions.Intern
     filterBilling: boolean
     filterShipping: boolean
     filterCalendar: boolean
+    prohibitedPhrases: string[]
     imapConfig: runtime.JsonValue | null
     syncStatus: $Enums.SyncStatus
     lastSyncedAt: Date | null
@@ -2482,6 +2752,7 @@ export interface Prisma__EmailAccountClient<T, Null = never, ExtArgs extends run
   members<T extends Prisma.EmailAccount$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccountMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workflowRules<T extends Prisma.EmailAccount$workflowRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$workflowRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   agents<T extends Prisma.EmailAccount$agentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$agentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  contacts<T extends Prisma.EmailAccount$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2525,6 +2796,7 @@ export interface EmailAccountFieldRefs {
   readonly filterBilling: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly filterShipping: Prisma.FieldRef<"EmailAccount", 'Boolean'>
   readonly filterCalendar: Prisma.FieldRef<"EmailAccount", 'Boolean'>
+  readonly prohibitedPhrases: Prisma.FieldRef<"EmailAccount", 'String[]'>
   readonly imapConfig: Prisma.FieldRef<"EmailAccount", 'Json'>
   readonly syncStatus: Prisma.FieldRef<"EmailAccount", 'SyncStatus'>
   readonly lastSyncedAt: Prisma.FieldRef<"EmailAccount", 'DateTime'>
@@ -3069,6 +3341,30 @@ export type EmailAccount$agentsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.AgentScalarFieldEnum | Prisma.AgentScalarFieldEnum[]
+}
+
+/**
+ * EmailAccount.contacts
+ */
+export type EmailAccount$contactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Contact
+   */
+  select?: Prisma.ContactSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Contact
+   */
+  omit?: Prisma.ContactOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ContactInclude<ExtArgs> | null
+  where?: Prisma.ContactWhereInput
+  orderBy?: Prisma.ContactOrderByWithRelationInput | Prisma.ContactOrderByWithRelationInput[]
+  cursor?: Prisma.ContactWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ContactScalarFieldEnum | Prisma.ContactScalarFieldEnum[]
 }
 
 /**

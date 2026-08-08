@@ -3,6 +3,7 @@ import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
+import { ContactModel } from '../../../generated/prisma/models';
 import { AIJobs, QueueNames } from '../../../infrastructure/queue';
 // Leaf-file import rather than the '../../agent' barrel — see the
 // comment below on WorkflowRuleService for why.
@@ -11,6 +12,9 @@ import { AgentService } from '../../agent/services/agent.service';
 // comment in meeting-scheduling.service.ts for why (avoids a Jest-only
 // circular require through calendar.module.ts <-> ai.module.ts).
 import { MeetingSchedulingService } from '../../calendar/services/meeting-scheduling.service';
+// Leaf-file import rather than the '../../crm' barrel — same reasoning as
+// AgentService below.
+import { ContactService } from '../../crm/services/contact.service';
 import {
   DocumentChunkMatch,
   DocumentsService,
@@ -21,6 +25,9 @@ import {
   ComposeService,
   GenerationMetadata,
 } from '../../email/services/compose.service';
+// Leaf-file import rather than the '../../notification' barrel — same
+// reasoning as AgentService above.
+import { NotificationService } from '../../notification/services/notification.service';
 import { TasksService } from '../../tasks';
 // Leaf-file import rather than the '../../workflow' barrel — see the
 // comment above on MeetingSchedulingService for why.
@@ -36,10 +43,17 @@ import {
   ContactMemoryService,
 } from '../services/contact-memory.service';
 import { scanOutputForPii } from '../utils/output-pii-scan.util';
+import { scanOutputForPolicyViolations } from '../utils/output-policy-scan.util';
 
 interface AiProcessingJobData {
   messageId: string;
 }
+
+// validate_reply's self-reported 0-100 confidence — chosen default, not
+// account-configurable yet. 70 favors holding borderline replies for
+// review over auto-sending them; revisit once there's real usage data on
+// how confidence scores correlate with actually-good replies.
+const REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD = 70;
 
 @Processor(QueueNames.AI)
 export class AiProcessingProcessor extends WorkerHost {
@@ -59,6 +73,10 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly workflowRuleService: WorkflowRuleService,
     @Inject(forwardRef(() => AgentService))
     private readonly agentService: AgentService,
+    @Inject(forwardRef(() => ContactService))
+    private readonly contactService: ContactService,
+    @Inject(forwardRef(() => NotificationService))
+    private readonly notificationService: NotificationService,
   ) {
     super();
   }
@@ -148,6 +166,17 @@ export class AiProcessingProcessor extends WorkerHost {
       thread,
     );
 
+    // CRM v1 (see docs/enterprise-ai-pipeline-plan.md §4) — best-effort,
+    // no-op if this sender isn't an existing Contact (never auto-creates
+    // one, see Contact's schema comment).
+    const touchContactPromise = this.contactService
+      .touchLastContacted(account.id, sender.address)
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Failed to update Contact.lastContactedAt for ${sender.address}: ${String(error)}`,
+        );
+      });
+
     // Workflow Builder (v2.0 §3): evaluated here (before reply generation,
     // not after) specifically so an AI Agent persona (v2.0 §4) attached to
     // a matched rule's AUTO_REPLY action can influence the reply's actual
@@ -196,11 +225,21 @@ export class AiProcessingProcessor extends WorkerHost {
       .search(account.userId, message.bodyText ?? subject, 3)
       .catch(() => []);
 
-    const { instruction, contactMemoryUsed } = buildContextInstruction(
-      related,
-      contactMemory,
-      documentMatches,
-    );
+    // Multi-agent orchestration §A (see docs/multi-agent-orchestration-plan.md)
+    // — ground the reply in CRM data the same best-effort way as RAG/
+    // contact-memory above. Null (not an error) for the common case: most
+    // senders aren't a known Contact.
+    const crmContact = await this.contactService
+      .findByEmail(account.id, sender.address)
+      .catch(() => null);
+
+    const { instruction, contactMemoryUsed, crmContactUsed } =
+      buildContextInstruction(
+        related,
+        contactMemory,
+        documentMatches,
+        crmContact,
+      );
 
     const reply = await this.aiClientService.generateReply(
       subject,
@@ -212,6 +251,7 @@ export class AiProcessingProcessor extends WorkerHost {
     const generationMetadata: GenerationMetadata = {
       ragUsed: documentMatches.length > 0,
       contactMemoryUsed,
+      crmContactUsed,
       provider: reply.provider,
       model: reply.model,
       usage: reply.usage,
@@ -223,14 +263,15 @@ export class AiProcessingProcessor extends WorkerHost {
       })),
     };
 
-    // Output validation (minimal first pass — see docs/enterprise-ai-pipeline-plan.md
-    // §6): a deterministic scan of what the LLM actually generated, not
-    // just the account's own settings. Catches an LLM inventing a
-    // plausible-looking SSN/account number that was never in the thread —
-    // the input-side classification alone can't catch that, since it only
-    // ever looks at the INCOMING message. Free (regex, no LLM call), so
+    // Output validation (see docs/enterprise-ai-pipeline-plan.md §6):
+    // deterministic scans of what the LLM actually generated, not just
+    // the account's own settings. Free (regex/substring, no LLM call), so
     // computed unconditionally rather than gated behind matchedActions.
     const outputPiiScan = scanOutputForPii(reply.reply);
+    const outputPolicyScan = scanOutputForPolicyViolations(
+      reply.reply,
+      account.prohibitedPhrases,
+    );
 
     // Workflow Builder (v2.0 §3): the account's WorkflowRule rows decide
     // whether this reply auto-sends (and any other actions — assign,
@@ -253,10 +294,12 @@ export class AiProcessingProcessor extends WorkerHost {
       //   'urgent' directly and so never actually excluded urgent
       //   messages from auto-send; keeping the same guarantee even
       //   though the decision now otherwise comes from rules.
-      // - outputPiiScan: never auto-send text that looks like it
-      //   contains an SSN/account number.
+      // - outputPiiScan / outputPolicyScan: never auto-send text that
+      //   looks like it contains an SSN/account number, or that trips
+      //   the account's own prohibited-phrase list (empty by default).
       // - validateReply: a second, more expensive LLM call checking the
-      //   draft actually addresses the thread — only paid for once the
+      //   draft actually addresses the thread, has no grammar issues,
+      //   and self-reports enough confidence — only paid for once the
       //   cheaper rails already passed and this is genuinely the last
       //   thing standing between the reply and a real auto-send. A
       //   message that was always going to be drafted for human review
@@ -264,30 +307,75 @@ export class AiProcessingProcessor extends WorkerHost {
       const passesUrgentRail =
         classification.priority.toLowerCase() !== 'urgent';
       const passesPiiRail = !outputPiiScan.detected;
+      const passesPolicyRail = !outputPolicyScan.violated;
 
       let passesValidationRail = false;
-      if (autoReply && passesUrgentRail && passesPiiRail) {
+      if (autoReply && passesUrgentRail && passesPiiRail && passesPolicyRail) {
         const { validation } = await this.aiClientService.validateReply(
           subject,
           thread,
           reply.reply,
         );
-        passesValidationRail = validation.addressesThread;
+
+        // Tone is deliberately NOT a hard rail — more subjective/
+        // error-prone for an LLM to judge than grammar or thread-
+        // addressing, so blocking on it risks over-holding perfectly
+        // good replies. Logged so it's visible, not silently dropped.
+        if (!validation.toneAppropriate) {
+          this.logger.warn(
+            `Generated reply for message ${messageId} has a possible tone mismatch (not blocking auto-send): ${validation.toneNote || 'no specific note given'}.`,
+          );
+        }
+
+        passesValidationRail =
+          validation.addressesThread &&
+          validation.unsupportedClaims.length === 0 &&
+          validation.grammarIssues.length === 0 &&
+          validation.confidence >= REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD;
 
         if (!passesValidationRail) {
+          const reasons: string[] = [];
+          if (!validation.addressesThread) {
+            reasons.push(
+              `doesn't address the thread (${validation.concerns.join(', ') || 'no specific concern given'})`,
+            );
+          }
+          if (validation.unsupportedClaims.length > 0) {
+            reasons.push(
+              `unsupported claims: ${validation.unsupportedClaims.join(', ')}`,
+            );
+          }
+          if (validation.grammarIssues.length > 0) {
+            reasons.push(`grammar issues: ${validation.grammarIssues.join(', ')}`);
+          }
+          if (validation.confidence < REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD) {
+            reasons.push(
+              `confidence ${validation.confidence} below the ${REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD} threshold`,
+            );
+          }
           this.logger.warn(
-            `Generated reply for message ${messageId} was held for review — doesn't address the thread (${validation.concerns.join(', ') || 'no specific concern given'}).`,
+            `Generated reply for message ${messageId} was held for review — ${reasons.join('; ')}.`,
           );
         }
       }
 
       isSafeToAutoSend =
-        autoReply && passesUrgentRail && passesPiiRail && passesValidationRail;
+        autoReply &&
+        passesUrgentRail &&
+        passesPiiRail &&
+        passesPolicyRail &&
+        passesValidationRail;
     }
 
     if (outputPiiScan.detected) {
       this.logger.warn(
         `Generated reply for message ${messageId} contains a possible ${outputPiiScan.types.join(', ')} — will not auto-send regardless of matching rules.`,
+      );
+    }
+
+    if (outputPolicyScan.violated) {
+      this.logger.warn(
+        `Generated reply for message ${messageId} matched a prohibited phrase (${outputPolicyScan.matchedPhrases.join(', ')}) — will not auto-send regardless of matching rules.`,
       );
     }
 
@@ -304,6 +392,25 @@ export class AiProcessingProcessor extends WorkerHost {
       this.logger.log(
         `Auto-sent a reply to message ${messageId} (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
       );
+
+      // §7 post-processing (see docs/enterprise-ai-pipeline-plan.md) —
+      // visibility into an autonomous action, not just a silent send. A
+      // drafted (non-auto-sent) reply doesn't need this: it already sits
+      // visibly in the Drafts folder awaiting the same review a
+      // notification would prompt. Best-effort — a notification failure
+      // must never be treated as the send itself having failed.
+      await this.notificationService
+        .create(
+          account.userId,
+          'Auto-replied to an email',
+          `Sent from ${account.email} — "${subject}"`,
+          { threadId: message.threadId, messageId },
+        )
+        .catch((error: unknown) => {
+          this.logger.warn(
+            `Failed to create auto-send notification for message ${messageId}: ${String(error)}`,
+          );
+        });
     } else {
       await this.composeService.saveDraftReply(
         account.userId,
@@ -322,7 +429,11 @@ export class AiProcessingProcessor extends WorkerHost {
     // Awaited here (not earlier) so both run concurrently with the reply
     // pipeline above rather than serially in front of it, while still
     // guaranteeing they finish before the job is marked complete.
-    await Promise.all([extractionPromise, summarizePromise]);
+    await Promise.all([
+      extractionPromise,
+      summarizePromise,
+      touchContactPromise,
+    ]);
 
     await this.markProcessed(messageId);
   }
@@ -451,7 +562,12 @@ function buildContextInstruction(
   related: ContactMemoryMatch[],
   current: ContactMemoryResponse,
   documentMatches: DocumentChunkMatch[],
-): { instruction: string | undefined; contactMemoryUsed: boolean } {
+  crmContact: ContactModel | null,
+): {
+  instruction: string | undefined;
+  contactMemoryUsed: boolean;
+  crmContactUsed: boolean;
+} {
   const sections: string[] = [];
 
   const priorContacts = related.filter(
@@ -468,6 +584,25 @@ function buildContextInstruction(
     );
   }
 
+  // Multi-agent orchestration §A (see docs/multi-agent-orchestration-plan.md)
+  // — the sender's CRM record, when one exists. Distinct from
+  // contactMemory above: this is user-entered/curated data (status,
+  // company, notes), not AI-inferred facts.
+  if (crmContact) {
+    const lines: string[] = [];
+    if (crmContact.status) lines.push(`Status: ${crmContact.status}`);
+    if (crmContact.company) lines.push(`Company: ${crmContact.company}`);
+    if (crmContact.notes) lines.push(`Notes: ${crmContact.notes}`);
+    if (crmContact.lastContactedAt) {
+      lines.push(`Last contacted: ${crmContact.lastContactedAt.toISOString()}`);
+    }
+    if (lines.length > 0) {
+      sections.push(
+        `This sender is a known CRM contact${crmContact.name ? ` (${crmContact.name})` : ''}:\n${lines.join('\n')}`,
+      );
+    }
+  }
+
   if (documentMatches.length > 0) {
     const lines = documentMatches.map(
       (match) => `- (from "${match.filename}"): ${match.content}`,
@@ -480,5 +615,6 @@ function buildContextInstruction(
   return {
     instruction: sections.length > 0 ? sections.join('\n\n') : undefined,
     contactMemoryUsed: priorContacts.length > 0,
+    crmContactUsed: !!crmContact,
   };
 }

@@ -75,9 +75,7 @@ services:
       - apps/ai/.env
 
     environment:
-      # host.docker.internal reaches a file-upload-service run directly on
-      # the host (outside this compose stack) for local dev/testing.
-      FILE_SERVICE_URL: http://host.docker.internal:5000
+      FILE_SERVICE_URL: https://fms.easydev.in
 
     ports:
       - "8000:8000"
@@ -102,7 +100,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       AI_SERVICE_URL: http://ai:8000
-      FILE_SERVICE_URL: http://host.docker.internal:5000
+      FILE_SERVICE_URL: https://fms.easydev.in
 
     ports:
       - "3000:3000"
@@ -142,7 +140,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       AI_SERVICE_URL: http://ai:8000
-      FILE_SERVICE_URL: http://host.docker.internal:5000
+      FILE_SERVICE_URL: https://fms.easydev.in
 
     command: ["node", "dist/main.worker.js"]
 
@@ -159,23 +157,23 @@ services:
       api:
         condition: service_healthy
 
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000
+  # web:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/web/Dockerfile
+  #     args:
+  #       NEXT_PUBLIC_API_URL: http://localhost:3000
 
-    container_name: ai-email-web
+  #   container_name: ai-email-web
 
-    restart: unless-stopped
+  #   restart: unless-stopped
 
-    ports:
-      - "3001:3000"
+  #   ports:
+  #     - "3001:3000"
 
-    depends_on:
-      api:
-        condition: service_started
+  #   depends_on:
+  #     api:
+  #       condition: service_started
 
 volumes:
   postgres_data:

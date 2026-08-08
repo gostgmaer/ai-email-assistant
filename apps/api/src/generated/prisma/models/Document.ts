@@ -2040,7 +2040,9 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
      */
     owner: string | null
     /**
-     * BCP-47 / ISO language code — no language detection runs yet.
+     * BCP-47 / ISO 639-1 code from langdetect (see process_document in
+     * apps/ai). Null when undetectable or the document had no
+     * extractable text.
      */
     language: string | null
     /**

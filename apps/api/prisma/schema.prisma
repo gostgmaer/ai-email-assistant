@@ -183,6 +183,17 @@ model EmailAccount {
   filterShipping      Boolean @default(true)
   filterCalendar      Boolean @default(true)
 
+  // Output validation §6 (see docs/enterprise-ai-pipeline-plan.md) —
+  // case-insensitive substring check against every AI-generated reply
+  // before it's allowed to auto-send (e.g. "refund", "discount",
+  // "guarantee"). Deliberately just a mechanism, not pre-populated with
+  // any actual policy content — this codebase doesn't know this
+  // account's real business rules, and inventing placeholder ones would
+  // mean silently blocking or (worse) not blocking real replies based on
+  // made-up policy. Empty by default, same opt-in posture as everything
+  // else auto-send-adjacent here.
+  prohibitedPhrases String[] @default([])
+
   // IMAP-only connection settings (host/port/secure/username); null for GOOGLE/MICROSOFT
   imapConfig Json?
 
@@ -201,6 +212,7 @@ model EmailAccount {
   members       AccountMember[]
   workflowRules WorkflowRule[]
   agents        Agent[]
+  contacts      Contact[]
 
   @@unique([provider, email])
   @@index([userId])
@@ -299,6 +311,45 @@ model Agent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([accountId])
+}
+
+/**
+ * CRM v1 — a structured contact record per account, distinct from
+ * ContactMemoryService's AI-inferred embedding "facts" (which stays as
+ * unstructured, per-sender context for reply generation, not a CRM).
+ * Deliberately NOT auto-populated by the AI pipeline — a Contact only
+ * ever gets created by an explicit user action, so the CRM doesn't
+ * silently fill up with every marketing sender or notification address
+ * that happens to email the account. The pipeline only updates
+ * lastContactedAt on an EXISTING match (see AiProcessingProcessor).
+ * Pipeline/deal stages, lead qualification, and pricing lookup are
+ * out of scope for this pass — see docs/enterprise-ai-pipeline-plan.md §4.
+ */
+model Contact {
+  id String @id @default(uuid())
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  email   String
+  name    String?
+  company String?
+  phone   String?
+  notes   String?
+  tags    String[] @default([])
+
+  // Loosely-typed, matching category/priority's convention elsewhere in
+  // this schema — free text like "Lead"/"Customer"/"Other", not a fixed
+  // enum.
+  status String?
+
+  lastContactedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, email])
   @@index([accountId])
 }
 
@@ -667,7 +718,9 @@ model Document {
   /// Team/owner distinct from author — no ownership model exists yet
   /// (single-tenant uploads), so always null until one does.
   owner       String?
-  /// BCP-47 / ISO language code — no language detection runs yet.
+  /// BCP-47 / ISO 639-1 code from langdetect (see process_document in
+  /// apps/ai). Null when undetectable or the document had no
+  /// extractable text.
   language    String?
 
   /// Origin channel. Always "upload" today (the only ingestion path); kept

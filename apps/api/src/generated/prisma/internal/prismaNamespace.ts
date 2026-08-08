@@ -405,6 +405,7 @@ export const ModelName = {
   AccountMember: 'AccountMember',
   WorkflowRule: 'WorkflowRule',
   Agent: 'Agent',
+  Contact: 'Contact',
   EmailCredential: 'EmailCredential',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
@@ -431,7 +432,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "accountMember" | "workflowRule" | "agent" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "threadNote" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
+    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "accountMember" | "workflowRule" | "agent" | "contact" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "threadNote" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1024,6 +1025,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.AgentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.AgentCountAggregateOutputType> | number
+        }
+      }
+    }
+    Contact: {
+      payload: Prisma.$ContactPayload<ExtArgs>
+      fields: Prisma.ContactFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ContactFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ContactFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>
+        }
+        findFirst: {
+          args: Prisma.ContactFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ContactFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>
+        }
+        findMany: {
+          args: Prisma.ContactFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>[]
+        }
+        create: {
+          args: Prisma.ContactCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>
+        }
+        createMany: {
+          args: Prisma.ContactCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ContactCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>[]
+        }
+        delete: {
+          args: Prisma.ContactDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>
+        }
+        update: {
+          args: Prisma.ContactUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>
+        }
+        deleteMany: {
+          args: Prisma.ContactDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ContactUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ContactUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>[]
+        }
+        upsert: {
+          args: Prisma.ContactUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>
+        }
+        aggregate: {
+          args: Prisma.ContactAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateContact>
+        }
+        groupBy: {
+          args: Prisma.ContactGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ContactCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactCountAggregateOutputType> | number
         }
       }
     }
@@ -1954,6 +2029,7 @@ export const EmailAccountScalarFieldEnum = {
   filterBilling: 'filterBilling',
   filterShipping: 'filterShipping',
   filterCalendar: 'filterCalendar',
+  prohibitedPhrases: 'prohibitedPhrases',
   imapConfig: 'imapConfig',
   syncStatus: 'syncStatus',
   lastSyncedAt: 'lastSyncedAt',
@@ -2004,6 +2080,24 @@ export const AgentScalarFieldEnum = {
 } as const
 
 export type AgentScalarFieldEnum = (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum]
+
+
+export const ContactScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  email: 'email',
+  name: 'name',
+  company: 'company',
+  phone: 'phone',
+  notes: 'notes',
+  tags: 'tags',
+  status: 'status',
+  lastContactedAt: 'lastContactedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum]
 
 
 export const EmailCredentialScalarFieldEnum = {
@@ -2645,6 +2739,7 @@ export type GlobalOmitConfig = {
   accountMember?: Prisma.AccountMemberOmit
   workflowRule?: Prisma.WorkflowRuleOmit
   agent?: Prisma.AgentOmit
+  contact?: Prisma.ContactOmit
   emailCredential?: Prisma.EmailCredentialOmit
   calendarAccount?: Prisma.CalendarAccountOmit
   calendarCredential?: Prisma.CalendarCredentialOmit

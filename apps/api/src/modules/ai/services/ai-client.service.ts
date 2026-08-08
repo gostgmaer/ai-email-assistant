@@ -56,6 +56,11 @@ export interface ClassifyResponse {
 export interface ReplyValidationResult {
   addressesThread: boolean;
   concerns: string[];
+  unsupportedClaims: string[];
+  grammarIssues: string[];
+  toneAppropriate: boolean;
+  toneNote: string;
+  confidence: number;
 }
 
 export interface ValidateReplyResponse {
@@ -154,6 +159,11 @@ interface RawClassifyResponse {
 interface RawReplyValidationResult {
   addresses_thread: boolean;
   concerns: string[];
+  unsupported_claims: string[];
+  grammar_issues: string[];
+  tone_appropriate: boolean;
+  tone_note: string;
+  confidence: number;
 }
 
 interface RawValidateReplyResponse {
@@ -226,6 +236,7 @@ export interface ProcessDocumentResponse {
   chunkSize: number | null;
   chunkOverlap: number | null;
   pageCount: number | null;
+  language: string | null;
 }
 
 interface RawProcessedDocumentChunk {
@@ -253,6 +264,7 @@ interface RawProcessDocumentResponse {
   chunk_size: number | null;
   chunk_overlap: number | null;
   page_count: number | null;
+  language: string | null;
 }
 
 export interface EmbedQueryResponse {
@@ -390,6 +402,11 @@ export class AiClientService {
       validation: {
         addressesThread: res.validation.addresses_thread,
         concerns: res.validation.concerns,
+        unsupportedClaims: res.validation.unsupported_claims,
+        grammarIssues: res.validation.grammar_issues,
+        toneAppropriate: res.validation.tone_appropriate,
+        toneNote: res.validation.tone_note,
+        confidence: res.validation.confidence,
       },
       provider: res.provider,
       model: res.model,
@@ -465,6 +482,7 @@ export class AiClientService {
       chunkSize: res.chunk_size,
       chunkOverlap: res.chunk_overlap,
       pageCount: res.page_count,
+      language: res.language,
       chunks: res.chunks.map((chunk) => ({
         content: chunk.content,
         embedding: chunk.embedding,

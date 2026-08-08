@@ -38,6 +38,7 @@ export interface EmailAccount {
   filterBilling: boolean;
   filterShipping: boolean;
   filterCalendar: boolean;
+  prohibitedPhrases: string[];
   createdAt: string;
   /** This user's Shared Inbox role on this account — OWNER can change
    * settings/disconnect/invite members, MEMBER can only work threads. */
@@ -98,6 +99,21 @@ export interface Agent {
   name: string;
   systemPrompt: string;
   enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Contact {
+  id: string;
+  accountId: string;
+  email: string;
+  name: string | null;
+  company: string | null;
+  phone: string | null;
+  notes: string | null;
+  tags: string[];
+  status: string | null;
+  lastContactedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
