@@ -11,6 +11,9 @@ import { AgentService } from '../../agent/services/agent.service';
 // comment in meeting-scheduling.service.ts for why (avoids a Jest-only
 // circular require through calendar.module.ts <-> ai.module.ts).
 import { MeetingSchedulingService } from '../../calendar/services/meeting-scheduling.service';
+// Leaf-file import rather than the '../../crm' barrel — same reasoning as
+// AgentService below.
+import { ContactService } from '../../crm/services/contact.service';
 import {
   DocumentChunkMatch,
   DocumentsService,
@@ -59,6 +62,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly workflowRuleService: WorkflowRuleService,
     @Inject(forwardRef(() => AgentService))
     private readonly agentService: AgentService,
+    @Inject(forwardRef(() => ContactService))
+    private readonly contactService: ContactService,
   ) {
     super();
   }
@@ -147,6 +152,17 @@ export class AiProcessingProcessor extends WorkerHost {
       subject,
       thread,
     );
+
+    // CRM v1 (see docs/enterprise-ai-pipeline-plan.md §4) — best-effort,
+    // no-op if this sender isn't an existing Contact (never auto-creates
+    // one, see Contact's schema comment).
+    const touchContactPromise = this.contactService
+      .touchLastContacted(account.id, sender.address)
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Failed to update Contact.lastContactedAt for ${sender.address}: ${String(error)}`,
+        );
+      });
 
     // Workflow Builder (v2.0 §3): evaluated here (before reply generation,
     // not after) specifically so an AI Agent persona (v2.0 §4) attached to
@@ -322,7 +338,11 @@ export class AiProcessingProcessor extends WorkerHost {
     // Awaited here (not earlier) so both run concurrently with the reply
     // pipeline above rather than serially in front of it, while still
     // guaranteeing they finish before the job is marked complete.
-    await Promise.all([extractionPromise, summarizePromise]);
+    await Promise.all([
+      extractionPromise,
+      summarizePromise,
+      touchContactPromise,
+    ]);
 
     await this.markProcessed(messageId);
   }

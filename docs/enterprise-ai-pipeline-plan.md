@@ -6,7 +6,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 **How to read the status column:** ✅ Built · 🟡 Partial (something exists but doesn't do what the name implies) · ⬜ Not started.
 
-**Update:** the whole "Small" list (language detection, PII detection, wiring `summarize` into the pipeline, OCR) and a minimal version of the "Medium" output validation pipeline (output-side PII scan + a second-LLM-call "does this reply address the thread" check, both gating auto-send) have since shipped — see the rows below and `AiProcessingProcessor`/`apps/ai/app/capabilities/validate_reply`. CRM, multi-agent orchestration, and the learning pipeline (the "Large" tier) are still not started and still need their own scoping pass before code, per the original recommendation below.
+**Update:** the whole "Small" list (language detection, PII detection, wiring `summarize` into the pipeline, OCR) and a minimal version of the "Medium" output validation pipeline (output-side PII scan + a second-LLM-call "does this reply address the thread" check, both gating auto-send) have since shipped — see the rows below and `AiProcessingProcessor`/`apps/ai/app/capabilities/validate_reply`. A CRM v1 has also shipped (`apps/api/src/modules/crm` — structured `Contact` records, member-accessible CRUD, `lastContactedAt` auto-updated by the pipeline on an existing match) — see §4/§7 below for what it does and doesn't cover. Multi-agent orchestration and the learning pipeline are still not started and still need their own scoping pass before code.
 
 ---
 
@@ -53,10 +53,10 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 |---|---|---|
 | Workflow router | ✅ | `WorkflowRuleService.evaluate`/`executeActions` — category/priority/sender conditions → AUTO_REPLY/ASSIGN_TO/NOTIFY/REQUIRE_APPROVAL |
 | Specialized agents (Calendar/Task/Support/Sales/CRM/Knowledge as separate executable units) | 🟡 — **this is the biggest conceptual gap** | `Agent` is `{name, systemPrompt, enabled}` — a system-prompt override on **one shared** `generateReply` call. There is no per-agent tool access, no parallel execution, no agent-specific logic. "Calendar Agent" in the vision doc implies something that checks availability and creates events as part of answering a message; today, calendar scheduling is a **separate, human-triggered flow** (`MeetingSchedulingService`), not something a "Calendar Agent" invokes mid-reply. |
-| CRM functionality | ⬜ | No CRM code anywhere. Closest relative: `ContactMemoryService` — per-sender embedded "facts" (e.g. company, past context), which informs replies but does nothing a CRM does (pipeline stages, deal tracking, structured contact records) |
+| CRM functionality | 🟡 | v1 shipped: `Contact` model (`apps/api/src/modules/crm`) — structured, member-accessible, user-created records (email/name/company/phone/notes/tags/status), auto-updated `lastContactedAt` from the pipeline. Still missing: pipeline/deal stages, lead qualification, pricing lookup, and any UI (API/DB only so far) |
 | Knowledge Agent / RAG search+rerank | ✅ | Real pipeline: pgvector cosine search with metadata filtering, then MMR re-ranking over a wider candidate pool |
 
-**Verdict:** the Workflow Router and RAG pipeline are genuinely built and load-bearing. "Specialized agents" as the vision doc means them — separate units with their own tools, running in parallel, feeding a shared aggregator — do not exist. Today's "Agent" is a persona/tone layer on top of one reply call, not an orchestration primitive. CRM is entirely greenfield.
+**Verdict:** the Workflow Router and RAG pipeline are genuinely built and load-bearing. "Specialized agents" as the vision doc means them — separate units with their own tools, running in parallel, feeding a shared aggregator — do not exist. Today's "Agent" is a persona/tone layer on top of one reply call, not an orchestration primitive. CRM now has a real data layer (v1), but nothing resembling a "CRM Agent" invoking it mid-reply — that's downstream of multi-agent orchestration, still not started.
 
 ## 5. Orchestration & LLM
 
@@ -89,10 +89,10 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 | Lightweight audit trail | 🟡 | `generationMetadata` (provider/model/usage/RAG-used/contact-memory-used) stored per sent message — real, but not a dedicated audit-log system with its own queryable history (that's v3.0 Enterprise Features scope) |
 | Calendar update | 🟡 | Real, but only for meeting requests, and only via the opt-in `autoSchedule` (off by default) — not a general "every send touches the calendar" step |
 | Task update | ✅ | `TasksService.createFromExtraction` |
-| CRM update | ⬜ | No CRM exists |
+| CRM update | ✅ | `ContactService.touchLastContacted` — best-effort, runs per processed message, updates `lastContactedAt` on an existing matching Contact (never creates one) |
 | Notification | 🟡 | Real for sync events / workflow NOTIFY actions / daily digest — not fired on every send |
 
-**Verdict:** mostly built for what the app actually does today (email + tasks + optional calendar); the gaps here (CRM, universal notification) are downstream of §4's CRM/agent gaps, not independent work.
+**Verdict:** mostly built for what the app actually does today (email + tasks + optional calendar + CRM's lastContactedAt). Universal notification (on every send, not just NOTIFY-action/digest) is the one remaining gap here, and it's a small addition, not independent work.
 
 ## 8. Analytics & learning
 
@@ -118,8 +118,8 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 - **Confidence scoring** — still not started; would let auto-send decisions be more than binary rule-match + hard rails, but needs a defined source (self-reported by the LLM? a second classifier?) before it's worth building.
 
 **Large (genuinely new subsystems, each deserving its own plan doc before implementation, same way v2.0's four areas each got scoped separately):**
-- **CRM** — contact records, pipeline/deal stages, customer history beyond `ContactMemoryService`'s per-sender facts. Nothing to build on top of; this is greenfield.
-- **Multi-agent parallel orchestration** — turning "Agent" from a prompt override into actual separate units (Calendar/Task/Sales/CRM/Support) that can each run, return structured results, and feed a real aggregator. This is an architecture change to `AiProcessingProcessor`/`reply` graph, not an incremental addition — worth its own design pass (parallel execution + aggregation + failure handling per agent all need real decisions).
+- ✅ **CRM v1 shipped** (contact records — see §4/§7) — **still open:** pipeline/deal stages, lead qualification, pricing lookup, a web UI panel (API/DB only so far, no `apps/web` component yet, unlike Agents/Workflows/Members which all got one)
+- **Multi-agent parallel orchestration** — turning "Agent" from a prompt override into actual separate units (Calendar/Task/Sales/CRM/Support) that can each run, return structured results, and feed a real aggregator. This is an architecture change to `AiProcessingProcessor`/`reply` graph, not an incremental addition — worth its own design pass (parallel execution + aggregation + failure handling per agent all need real decisions). Would be the thing that actually wires the new CRM data into a reply, e.g. via a "CRM Agent."
 - **Learning pipeline** — feedback capture, prompt optimization, auto-updating the knowledge base, model evaluation. Depends on having enough real usage data to be worth building at all; premature before the app has real production traffic.
 
 **Already planned elsewhere — don't duplicate:**
@@ -129,4 +129,4 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 ## Recommended next step
 
-Small and Medium are both done. What's left — CRM, multi-agent orchestration, the learning pipeline, confidence scoring — is all Large-tier or depends on a design decision not yet made (confidence scoring's score source). Each of the three Large items deserves its own short scoping pass, the same way each of v2.0's four sections got one, before any code gets written — multi-agent orchestration in particular is an architecture change to `AiProcessingProcessor`, not an incremental addition.
+Small and Medium are both done, and CRM v1 (the data layer) has shipped. What's left: a CRM web UI panel (small — same shape as the existing Agents/Workflows/Members panels), multi-agent orchestration, the learning pipeline, and confidence scoring (blocked on a decision — where does the score come from). Multi-agent orchestration and the learning pipeline each still deserve their own short scoping pass before any code, the same way each of v2.0's four sections got one — multi-agent orchestration in particular is an architecture change to `AiProcessingProcessor`, not an incremental addition.

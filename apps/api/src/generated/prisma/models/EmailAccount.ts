@@ -313,6 +313,7 @@ export type EmailAccountWhereInput = {
   members?: Prisma.AccountMemberListRelationFilter
   workflowRules?: Prisma.WorkflowRuleListRelationFilter
   agents?: Prisma.AgentListRelationFilter
+  contacts?: Prisma.ContactListRelationFilter
 }
 
 export type EmailAccountOrderByWithRelationInput = {
@@ -344,6 +345,7 @@ export type EmailAccountOrderByWithRelationInput = {
   members?: Prisma.AccountMemberOrderByRelationAggregateInput
   workflowRules?: Prisma.WorkflowRuleOrderByRelationAggregateInput
   agents?: Prisma.AgentOrderByRelationAggregateInput
+  contacts?: Prisma.ContactOrderByRelationAggregateInput
 }
 
 export type EmailAccountWhereUniqueInput = Prisma.AtLeast<{
@@ -379,6 +381,7 @@ export type EmailAccountWhereUniqueInput = Prisma.AtLeast<{
   members?: Prisma.AccountMemberListRelationFilter
   workflowRules?: Prisma.WorkflowRuleListRelationFilter
   agents?: Prisma.AgentListRelationFilter
+  contacts?: Prisma.ContactListRelationFilter
 }, "id" | "provider_email">
 
 export type EmailAccountOrderByWithAggregationInput = {
@@ -463,6 +466,7 @@ export type EmailAccountCreateInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateInput = {
@@ -493,6 +497,7 @@ export type EmailAccountUncheckedCreateInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUpdateInput = {
@@ -523,6 +528,7 @@ export type EmailAccountUpdateInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateInput = {
@@ -553,6 +559,7 @@ export type EmailAccountUncheckedUpdateInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateManyInput = {
@@ -808,6 +815,20 @@ export type EmailAccountUpdateOneRequiredWithoutAgentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EmailAccountUpdateToOneWithWhereWithoutAgentsInput, Prisma.EmailAccountUpdateWithoutAgentsInput>, Prisma.EmailAccountUncheckedUpdateWithoutAgentsInput>
 }
 
+export type EmailAccountCreateNestedOneWithoutContactsInput = {
+  create?: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+  connectOrCreate?: Prisma.EmailAccountCreateOrConnectWithoutContactsInput
+  connect?: Prisma.EmailAccountWhereUniqueInput
+}
+
+export type EmailAccountUpdateOneRequiredWithoutContactsNestedInput = {
+  create?: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+  connectOrCreate?: Prisma.EmailAccountCreateOrConnectWithoutContactsInput
+  upsert?: Prisma.EmailAccountUpsertWithoutContactsInput
+  connect?: Prisma.EmailAccountWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmailAccountUpdateToOneWithWhereWithoutContactsInput, Prisma.EmailAccountUpdateWithoutContactsInput>, Prisma.EmailAccountUncheckedUpdateWithoutContactsInput>
+}
+
 export type EmailAccountCreateNestedOneWithoutCredentialInput = {
   create?: Prisma.XOR<Prisma.EmailAccountCreateWithoutCredentialInput, Prisma.EmailAccountUncheckedCreateWithoutCredentialInput>
   connectOrCreate?: Prisma.EmailAccountCreateOrConnectWithoutCredentialInput
@@ -877,6 +898,7 @@ export type EmailAccountCreateWithoutUserInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutUserInput = {
@@ -906,6 +928,7 @@ export type EmailAccountUncheckedCreateWithoutUserInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutUserInput = {
@@ -988,6 +1011,7 @@ export type EmailAccountCreateWithoutMembersInput = {
   threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutMembersInput = {
@@ -1017,6 +1041,7 @@ export type EmailAccountUncheckedCreateWithoutMembersInput = {
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutMembersInput = {
@@ -1062,6 +1087,7 @@ export type EmailAccountUpdateWithoutMembersInput = {
   threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutMembersInput = {
@@ -1091,6 +1117,7 @@ export type EmailAccountUncheckedUpdateWithoutMembersInput = {
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutWorkflowRulesInput = {
@@ -1120,6 +1147,7 @@ export type EmailAccountCreateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutWorkflowRulesInput = {
@@ -1149,6 +1177,7 @@ export type EmailAccountUncheckedCreateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutWorkflowRulesInput = {
@@ -1194,6 +1223,7 @@ export type EmailAccountUpdateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutWorkflowRulesInput = {
@@ -1223,6 +1253,7 @@ export type EmailAccountUncheckedUpdateWithoutWorkflowRulesInput = {
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutAgentsInput = {
@@ -1252,6 +1283,7 @@ export type EmailAccountCreateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutAgentsInput = {
@@ -1281,6 +1313,7 @@ export type EmailAccountUncheckedCreateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutAgentsInput = {
@@ -1326,6 +1359,7 @@ export type EmailAccountUpdateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutAgentsInput = {
@@ -1355,6 +1389,143 @@ export type EmailAccountUncheckedUpdateWithoutAgentsInput = {
   threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
+}
+
+export type EmailAccountCreateWithoutContactsInput = {
+  id?: string
+  provider: $Enums.EmailProvider
+  email: string
+  displayName?: string | null
+  isPrimary?: boolean
+  syncEnabled?: boolean
+  autoScheduleMeetings?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: $Enums.SyncStatus
+  lastSyncedAt?: Date | string | null
+  lastSyncError?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  user: Prisma.UserCreateNestedOneWithoutEmailAccountsInput
+  credential?: Prisma.EmailCredentialCreateNestedOneWithoutAccountInput
+  folders?: Prisma.MailFolderCreateNestedManyWithoutAccountInput
+  threads?: Prisma.EmailThreadCreateNestedManyWithoutAccountInput
+  members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
+  workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
+  agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+}
+
+export type EmailAccountUncheckedCreateWithoutContactsInput = {
+  id?: string
+  userId: string
+  provider: $Enums.EmailProvider
+  email: string
+  displayName?: string | null
+  isPrimary?: boolean
+  syncEnabled?: boolean
+  autoScheduleMeetings?: boolean
+  filterMarketing?: boolean
+  filterOtp?: boolean
+  filterPasswordReset?: boolean
+  filterBilling?: boolean
+  filterShipping?: boolean
+  filterCalendar?: boolean
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: $Enums.SyncStatus
+  lastSyncedAt?: Date | string | null
+  lastSyncError?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  credential?: Prisma.EmailCredentialUncheckedCreateNestedOneWithoutAccountInput
+  folders?: Prisma.MailFolderUncheckedCreateNestedManyWithoutAccountInput
+  threads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAccountInput
+  members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
+  workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+}
+
+export type EmailAccountCreateOrConnectWithoutContactsInput = {
+  where: Prisma.EmailAccountWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+}
+
+export type EmailAccountUpsertWithoutContactsInput = {
+  update: Prisma.XOR<Prisma.EmailAccountUpdateWithoutContactsInput, Prisma.EmailAccountUncheckedUpdateWithoutContactsInput>
+  create: Prisma.XOR<Prisma.EmailAccountCreateWithoutContactsInput, Prisma.EmailAccountUncheckedCreateWithoutContactsInput>
+  where?: Prisma.EmailAccountWhereInput
+}
+
+export type EmailAccountUpdateToOneWithWhereWithoutContactsInput = {
+  where?: Prisma.EmailAccountWhereInput
+  data: Prisma.XOR<Prisma.EmailAccountUpdateWithoutContactsInput, Prisma.EmailAccountUncheckedUpdateWithoutContactsInput>
+}
+
+export type EmailAccountUpdateWithoutContactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.EnumEmailProviderFieldUpdateOperationsInput | $Enums.EmailProvider
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
+  lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastSyncError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  user?: Prisma.UserUpdateOneRequiredWithoutEmailAccountsNestedInput
+  credential?: Prisma.EmailCredentialUpdateOneWithoutAccountNestedInput
+  folders?: Prisma.MailFolderUpdateManyWithoutAccountNestedInput
+  threads?: Prisma.EmailThreadUpdateManyWithoutAccountNestedInput
+  members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
+  workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
+  agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+}
+
+export type EmailAccountUncheckedUpdateWithoutContactsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  provider?: Prisma.EnumEmailProviderFieldUpdateOperationsInput | $Enums.EmailProvider
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPrimary?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  syncEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  autoScheduleMeetings?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterOtp?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterPasswordReset?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterBilling?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterShipping?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filterCalendar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  imapConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  syncStatus?: Prisma.EnumSyncStatusFieldUpdateOperationsInput | $Enums.SyncStatus
+  lastSyncedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastSyncError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  credential?: Prisma.EmailCredentialUncheckedUpdateOneWithoutAccountNestedInput
+  folders?: Prisma.MailFolderUncheckedUpdateManyWithoutAccountNestedInput
+  threads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAccountNestedInput
+  members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
+  workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutCredentialInput = {
@@ -1384,6 +1555,7 @@ export type EmailAccountCreateWithoutCredentialInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutCredentialInput = {
@@ -1413,6 +1585,7 @@ export type EmailAccountUncheckedCreateWithoutCredentialInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutCredentialInput = {
@@ -1458,6 +1631,7 @@ export type EmailAccountUpdateWithoutCredentialInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutCredentialInput = {
@@ -1487,6 +1661,7 @@ export type EmailAccountUncheckedUpdateWithoutCredentialInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutFoldersInput = {
@@ -1516,6 +1691,7 @@ export type EmailAccountCreateWithoutFoldersInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutFoldersInput = {
@@ -1545,6 +1721,7 @@ export type EmailAccountUncheckedCreateWithoutFoldersInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutFoldersInput = {
@@ -1590,6 +1767,7 @@ export type EmailAccountUpdateWithoutFoldersInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutFoldersInput = {
@@ -1619,6 +1797,7 @@ export type EmailAccountUncheckedUpdateWithoutFoldersInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateWithoutThreadsInput = {
@@ -1648,6 +1827,7 @@ export type EmailAccountCreateWithoutThreadsInput = {
   members?: Prisma.AccountMemberCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountUncheckedCreateWithoutThreadsInput = {
@@ -1677,6 +1857,7 @@ export type EmailAccountUncheckedCreateWithoutThreadsInput = {
   members?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutAccountInput
   workflowRules?: Prisma.WorkflowRuleUncheckedCreateNestedManyWithoutAccountInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutAccountInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutAccountInput
 }
 
 export type EmailAccountCreateOrConnectWithoutThreadsInput = {
@@ -1722,6 +1903,7 @@ export type EmailAccountUpdateWithoutThreadsInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutThreadsInput = {
@@ -1751,6 +1933,7 @@ export type EmailAccountUncheckedUpdateWithoutThreadsInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountCreateManyUserInput = {
@@ -1803,6 +1986,7 @@ export type EmailAccountUpdateWithoutUserInput = {
   members?: Prisma.AccountMemberUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateWithoutUserInput = {
@@ -1832,6 +2016,7 @@ export type EmailAccountUncheckedUpdateWithoutUserInput = {
   members?: Prisma.AccountMemberUncheckedUpdateManyWithoutAccountNestedInput
   workflowRules?: Prisma.WorkflowRuleUncheckedUpdateManyWithoutAccountNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutAccountNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutAccountNestedInput
 }
 
 export type EmailAccountUncheckedUpdateManyWithoutUserInput = {
@@ -1868,6 +2053,7 @@ export type EmailAccountCountOutputType = {
   members: number
   workflowRules: number
   agents: number
+  contacts: number
 }
 
 export type EmailAccountCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1876,6 +2062,7 @@ export type EmailAccountCountOutputTypeSelect<ExtArgs extends runtime.Types.Exte
   members?: boolean | EmailAccountCountOutputTypeCountMembersArgs
   workflowRules?: boolean | EmailAccountCountOutputTypeCountWorkflowRulesArgs
   agents?: boolean | EmailAccountCountOutputTypeCountAgentsArgs
+  contacts?: boolean | EmailAccountCountOutputTypeCountContactsArgs
 }
 
 /**
@@ -1923,6 +2110,13 @@ export type EmailAccountCountOutputTypeCountAgentsArgs<ExtArgs extends runtime.T
   where?: Prisma.AgentWhereInput
 }
 
+/**
+ * EmailAccountCountOutputType without action
+ */
+export type EmailAccountCountOutputTypeCountContactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ContactWhereInput
+}
+
 
 export type EmailAccountSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1953,6 +2147,7 @@ export type EmailAccountSelect<ExtArgs extends runtime.Types.Extensions.Internal
   members?: boolean | Prisma.EmailAccount$membersArgs<ExtArgs>
   workflowRules?: boolean | Prisma.EmailAccount$workflowRulesArgs<ExtArgs>
   agents?: boolean | Prisma.EmailAccount$agentsArgs<ExtArgs>
+  contacts?: boolean | Prisma.EmailAccount$contactsArgs<ExtArgs>
   _count?: boolean | Prisma.EmailAccountCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emailAccount"]>
 
@@ -2039,6 +2234,7 @@ export type EmailAccountInclude<ExtArgs extends runtime.Types.Extensions.Interna
   members?: boolean | Prisma.EmailAccount$membersArgs<ExtArgs>
   workflowRules?: boolean | Prisma.EmailAccount$workflowRulesArgs<ExtArgs>
   agents?: boolean | Prisma.EmailAccount$agentsArgs<ExtArgs>
+  contacts?: boolean | Prisma.EmailAccount$contactsArgs<ExtArgs>
   _count?: boolean | Prisma.EmailAccountCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmailAccountIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2058,6 +2254,7 @@ export type $EmailAccountPayload<ExtArgs extends runtime.Types.Extensions.Intern
     members: Prisma.$AccountMemberPayload<ExtArgs>[]
     workflowRules: Prisma.$WorkflowRulePayload<ExtArgs>[]
     agents: Prisma.$AgentPayload<ExtArgs>[]
+    contacts: Prisma.$ContactPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2482,6 +2679,7 @@ export interface Prisma__EmailAccountClient<T, Null = never, ExtArgs extends run
   members<T extends Prisma.EmailAccount$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccountMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workflowRules<T extends Prisma.EmailAccount$workflowRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$workflowRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkflowRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   agents<T extends Prisma.EmailAccount$agentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$agentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  contacts<T extends Prisma.EmailAccount$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailAccount$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3069,6 +3267,30 @@ export type EmailAccount$agentsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.AgentScalarFieldEnum | Prisma.AgentScalarFieldEnum[]
+}
+
+/**
+ * EmailAccount.contacts
+ */
+export type EmailAccount$contactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Contact
+   */
+  select?: Prisma.ContactSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Contact
+   */
+  omit?: Prisma.ContactOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ContactInclude<ExtArgs> | null
+  where?: Prisma.ContactWhereInput
+  orderBy?: Prisma.ContactOrderByWithRelationInput | Prisma.ContactOrderByWithRelationInput[]
+  cursor?: Prisma.ContactWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ContactScalarFieldEnum | Prisma.ContactScalarFieldEnum[]
 }
 
 /**
