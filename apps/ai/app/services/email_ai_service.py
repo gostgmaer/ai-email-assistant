@@ -52,6 +52,10 @@ class EmailAIService:
         return SummarizeResponse(
             summary=result["summary"],
             key_points=result["key_points"],
+            action_items=result.get("action_items", []),
+            important_dates=result.get("important_dates", []),
+            participants=result.get("participants", []),
+            decisions_made=result.get("decisions_made", []),
             provider=result["provider"],
             model=result["model"],
             usage=result["usage"],

@@ -15,6 +15,12 @@ class TokenUsage(TypedDict):
     total_tokens: int
 
 
+class ActionItem(TypedDict):
+    task: str
+    owner: str | None
+    due_date: str | None
+
+
 class SummarizeState(TypedDict):
     # Input
     subject: str
@@ -28,6 +34,10 @@ class SummarizeState(TypedDict):
     # Output
     summary: NotRequired[str]
     key_points: NotRequired[list[str]]
+    action_items: NotRequired[list[ActionItem]]
+    important_dates: NotRequired[list[str]]
+    participants: NotRequired[list[str]]
+    decisions_made: NotRequired[list[str]]
 
     # Metadata
     provider: NotRequired[str]

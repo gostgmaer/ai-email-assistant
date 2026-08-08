@@ -7,6 +7,12 @@ class EmailMessageSchema(BaseModel):
     content: str
 
 
+class ActionItemSchema(BaseModel):
+    task: str
+    owner: str | None = None
+    due_date: str | None = None
+
+
 class SummarizeRequest(BaseModel):
     subject: str
     thread: list[EmailMessageSchema]
@@ -21,6 +27,10 @@ class TokenUsageSchema(BaseModel):
 class SummarizeResponse(BaseModel):
     summary: str
     key_points: list[str]
+    action_items: list[ActionItemSchema]
+    important_dates: list[str]
+    participants: list[str]
+    decisions_made: list[str]
     provider: str
     model: str
     usage: TokenUsageSchema

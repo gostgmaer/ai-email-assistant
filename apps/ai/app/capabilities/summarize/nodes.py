@@ -77,11 +77,14 @@ def extract_summary(state: SummarizeState) -> SummarizeState:
     else:
         raw = str(content)
 
-    summary, key_points = _parse_summary(raw)
+    parsed = _parse_summary(raw)
 
-    state["summary"] = summary
-
-    state["key_points"] = key_points
+    state["summary"] = parsed["summary"]
+    state["key_points"] = parsed["key_points"]
+    state["action_items"] = parsed["action_items"]
+    state["important_dates"] = parsed["important_dates"]
+    state["participants"] = parsed["participants"]
+    state["decisions_made"] = parsed["decisions_made"]
 
     state["provider"] = llm_manager.provider
 
@@ -98,28 +101,60 @@ def extract_summary(state: SummarizeState) -> SummarizeState:
     return state
 
 
-def _parse_summary(raw: str) -> tuple[str, list[str]]:
-    """Parse the model's JSON response into (summary, key_points).
+def _parse_summary(raw: str) -> dict:
+    """Parse the model's JSON response into a structured summary dict.
 
     The prompt asks for raw JSON, but models often wrap it in a
     ```json fenced block; strip that before parsing. Falls back to
     treating the whole response as the summary if it isn't valid JSON.
     """
 
+    _empty: dict = {
+        "summary": raw.strip(),
+        "key_points": [],
+        "action_items": [],
+        "important_dates": [],
+        "participants": [],
+        "decisions_made": [],
+    }
+
     text = _CODE_FENCE_RE.sub("", raw).strip()
 
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        return raw.strip(), []
+        return _empty
 
     if not isinstance(data, dict):
-        return raw.strip(), []
+        return _empty
+
+    def _str_list(key: str) -> list[str]:
+        val = data.get(key)
+        return val if isinstance(val, list) else []
+
+    def _action_items(key: str) -> list[dict]:
+        val = data.get(key)
+        if not isinstance(val, list):
+            return []
+        result = []
+        for item in val:
+            if isinstance(item, dict) and "task" in item:
+                result.append(
+                    {
+                        "task": str(item["task"]),
+                        "owner": item.get("owner") or None,
+                        "due_date": item.get("due_date") or None,
+                    }
+                )
+        return result
 
     summary = data.get("summary")
-    key_points = data.get("key_points")
 
-    return (
-        summary if isinstance(summary, str) else raw.strip(),
-        key_points if isinstance(key_points, list) else [],
-    )
+    return {
+        "summary": summary if isinstance(summary, str) else raw.strip(),
+        "key_points": _str_list("key_points"),
+        "action_items": _action_items("action_items"),
+        "important_dates": _str_list("important_dates"),
+        "participants": _str_list("participants"),
+        "decisions_made": _str_list("decisions_made"),
+    }
