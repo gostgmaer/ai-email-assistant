@@ -147,7 +147,7 @@ describe('CalendarService', () => {
 
       expect(result).toEqual({ id: 'evt-1', htmlLink: 'https://calendar.google.com/x' });
 
-      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
       const body = JSON.parse(init.body as string) as {
         start: { dateTime: string };
         end: { dateTime: string };
@@ -155,6 +155,29 @@ describe('CalendarService', () => {
       };
       expect(body.start.dateTime).toBe('2026-08-09T19:30:00+05:30');
       expect(body.attendees).toEqual([{ email: 'them@example.com' }]);
+      // Regression: without sendUpdates=all, Google silently never emails
+      // the attendee an invite at all.
+      expect(url).toContain('sendUpdates=all');
+    });
+
+    it('does not ask Google to send updates when there is no attendee', async () => {
+      const fetchMock = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({ id: 'evt-1', htmlLink: 'https://calendar.google.com/x' }),
+      });
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      const service = buildService();
+
+      await service.createEvent('account-1', 'GOOGLE', {
+        summary: 'Focus block',
+        start: '2026-08-09T19:30:00+05:30',
+        end: '2026-08-09T20:00:00+05:30',
+      });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toContain('sendUpdates=none');
     });
 
     it('normalizes Microsoft event.start/end to UTC with a separate timeZone field, and maps webLink to htmlLink', async () => {

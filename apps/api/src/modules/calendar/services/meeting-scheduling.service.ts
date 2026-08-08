@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 
 // Leaf-file imports rather than the module barrels (`../../ai`,
 // `../../email`, `../../tasks`) on purpose: those barrels re-export the
@@ -148,19 +153,30 @@ export class MeetingSchedulingService {
         const originalMessage: EmailMessageDto = {
           name: sender?.name ?? sender?.address ?? 'Unknown',
           email: sender?.address ?? dto.attendeeEmail,
-          content: originalTask.emailMessage?.bodyText ?? originalTask.description,
+          content:
+            originalTask.emailMessage?.bodyText ?? originalTask.description,
         };
 
         const { reply } = await this.aiClientService.generateReply(
           subject,
           [originalMessage],
-          `Write a short reply confirming the meeting "${dto.title}" has been scheduled for ${formatEventTime(dto.start, dto.end)}. Mention a calendar invite will follow separately. 2-3 sentences, no restating the original request.`,
+          `Write a short reply confirming the meeting "${dto.title}" has been scheduled for ${formatEventTime(dto.start, dto.end)}. Mention that a calendar invite has been sent separately — do not invent or restate a link yourself, one is appended after your reply automatically. 2-3 sentences, no restating the original request.`,
         );
+
+        // The link is appended here, deterministically, rather than left to
+        // the LLM to include correctly — generateReply() has no reliable
+        // way to embed a real URL it was never given. This is also the
+        // fallback if the account's own Google/Outlook invite email
+        // (sendUpdates=all — see CalendarService.createEvent) doesn't reach
+        // the recipient for some reason (spam filtering, etc.): the link is
+        // guaranteed to be in this reply's body either way.
+        const bodyText = `${reply}\n\nView/add to your calendar: ${event.htmlLink}`;
+        const bodyHtml = `<p>${reply.replace(/\n/g, '<br />')}</p><p><a href="${event.htmlLink}">View/add to your calendar</a></p>`;
 
         await this.composeService.reply(userId, {
           messageId: originalTask.emailMessageId,
-          bodyHtml: `<p>${reply.replace(/\n/g, '<br />')}</p>`,
-          bodyText: reply,
+          bodyHtml,
+          bodyText,
         });
       } catch (error) {
         this.logger.warn(

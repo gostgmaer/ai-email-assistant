@@ -174,13 +174,21 @@ describe('MeetingSchedulingService', () => {
         calendarEventUrl: 'https://calendar.google.com/x',
       });
       expect(aiClientService.generateReply).toHaveBeenCalled();
+      // The event link is appended deterministically, not left to the LLM
+      // to include — see meeting-scheduling.service.ts's comment on why.
       expect(composeService.reply).toHaveBeenCalledWith(
         userId,
         expect.objectContaining({
           messageId: 'msg-1',
-          bodyText: 'Confirmed — see you then!',
+          bodyText: expect.stringContaining('Confirmed — see you then!'),
         }),
       );
+      const replyCall = composeService.reply.mock.calls[0][1] as {
+        bodyText: string;
+        bodyHtml: string;
+      };
+      expect(replyCall.bodyText).toContain('https://calendar.google.com/x');
+      expect(replyCall.bodyHtml).toContain('https://calendar.google.com/x');
       expect(result).toEqual({
         task: { id: taskId, status: 'DONE' },
         event: { id: 'evt-1', htmlLink: 'https://calendar.google.com/x' },
