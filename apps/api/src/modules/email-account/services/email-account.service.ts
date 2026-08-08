@@ -331,6 +331,7 @@ export class EmailAccountService {
       filterBilling?: boolean;
       filterShipping?: boolean;
       filterCalendar?: boolean;
+      prohibitedPhrases?: string[];
     },
   ): Promise<EmailAccountModel> {
     await this.getOwnedAccountOrThrow(userId, accountId);

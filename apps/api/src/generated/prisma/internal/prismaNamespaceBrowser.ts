@@ -163,6 +163,7 @@ export const EmailAccountScalarFieldEnum = {
   filterBilling: 'filterBilling',
   filterShipping: 'filterShipping',
   filterCalendar: 'filterCalendar',
+  prohibitedPhrases: 'prohibitedPhrases',
   imapConfig: 'imapConfig',
   syncStatus: 'syncStatus',
   lastSyncedAt: 'lastSyncedAt',

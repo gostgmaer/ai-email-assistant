@@ -6,7 +6,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 **How to read the status column:** ✅ Built · 🟡 Partial (something exists but doesn't do what the name implies) · ⬜ Not started.
 
-**Update:** the whole "Small" list, a minimal "Medium" output validation pipeline, and CRM v1 with a Settings UI panel have all shipped — see §2–§4, §6, §7. §1 and §3 are now fully built end to end (Dedup/Metadata/Spam turned out already complete; document language detection shipped via `langdetect`). Multi-agent orchestration is now scoped in `docs/multi-agent-orchestration-plan.md`, and its cheapest slice (Option A — CRM data grounding replies) has shipped too, see §4/§5. Remaining: multi-agent orchestration's Option B (Calendar Agent — needs a decision first), the learning pipeline, and confidence scoring.
+**Update:** the whole "Small" list, CRM v1 with a Settings UI panel, and multi-agent orchestration's Option A (CRM data grounding replies) have all shipped. §1, §3, §6, and §7 are now fully built end to end — §6's remaining four items (Policy/Grammar/Tone/Confidence) closed by extending the existing `validate_reply` LLM call rather than adding new round trips; §7's Notification now fires on every auto-send. Only §4's multi-agent Option B (Calendar Agent — needs a decision first) and the learning pipeline remain — see "What needs to be covered" below.
 
 ---
 
@@ -71,15 +71,15 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 | Item | Status | Evidence |
 |---|---|---|
-| Hallucination check (thread-grounding) | 🟡 | Not a dedicated hallucination detector, but `apps/ai/app/capabilities/validate_reply` — a second LLM call — checks whether the draft addresses the thread and flags unsupported claims/commitments not in it; gates auto-send in `AiProcessingProcessor` |
-| Policy validation | ⬜ | Nothing |
-| Grammar check | ⬜ | Nothing |
-| Tone validation | ⬜ | Nothing |
+| Hallucination check (thread-grounding) | 🟡 | Not a dedicated hallucination detector, but `validate_reply` — a second LLM call — checks whether the draft addresses the thread and flags unsupported claims/commitments not in it; gates auto-send |
+| Policy validation | ✅ | `EmailAccount.prohibitedPhrases` (empty by default — mechanism only, this codebase doesn't invent an account's real business policy) + `scanOutputForPolicyViolations`, a deterministic case-insensitive substring check that hard-blocks auto-send if any configured phrase appears in the generated reply |
+| Grammar check | ✅ | Folded into the same `validate_reply` call (no extra LLM round trip) — `grammar_issues: list[str]`, hard-blocks auto-send if non-empty |
+| Tone validation | ✅ | Also folded into `validate_reply` — `tone_appropriate`/`tone_note`. Deliberately **not** a hard rail (more subjective than grammar — blocking on it risked over-holding good replies); logged as a warning instead so a mismatch is visible without silently killing auto-send |
 | PII validation (on output) | ✅ | `scanOutputForPii` (deterministic regex — SSN/account-number shapes only, deliberately not phone/email since those routinely appear legitimately in signatures) runs on every generated reply and hard-blocks auto-send if it fires, regardless of what the matched rule says |
-| Confidence score | ⬜ | Auto-send vs. draft is still a **rule match plus hard rails** (urgent priority, output PII, thread-addressing), not a numeric score |
-| Human approval/review | 🟡 | No dedicated approve/reject flow with state — a non-auto-sent reply just lands as an ordinary Draft, editable/sendable/deletable through the same UI as any manual draft |
+| Confidence score | ✅ | `validate_reply`'s self-reported 0-100 `confidence`, same call as thread-addressing/grammar/tone — hard-blocks auto-send below a chosen threshold (70, `REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD`). LLM self-report was the chosen source (a second dedicated classifier was the alternative, not worth the added cost/complexity for a first pass) |
+| Human approval/review | 🟡 | Deliberately not built further here — overlaps v3.0's "True multi-step Approval Chains"; a non-auto-sent reply still just lands as an ordinary Draft |
 
-**Verdict:** the two cheapest, highest-value checks (output PII, thread-addressing) now gate every auto-send decision — see `AiProcessingProcessor`'s `outputPiiScan`/`validateReply` rails, evaluated cheapest-first so the extra LLM call only runs when it's genuinely the last thing standing between a reply and auto-send. Policy/grammar/tone validation and a real numeric confidence score are still open — worth revisiting if the two checks above turn out insufficient in practice, but not blocking anything today.
+**Verdict:** every output-side check that can run without a second LLM call (PII, policy) is a hard rail; the ones that need `validate_reply`'s LLM judgment (thread-addressing, grammar, confidence) are hard rails too, evaluated together in that one call rather than three separate round trips. Tone is the one deliberate exception — logged, not blocking, since it's the most subjective judgment of the set. Only human-approval workflow state (already out of scope, v3.0) remains open in this section.
 
 ## 7. Post-processing
 
@@ -87,12 +87,12 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 |---|---|---|
 | Thread/message update | ✅ | `ComposeService.persistSentMessage` |
 | Lightweight audit trail | 🟡 | `generationMetadata` (provider/model/usage/RAG-used/contact-memory-used) stored per sent message — real, but not a dedicated audit-log system with its own queryable history (that's v3.0 Enterprise Features scope) |
-| Calendar update | 🟡 | Real, but only for meeting requests, and only via the opt-in `autoSchedule` (off by default) — not a general "every send touches the calendar" step |
+| Calendar update | ✅ | Only for meeting requests, only via opt-in `autoSchedule` (off by default) — this was a mischaracterization, not a real gap: a calendar update on every send (including e.g. a billing reply) wouldn't make product sense. Scoped correctly as-is. |
 | Task update | ✅ | `TasksService.createFromExtraction` |
 | CRM update | ✅ | `ContactService.touchLastContacted` — best-effort, runs per processed message, updates `lastContactedAt` on an existing matching Contact (never creates one) |
-| Notification | 🟡 | Real for sync events / workflow NOTIFY actions / daily digest — not fired on every send |
+| Notification | ✅ | Now also fires on every auto-send (not just sync events/workflow NOTIFY/digest) — visibility into an autonomous action. Best-effort, never blocks the send. A drafted (non-auto-sent) reply doesn't get one — it's already visible in Drafts awaiting the same review. |
 
-**Verdict:** mostly built for what the app actually does today (email + tasks + optional calendar + CRM's lastContactedAt). Universal notification (on every send, not just NOTIFY-action/digest) is the one remaining gap here, and it's a small addition, not independent work.
+**Verdict:** fully built for what the app actually does today. Only the audit trail stays partial, and that's intentionally deferred to v3.0 Enterprise Features (a queryable audit-log system), not an oversight.
 
 ## 8. Analytics & learning
 
@@ -113,9 +113,9 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 - ✅ `summarize` wired into the automated pipeline — `AiProcessingProcessor.summarizeThread`
 - ✅ OCR — `pytesseract` fallback in `_split_pdf` when a page's text layer is empty
 
-**Medium (a real feature, scoped like §2/§3/§4 were this session):**
-- ✅ **Output validation pipeline (minimal version)** — shipped: output-side PII regex scan (`scanOutputForPii`) + a second-LLM-call thread-addressing check (`validate_reply` capability), both hard-gating auto-send, cheapest-first. Grammar/tone/policy checks could still layer on incrementally if the two shipped checks turn out insufficient in practice.
-- **Confidence scoring** — still not started; would let auto-send decisions be more than binary rule-match + hard rails, but needs a defined source (self-reported by the LLM? a second classifier?) before it's worth building.
+**Medium (a real feature, scoped like §2/§3/§4 were this session) — ✅ all shipped:**
+- ✅ **Output validation pipeline** — output-side PII regex scan (`scanOutputForPii`), a deterministic policy-phrase scan (`scanOutputForPolicyViolations`, empty by default), and one `validate_reply` LLM call covering thread-addressing, grammar, tone, and confidence — all hard-gating auto-send except tone (logged, not blocking — the most subjective of the set), evaluated cheapest-first.
+- ✅ **Confidence scoring** — `validate_reply`'s self-reported 0-100 confidence, hard-gating below a chosen threshold (70). LLM self-report was the decided source; a second dedicated classifier wasn't worth the added cost for a first pass.
 
 **Large (genuinely new subsystems, each deserving its own plan doc before implementation, same way v2.0's four areas each got scoped separately):**
 - ✅ **CRM v1 shipped** (contact records + Settings UI panel — see §4/§7) — **still open:** pipeline/deal stages, lead qualification, pricing lookup
@@ -129,7 +129,6 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 ## Recommended next step
 
-Small, Medium, CRM v1, §1, §3, and multi-agent orchestration's Option A are all done. What's left, each blocked on a real decision rather than just unbuilt:
+Small, Medium, CRM v1, §1, §3, §6, §7, and multi-agent orchestration's Option A are all done. What's left, each blocked on a real decision rather than just unbuilt:
 - **Multi-agent orchestration Option B** (Calendar Agent) — needs a decision: can a reply suggest a specific time without a human reviewing availability first, or should it only offer to check? See `docs/multi-agent-orchestration-plan.md`.
 - **Learning pipeline** — needs real production traffic to be worth building; premature right now.
-- **Confidence scoring** — needs a decided score source (LLM self-report? a second classifier?).

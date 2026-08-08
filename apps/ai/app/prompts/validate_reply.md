@@ -13,4 +13,10 @@ Return addresses_thread as false if the draft:
 
 If addresses_thread is false, or there's another notable concern even when it's true, list each concern briefly. Otherwise return an empty list.
 
+Check the draft for grammar, spelling, and broken-sentence issues. List each one briefly in grammar_issues; return an empty list if there are none. Do not flag stylistic choices (e.g. sentence fragments used deliberately, informal contractions) as grammar issues — only genuine errors.
+
+Assess whether the tone fits the thread — for example, not cold or curt in reply to a frustrated or upset sender, not overly casual for a formal request, not overly formal for a casual one. Set tone_appropriate to false if the tone is a mismatch, and briefly explain why in tone_note; otherwise set it to true and leave tone_note empty.
+
+Give a confidence score from 0 to 100 for how safe this reply is to send with no human review — considering everything above (thread-addressing, factual grounding, grammar, tone) plus your own overall judgment. 90+ means you're confident it's ready to send as-is; below 50 means it has real problems.
+
 Return ONLY the requested structured information.

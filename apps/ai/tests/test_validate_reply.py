@@ -29,6 +29,10 @@ def test_extract_validation_flags_a_draft_that_ignores_the_thread():
             return {
                 "addresses_thread": False,
                 "concerns": ["Ignores the reschedule request entirely"],
+                "grammar_issues": [],
+                "tone_appropriate": True,
+                "tone_note": "",
+                "confidence": 20,
             }
 
     state = {"response": FakeResponse()}
@@ -39,6 +43,31 @@ def test_extract_validation_flags_a_draft_that_ignores_the_thread():
     assert result["validation"]["concerns"] == [
         "Ignores the reschedule request entirely"
     ]
+    assert result["validation"]["confidence"] == 20
     assert "provider" in result
     assert "model" in result
     assert "usage" in result
+
+
+def test_extract_validation_passes_through_grammar_and_tone():
+    class FakeResponse:
+        def model_dump(self):
+            return {
+                "addresses_thread": True,
+                "concerns": [],
+                "grammar_issues": ["Missing period at end of second sentence"],
+                "tone_appropriate": False,
+                "tone_note": "Too curt for a frustrated customer",
+                "confidence": 55,
+            }
+
+    state = {"response": FakeResponse()}
+
+    result = extract_validation(state)
+
+    assert result["validation"]["grammar_issues"] == [
+        "Missing period at end of second sentence"
+    ]
+    assert result["validation"]["tone_appropriate"] is False
+    assert result["validation"]["tone_note"] == "Too curt for a frustrated customer"
+    assert result["validation"]["confidence"] == 55

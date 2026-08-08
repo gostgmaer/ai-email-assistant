@@ -25,6 +25,9 @@ import {
   ComposeService,
   GenerationMetadata,
 } from '../../email/services/compose.service';
+// Leaf-file import rather than the '../../notification' barrel — same
+// reasoning as AgentService above.
+import { NotificationService } from '../../notification/services/notification.service';
 import { TasksService } from '../../tasks';
 // Leaf-file import rather than the '../../workflow' barrel — see the
 // comment above on MeetingSchedulingService for why.
@@ -40,10 +43,17 @@ import {
   ContactMemoryService,
 } from '../services/contact-memory.service';
 import { scanOutputForPii } from '../utils/output-pii-scan.util';
+import { scanOutputForPolicyViolations } from '../utils/output-policy-scan.util';
 
 interface AiProcessingJobData {
   messageId: string;
 }
+
+// validate_reply's self-reported 0-100 confidence — chosen default, not
+// account-configurable yet. 70 favors holding borderline replies for
+// review over auto-sending them; revisit once there's real usage data on
+// how confidence scores correlate with actually-good replies.
+const REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD = 70;
 
 @Processor(QueueNames.AI)
 export class AiProcessingProcessor extends WorkerHost {
@@ -65,6 +75,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly agentService: AgentService,
     @Inject(forwardRef(() => ContactService))
     private readonly contactService: ContactService,
+    @Inject(forwardRef(() => NotificationService))
+    private readonly notificationService: NotificationService,
   ) {
     super();
   }
@@ -251,14 +263,15 @@ export class AiProcessingProcessor extends WorkerHost {
       })),
     };
 
-    // Output validation (minimal first pass — see docs/enterprise-ai-pipeline-plan.md
-    // §6): a deterministic scan of what the LLM actually generated, not
-    // just the account's own settings. Catches an LLM inventing a
-    // plausible-looking SSN/account number that was never in the thread —
-    // the input-side classification alone can't catch that, since it only
-    // ever looks at the INCOMING message. Free (regex, no LLM call), so
+    // Output validation (see docs/enterprise-ai-pipeline-plan.md §6):
+    // deterministic scans of what the LLM actually generated, not just
+    // the account's own settings. Free (regex/substring, no LLM call), so
     // computed unconditionally rather than gated behind matchedActions.
     const outputPiiScan = scanOutputForPii(reply.reply);
+    const outputPolicyScan = scanOutputForPolicyViolations(
+      reply.reply,
+      account.prohibitedPhrases,
+    );
 
     // Workflow Builder (v2.0 §3): the account's WorkflowRule rows decide
     // whether this reply auto-sends (and any other actions — assign,
@@ -281,10 +294,12 @@ export class AiProcessingProcessor extends WorkerHost {
       //   'urgent' directly and so never actually excluded urgent
       //   messages from auto-send; keeping the same guarantee even
       //   though the decision now otherwise comes from rules.
-      // - outputPiiScan: never auto-send text that looks like it
-      //   contains an SSN/account number.
+      // - outputPiiScan / outputPolicyScan: never auto-send text that
+      //   looks like it contains an SSN/account number, or that trips
+      //   the account's own prohibited-phrase list (empty by default).
       // - validateReply: a second, more expensive LLM call checking the
-      //   draft actually addresses the thread — only paid for once the
+      //   draft actually addresses the thread, has no grammar issues,
+      //   and self-reports enough confidence — only paid for once the
       //   cheaper rails already passed and this is genuinely the last
       //   thing standing between the reply and a real auto-send. A
       //   message that was always going to be drafted for human review
@@ -292,30 +307,69 @@ export class AiProcessingProcessor extends WorkerHost {
       const passesUrgentRail =
         classification.priority.toLowerCase() !== 'urgent';
       const passesPiiRail = !outputPiiScan.detected;
+      const passesPolicyRail = !outputPolicyScan.violated;
 
       let passesValidationRail = false;
-      if (autoReply && passesUrgentRail && passesPiiRail) {
+      if (autoReply && passesUrgentRail && passesPiiRail && passesPolicyRail) {
         const { validation } = await this.aiClientService.validateReply(
           subject,
           thread,
           reply.reply,
         );
-        passesValidationRail = validation.addressesThread;
+
+        // Tone is deliberately NOT a hard rail — more subjective/
+        // error-prone for an LLM to judge than grammar or thread-
+        // addressing, so blocking on it risks over-holding perfectly
+        // good replies. Logged so it's visible, not silently dropped.
+        if (!validation.toneAppropriate) {
+          this.logger.warn(
+            `Generated reply for message ${messageId} has a possible tone mismatch (not blocking auto-send): ${validation.toneNote || 'no specific note given'}.`,
+          );
+        }
+
+        passesValidationRail =
+          validation.addressesThread &&
+          validation.grammarIssues.length === 0 &&
+          validation.confidence >= REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD;
 
         if (!passesValidationRail) {
+          const reasons: string[] = [];
+          if (!validation.addressesThread) {
+            reasons.push(
+              `doesn't address the thread (${validation.concerns.join(', ') || 'no specific concern given'})`,
+            );
+          }
+          if (validation.grammarIssues.length > 0) {
+            reasons.push(`grammar issues: ${validation.grammarIssues.join(', ')}`);
+          }
+          if (validation.confidence < REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD) {
+            reasons.push(
+              `confidence ${validation.confidence} below the ${REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD} threshold`,
+            );
+          }
           this.logger.warn(
-            `Generated reply for message ${messageId} was held for review — doesn't address the thread (${validation.concerns.join(', ') || 'no specific concern given'}).`,
+            `Generated reply for message ${messageId} was held for review — ${reasons.join('; ')}.`,
           );
         }
       }
 
       isSafeToAutoSend =
-        autoReply && passesUrgentRail && passesPiiRail && passesValidationRail;
+        autoReply &&
+        passesUrgentRail &&
+        passesPiiRail &&
+        passesPolicyRail &&
+        passesValidationRail;
     }
 
     if (outputPiiScan.detected) {
       this.logger.warn(
         `Generated reply for message ${messageId} contains a possible ${outputPiiScan.types.join(', ')} — will not auto-send regardless of matching rules.`,
+      );
+    }
+
+    if (outputPolicyScan.violated) {
+      this.logger.warn(
+        `Generated reply for message ${messageId} matched a prohibited phrase (${outputPolicyScan.matchedPhrases.join(', ')}) — will not auto-send regardless of matching rules.`,
       );
     }
 
@@ -332,6 +386,25 @@ export class AiProcessingProcessor extends WorkerHost {
       this.logger.log(
         `Auto-sent a reply to message ${messageId} (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
       );
+
+      // §7 post-processing (see docs/enterprise-ai-pipeline-plan.md) —
+      // visibility into an autonomous action, not just a silent send. A
+      // drafted (non-auto-sent) reply doesn't need this: it already sits
+      // visibly in the Drafts folder awaiting the same review a
+      // notification would prompt. Best-effort — a notification failure
+      // must never be treated as the send itself having failed.
+      await this.notificationService
+        .create(
+          account.userId,
+          'Auto-replied to an email',
+          `Sent from ${account.email} — "${subject}"`,
+          { threadId: message.threadId, messageId },
+        )
+        .catch((error: unknown) => {
+          this.logger.warn(
+            `Failed to create auto-send notification for message ${messageId}: ${String(error)}`,
+          );
+        });
     } else {
       await this.composeService.saveDraftReply(
         account.userId,

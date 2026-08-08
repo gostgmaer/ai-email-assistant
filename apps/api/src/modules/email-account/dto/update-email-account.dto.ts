@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateEmailAccountDto {
   @ApiPropertyOptional()
@@ -69,4 +75,14 @@ export class UpdateEmailAccountDto {
   @IsOptional()
   @IsBoolean()
   filterCalendar?: boolean;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description:
+      'Case-insensitive phrases that block an AI reply from auto-sending if present (e.g. "refund", "guarantee") — held for review instead. Empty by default; this account defines its own policy, nothing is pre-populated.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  prohibitedPhrases?: string[];
 }
