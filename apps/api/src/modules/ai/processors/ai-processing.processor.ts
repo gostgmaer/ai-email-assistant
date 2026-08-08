@@ -140,6 +140,13 @@ export class AiProcessingProcessor extends WorkerHost {
       account.autoScheduleMeetings,
     );
 
+    // Same best-effort/concurrent shape as extractionPromise above.
+    const summarizePromise = this.summarizeThread(
+      message.threadId,
+      subject,
+      thread,
+    );
+
     // Workflow Builder (v2.0 §3): evaluated here (before reply generation,
     // not after) specifically so an AI Agent persona (v2.0 §4) attached to
     // a matched rule's AUTO_REPLY action can influence the reply's actual
@@ -266,10 +273,10 @@ export class AiProcessingProcessor extends WorkerHost {
       );
     }
 
-    // Awaited here (not earlier) so it runs concurrently with the reply
+    // Awaited here (not earlier) so both run concurrently with the reply
     // pipeline above rather than serially in front of it, while still
-    // guaranteeing it finishes before the job is marked complete.
-    await extractionPromise;
+    // guaranteeing they finish before the job is marked complete.
+    await Promise.all([extractionPromise, summarizePromise]);
 
     await this.markProcessed(messageId);
   }
@@ -285,8 +292,44 @@ export class AiProcessingProcessor extends WorkerHost {
         priority: classification.priority,
         sentiment: classification.sentiment,
         isSpam: classification.spam,
+        language: classification.language,
+        containsPii: classification.containsPii,
+        piiTypes: classification.piiTypes,
       },
     });
+  }
+
+  /**
+   * Re-summarizes the whole thread (overwrite, not append) each time a new
+   * message lands on a thread with 2+ messages — a single fresh message
+   * has nothing to compress, so threads only ever get a summary once a
+   * real back-and-forth exists. Best-effort, same shape as extractTasks:
+   * a slow/failed summarize call must never block the reply pipeline.
+   */
+  private async summarizeThread(
+    threadId: string,
+    subject: string,
+    thread: EmailMessageDto[],
+  ): Promise<void> {
+    if (thread.length < 2) {
+      return;
+    }
+
+    try {
+      const { summary, keyPoints } = await this.aiClientService.summarize(
+        subject,
+        thread,
+      );
+
+      await this.prisma.emailThread.update({
+        where: { id: threadId },
+        data: { summary, summaryKeyPoints: keyPoints },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Thread summarization failed for thread ${threadId}: ${String(error)}`,
+      );
+    }
   }
 
   private async extractTasks(

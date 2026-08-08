@@ -41,6 +41,9 @@ export interface ClassificationResult {
   priority: string;
   sentiment: string;
   spam: boolean;
+  language: string;
+  containsPii: boolean;
+  piiTypes: string[];
 }
 
 export interface ClassifyResponse {
@@ -119,8 +122,18 @@ interface RawRewriteResponse {
   usage: RawUsage;
 }
 
+interface RawClassificationResult {
+  category: string;
+  priority: string;
+  sentiment: string;
+  spam: boolean;
+  language: string;
+  contains_pii: boolean;
+  pii_types: string[];
+}
+
 interface RawClassifyResponse {
-  classification: ClassificationResult;
+  classification: RawClassificationResult;
   provider: string;
   model: string;
   usage: RawUsage;
@@ -320,7 +333,15 @@ export class AiClientService {
     });
 
     return {
-      classification: res.classification,
+      classification: {
+        category: res.classification.category,
+        priority: res.classification.priority,
+        sentiment: res.classification.sentiment,
+        spam: res.classification.spam,
+        language: res.classification.language,
+        containsPii: res.classification.contains_pii,
+        piiTypes: res.classification.pii_types,
+      },
       provider: res.provider,
       model: res.model,
       usage: mapUsage(res.usage),

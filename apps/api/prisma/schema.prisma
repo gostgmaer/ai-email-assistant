@@ -428,6 +428,12 @@ model EmailThread {
   assignedToUserId String?
   assignedTo       User?   @relation("ThreadAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
 
+  // Re-summarized (overwritten, not appended) each time the automated AI
+  // pipeline processes a new message on a thread with 2+ messages — a
+  // single fresh message has nothing to summarize. Null until then.
+  summary          String?
+  summaryKeyPoints String[] @default([])
+
   messages EmailMessage[]
   tasks    Task[]
   notes    ThreadNote[]
@@ -515,6 +521,16 @@ model EmailMessage {
   priority  String?
   sentiment String?
   isSpam    Boolean @default(false)
+
+  // ISO 639-1 code (e.g. "en"), best-effort from the classify LLM call —
+  // not a dedicated language-detection model. Null for messages processed
+  // before this field existed.
+  language String?
+
+  // Best-effort PII flag from the same classify call — informational only
+  // today (nothing gates on it yet). piiTypes is always [] when false.
+  containsPii Boolean  @default(false)
+  piiTypes    String[] @default([])
 
   tasks Task[]
 

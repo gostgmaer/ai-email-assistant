@@ -279,6 +279,8 @@ export const EmailThreadScalarFieldEnum = {
   lastMessageAt: 'lastMessageAt',
   snoozedUntil: 'snoozedUntil',
   assignedToUserId: 'assignedToUserId',
+  summary: 'summary',
+  summaryKeyPoints: 'summaryKeyPoints',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -317,6 +319,9 @@ export const EmailMessageScalarFieldEnum = {
   priority: 'priority',
   sentiment: 'sentiment',
   isSpam: 'isSpam',
+  language: 'language',
+  containsPii: 'containsPii',
+  piiTypes: 'piiTypes',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
