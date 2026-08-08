@@ -9,6 +9,10 @@ from app.capabilities.contact_memory.schemas import (
     ContactMemoryRequest,
     ContactMemoryResponse,
 )
+from app.capabilities.validate_reply.schemas import (
+    ValidateReplyRequest,
+    ValidateReplyResponse,
+)
 from app.services.email_ai_service import email_ai_service
 
 router = APIRouter(
@@ -82,3 +86,17 @@ async def build_contact_memory(
     """Extract sender facts and an embedding for contact memory."""
 
     return await email_ai_service.contact_memory(request)
+
+
+@router.post(
+    "/validate-reply",
+    response_model=ValidateReplyResponse,
+)
+async def validate_reply(
+    request: ValidateReplyRequest,
+) -> ValidateReplyResponse:
+    """Check a drafted reply against its thread before it's allowed to
+    auto-send — does it actually address the thread, or is it generic/
+    off-topic/unsupported by anything in it."""
+
+    return await email_ai_service.validate_reply(request)

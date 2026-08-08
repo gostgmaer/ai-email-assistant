@@ -6,6 +6,8 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 **How to read the status column:** ✅ Built · 🟡 Partial (something exists but doesn't do what the name implies) · ⬜ Not started.
 
+**Update:** the whole "Small" list (language detection, PII detection, wiring `summarize` into the pipeline, OCR) and a minimal version of the "Medium" output validation pipeline (output-side PII scan + a second-LLM-call "does this reply address the thread" check, both gating auto-send) have since shipped — see the rows below and `AiProcessingProcessor`/`apps/ai/app/capabilities/validate_reply`. CRM, multi-agent orchestration, and the learning pipeline (the "Large" tier) are still not started and still need their own scoping pass before code, per the original recommendation below.
+
 ---
 
 ## 1. Email ingestion & parsing
@@ -23,27 +25,27 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 | Item | Status | Evidence |
 |---|---|---|
-| OCR (scanned/image docs) | ⬜ | `pdfplumber.extract_text()` only reads a text layer; scanned PDFs return zero chunks and fail with "No extractable text found". Already tracked in `MVP.md`. |
+| OCR (scanned/image docs) | ✅ | `_split_pdf` falls back to `pytesseract` (rasterized via pdfplumber's `page.to_image()`, no poppler/ImageMagick needed) when a page's text layer is empty; `DocumentMeta.parser` records `"pdf+ocr"` when it fired |
 | Text extraction (PDF/DOCX/+) | ✅ | Also html/md/csv/xlsx/json/xml/eml/msg — broader than the vision doc asks for |
 | Chunking | ✅ | Structure-aware (headers/tables/pages) with token-estimated sizes |
 | Embedding + vector DB | ✅ | pgvector, stored on `DocumentChunk.embedding` |
 
-**Verdict:** strong except OCR, which is a known, already-tracked gap (MVP.md v1.1).
+**Verdict:** strong across the board now, including OCR.
 
 ## 3. AI preprocessing
 
 | Item | Status | Evidence |
 |---|---|---|
-| Language detection | ⬜ | `Document.language` field exists but is explicitly left null — "stays null until a real enrichment step exists" |
+| Language detection | ✅ for emails, ⬜ for documents | `ClassificationSchema.language` (ISO 639-1) on the same classify call → `EmailMessage.language`. `Document.language` (uploaded attachments) is a separate field and still stays null — not addressed by this change. |
 | Spam detection | 🟡 | A `spam: bool` field on the general classify call, not a dedicated spam model/step — works, but is a side-effect of classification rather than its own stage |
 | Intent/category classification | ✅ | Same classify call → `EmailMessage.category` |
 | Urgency/priority detection | ✅ | Same call → `priority`, also used as a hard auto-send safety rail (`Urgent` never auto-sends) |
 | Sentiment analysis | ✅ | Same call → `sentiment` |
 | Entity extraction | ✅ | Separate `extract` capability — people/emails/phones/companies/dates/urls/tasks/meeting_requests |
-| PII detection | ⬜ | Nothing found anywhere in the repo |
-| Conversation/thread summarization | 🟡 | A `summarize` endpoint exists but is manual/on-demand, never invoked by the automated pipeline |
+| PII detection (input) | ✅ | `ClassificationSchema.contains_pii`/`pii_types` on the same classify call → `EmailMessage.containsPii`/`piiTypes` — informational only, nothing gates on it (the *output*-side PII check that does gate auto-send is new too, see §6 below) |
+| Conversation/thread summarization | ✅ | `AiProcessingProcessor.summarizeThread` now calls the existing `summarize` capability automatically once a thread has 2+ messages, storing the result on `EmailThread.summary`/`summaryKeyPoints` |
 
-**Verdict:** classification/sentiment/urgency/entities are genuinely solid and already drive real behavior (routing, auto-send gating, task creation). Language detection, PII detection, and automated summarization are real gaps.
+**Verdict:** classification/sentiment/urgency/entities/language/PII/summarization are all now genuinely solid and drive real behavior (routing, auto-send gating, task creation).
 
 ## 4. Routing & agents
 
@@ -69,15 +71,15 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 | Item | Status | Evidence |
 |---|---|---|
-| Hallucination check | ⬜ | Nothing — `extract_response` just parses the LLM's raw text |
+| Hallucination check (thread-grounding) | 🟡 | Not a dedicated hallucination detector, but `apps/ai/app/capabilities/validate_reply` — a second LLM call — checks whether the draft addresses the thread and flags unsupported claims/commitments not in it; gates auto-send in `AiProcessingProcessor` |
 | Policy validation | ⬜ | Nothing |
 | Grammar check | ⬜ | Nothing |
 | Tone validation | ⬜ | Nothing |
-| PII validation (on output) | ⬜ | Nothing |
-| Confidence score | ⬜ | Auto-send vs. draft is a **rule match**, not a score: `WorkflowRuleService` match + a hardcoded rail (`priority !== 'Urgent'`) |
+| PII validation (on output) | ✅ | `scanOutputForPii` (deterministic regex — SSN/account-number shapes only, deliberately not phone/email since those routinely appear legitimately in signatures) runs on every generated reply and hard-blocks auto-send if it fires, regardless of what the matched rule says |
+| Confidence score | ⬜ | Auto-send vs. draft is still a **rule match plus hard rails** (urgent priority, output PII, thread-addressing), not a numeric score |
 | Human approval/review | 🟡 | No dedicated approve/reject flow with state — a non-auto-sent reply just lands as an ordinary Draft, editable/sendable/deletable through the same UI as any manual draft |
 
-**Verdict:** this entire section is the second-biggest gap. Nothing validates an LLM's output before it goes out (or before it's shown as a draft), beyond the rule-based auto-send gate. This is worth prioritizing above CRM/multi-agent work — it's a correctness/safety gap, not a feature gap.
+**Verdict:** the two cheapest, highest-value checks (output PII, thread-addressing) now gate every auto-send decision — see `AiProcessingProcessor`'s `outputPiiScan`/`validateReply` rails, evaluated cheapest-first so the extra LLM call only runs when it's genuinely the last thing standing between a reply and auto-send. Policy/grammar/tone validation and a real numeric confidence score are still open — worth revisiting if the two checks above turn out insufficient in practice, but not blocking anything today.
 
 ## 7. Post-processing
 
@@ -105,15 +107,15 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 ## What needs to be covered — by size
 
-**Small (days, not a new subsystem):**
-- Language detection — one more field on the existing classify call, or a cheap dedicated model
-- PII detection (input side) — same shape as spam: add a field to the classify schema, or a fast regex/NER pass before the LLM sees the email
-- Wire the existing `summarize` capability into the automated pipeline (it already exists, just isn't called automatically)
-- OCR — already tracked in MVP.md; a tesseract (or cloud OCR API) step ahead of `pdfplumber` when the text layer is empty
+**Small (days, not a new subsystem) — ✅ all shipped:**
+- ✅ Language detection — `ClassificationSchema.language`
+- ✅ PII detection (input side) — `ClassificationSchema.contains_pii`/`pii_types`
+- ✅ `summarize` wired into the automated pipeline — `AiProcessingProcessor.summarizeThread`
+- ✅ OCR — `pytesseract` fallback in `_split_pdf` when a page's text layer is empty
 
 **Medium (a real feature, scoped like §2/§3/§4 were this session):**
-- **Output validation pipeline** — this is the one I'd prioritize highest of everything not yet started. Even a minimal version (PII-on-output regex check + a lightweight "does this reply address the thread" self-check via a second cheap LLM call) closes a real correctness gap, not just a checklist item. Grammar/tone/hallucination/policy checks can layer on incrementally after that.
-- **Confidence scoring** — would let auto-send decisions be more than binary rule-match; needs a defined source (self-reported by the LLM? a second classifier?) before it's worth building.
+- ✅ **Output validation pipeline (minimal version)** — shipped: output-side PII regex scan (`scanOutputForPii`) + a second-LLM-call thread-addressing check (`validate_reply` capability), both hard-gating auto-send, cheapest-first. Grammar/tone/policy checks could still layer on incrementally if the two shipped checks turn out insufficient in practice.
+- **Confidence scoring** — still not started; would let auto-send decisions be more than binary rule-match + hard rails, but needs a defined source (self-reported by the LLM? a second classifier?) before it's worth building.
 
 **Large (genuinely new subsystems, each deserving its own plan doc before implementation, same way v2.0's four areas each got scoped separately):**
 - **CRM** — contact records, pipeline/deal stages, customer history beyond `ContactMemoryService`'s per-sender facts. Nothing to build on top of; this is greenfield.
@@ -127,4 +129,4 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 ## Recommended next step
 
-Given everything else this session (v2.0 core, deployment) just shipped, my recommendation if you want to keep moving on this track: start with the **Small** list — it's real, cheap, and doesn't require a new design doc — then scope the **output validation pipeline** properly (its own short plan doc, like `v2.0-plan.md`'s sections got) before touching CRM or multi-agent orchestration, since those two are the ones most likely to reshape `AiProcessingProcessor` and are worth getting the design right before writing code.
+Small and Medium are both done. What's left — CRM, multi-agent orchestration, the learning pipeline, confidence scoring — is all Large-tier or depends on a design decision not yet made (confidence scoring's score source). Each of the three Large items deserves its own short scoping pass, the same way each of v2.0's four sections got one, before any code gets written — multi-agent orchestration in particular is an architecture change to `AiProcessingProcessor`, not an incremental addition.
