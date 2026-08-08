@@ -6,7 +6,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 **How to read the status column:** ✅ Built · 🟡 Partial (something exists but doesn't do what the name implies) · ⬜ Not started.
 
-**Update:** the whole "Small" list, CRM v1 with a Settings UI panel, and multi-agent orchestration's Option A (CRM data grounding replies) have all shipped. §1, §3, §6, and §7 are now fully built end to end — §6's remaining four items (Policy/Grammar/Tone/Confidence) closed by extending the existing `validate_reply` LLM call rather than adding new round trips; §7's Notification now fires on every auto-send. Only §4's multi-agent Option B (Calendar Agent — needs a decision first) and the learning pipeline remain — see "What needs to be covered" below.
+**Update:** the whole "Small" list, CRM v1 with a Settings UI panel, and multi-agent orchestration's Option A (CRM data grounding replies) have all shipped. §1, §3, §6, and §7 are now fully built end to end — §6's five gaps (Policy/Grammar/Tone/Confidence/Hallucination) all closed by extending the existing `validate_reply` LLM call rather than adding new round trips (hallucination detection split into its own `unsupported_claims` field, independent of topic-relevance); §7's Notification now fires on every auto-send. Of the remaining Partial rows, three are deliberately out of v2.0 scope (Analytics/Audit trail/Approval Chains — moved to v3.0 earlier this session) and three are blocked on a real decision not yet made (multi-agent orchestration's Option B, CRM deal stages/pricing needing a real data source). Only §4's multi-agent Option B and the learning pipeline are listed as "next" below.
 
 ---
 
@@ -71,7 +71,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 | Item | Status | Evidence |
 |---|---|---|
-| Hallucination check (thread-grounding) | 🟡 | Not a dedicated hallucination detector, but `validate_reply` — a second LLM call — checks whether the draft addresses the thread and flags unsupported claims/commitments not in it; gates auto-send |
+| Hallucination check (thread-grounding) | ✅ | `validate_reply`'s `unsupported_claims: list[str]` — a dedicated, separately-tracked signal (split out from `addresses_thread`/`concerns`, which now only judge topic-relevance): every specific factual claim/commitment/number/date in the draft not supported by the thread. Hard-blocks auto-send if non-empty, independent of whether the reply is otherwise on-topic. |
 | Policy validation | ✅ | `EmailAccount.prohibitedPhrases` (empty by default — mechanism only, this codebase doesn't invent an account's real business policy) + `scanOutputForPolicyViolations`, a deterministic case-insensitive substring check that hard-blocks auto-send if any configured phrase appears in the generated reply |
 | Grammar check | ✅ | Folded into the same `validate_reply` call (no extra LLM round trip) — `grammar_issues: list[str]`, hard-blocks auto-send if non-empty |
 | Tone validation | ✅ | Also folded into `validate_reply` — `tone_appropriate`/`tone_note`. Deliberately **not** a hard rail (more subjective than grammar — blocking on it risked over-holding good replies); logged as a warning instead so a mismatch is visible without silently killing auto-send |
@@ -79,7 +79,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 | Confidence score | ✅ | `validate_reply`'s self-reported 0-100 `confidence`, same call as thread-addressing/grammar/tone — hard-blocks auto-send below a chosen threshold (70, `REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD`). LLM self-report was the chosen source (a second dedicated classifier was the alternative, not worth the added cost/complexity for a first pass) |
 | Human approval/review | 🟡 | Deliberately not built further here — overlaps v3.0's "True multi-step Approval Chains"; a non-auto-sent reply still just lands as an ordinary Draft |
 
-**Verdict:** every output-side check that can run without a second LLM call (PII, policy) is a hard rail; the ones that need `validate_reply`'s LLM judgment (thread-addressing, grammar, confidence) are hard rails too, evaluated together in that one call rather than three separate round trips. Tone is the one deliberate exception — logged, not blocking, since it's the most subjective judgment of the set. Only human-approval workflow state (already out of scope, v3.0) remains open in this section.
+**Verdict:** every output-side check that can run without a second LLM call (PII, policy) is a hard rail; the ones that need `validate_reply`'s LLM judgment (thread-addressing, hallucination, grammar, confidence) are hard rails too, evaluated together in that one call rather than four separate round trips. Tone is the one deliberate exception — logged, not blocking, since it's the most subjective judgment of the set. Only human-approval workflow state (already out of scope, v3.0) remains open in this section — every other row is built.
 
 ## 7. Post-processing
 

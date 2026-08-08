@@ -329,6 +329,7 @@ export class AiProcessingProcessor extends WorkerHost {
 
         passesValidationRail =
           validation.addressesThread &&
+          validation.unsupportedClaims.length === 0 &&
           validation.grammarIssues.length === 0 &&
           validation.confidence >= REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD;
 
@@ -337,6 +338,11 @@ export class AiProcessingProcessor extends WorkerHost {
           if (!validation.addressesThread) {
             reasons.push(
               `doesn't address the thread (${validation.concerns.join(', ') || 'no specific concern given'})`,
+            );
+          }
+          if (validation.unsupportedClaims.length > 0) {
+            reasons.push(
+              `unsupported claims: ${validation.unsupportedClaims.join(', ')}`,
             );
           }
           if (validation.grammarIssues.length > 0) {

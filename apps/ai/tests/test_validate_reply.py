@@ -29,6 +29,7 @@ def test_extract_validation_flags_a_draft_that_ignores_the_thread():
             return {
                 "addresses_thread": False,
                 "concerns": ["Ignores the reschedule request entirely"],
+                "unsupported_claims": [],
                 "grammar_issues": [],
                 "tone_appropriate": True,
                 "tone_note": "",
@@ -55,6 +56,7 @@ def test_extract_validation_passes_through_grammar_and_tone():
             return {
                 "addresses_thread": True,
                 "concerns": [],
+                "unsupported_claims": [],
                 "grammar_issues": ["Missing period at end of second sentence"],
                 "tone_appropriate": False,
                 "tone_note": "Too curt for a frustrated customer",
@@ -71,3 +73,30 @@ def test_extract_validation_passes_through_grammar_and_tone():
     assert result["validation"]["tone_appropriate"] is False
     assert result["validation"]["tone_note"] == "Too curt for a frustrated customer"
     assert result["validation"]["confidence"] == 55
+
+
+def test_extract_validation_reports_unsupported_claims_separately_from_concerns():
+    class FakeResponse:
+        def model_dump(self):
+            return {
+                "addresses_thread": True,
+                "concerns": [],
+                "unsupported_claims": [
+                    "Claims a full refund was already processed — not in the thread"
+                ],
+                "grammar_issues": [],
+                "tone_appropriate": True,
+                "tone_note": "",
+                "confidence": 40,
+            }
+
+    state = {"response": FakeResponse()}
+
+    result = extract_validation(state)
+
+    # On-topic (addresses_thread=True, concerns empty) but still flags a
+    # fabricated claim — the two are independent signals.
+    assert result["validation"]["addresses_thread"] is True
+    assert result["validation"]["unsupported_claims"] == [
+        "Claims a full refund was already processed — not in the thread"
+    ]

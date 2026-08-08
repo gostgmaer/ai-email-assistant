@@ -56,6 +56,7 @@ export interface ClassifyResponse {
 export interface ReplyValidationResult {
   addressesThread: boolean;
   concerns: string[];
+  unsupportedClaims: string[];
   grammarIssues: string[];
   toneAppropriate: boolean;
   toneNote: string;
@@ -158,6 +159,7 @@ interface RawClassifyResponse {
 interface RawReplyValidationResult {
   addresses_thread: boolean;
   concerns: string[];
+  unsupported_claims: string[];
   grammar_issues: string[];
   tone_appropriate: boolean;
   tone_note: string;
@@ -400,6 +402,7 @@ export class AiClientService {
       validation: {
         addressesThread: res.validation.addresses_thread,
         concerns: res.validation.concerns,
+        unsupportedClaims: res.validation.unsupported_claims,
         grammarIssues: res.validation.grammar_issues,
         toneAppropriate: res.validation.tone_appropriate,
         toneNote: res.validation.tone_note,

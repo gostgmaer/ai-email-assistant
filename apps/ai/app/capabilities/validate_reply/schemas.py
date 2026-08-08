@@ -14,6 +14,14 @@ class ReplyValidationSchema(BaseModel):
     # Free-text, not a fixed enum — same loosely-typed convention as
     # ClassificationSchema's category/priority/sentiment.
     concerns: list[str]
+    # Dedicated hallucination check (see docs/enterprise-ai-pipeline-plan.md
+    # §6) — every specific factual claim/commitment/number/date in the
+    # draft that ISN'T supported by anything in the thread. Split out from
+    # concerns/addresses_thread so it's a first-class, separately-gated
+    # signal rather than folded into "is this on-topic," even though the
+    # underlying LLM judgment (does the thread support this claim) is
+    # similar in kind.
+    unsupported_claims: list[str]
     # Empty when there are no grammar/spelling/broken-sentence issues.
     # Objective enough to hard-gate auto-send on (unlike tone, below).
     grammar_issues: list[str]

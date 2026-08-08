@@ -9,9 +9,10 @@ Return addresses_thread as false if the draft:
 - Ignores a direct question or request from the thread
 - Responds to something unrelated to the thread
 - Is generic filler that could apply to almost any email
-- Contains a specific factual claim, commitment, or detail that isn't supported by anything in the thread
 
-If addresses_thread is false, or there's another notable concern even when it's true, list each concern briefly. Otherwise return an empty list.
+If addresses_thread is false, or there's another notable concern (other than an unsupported claim — see below) even when it's true, list each concern briefly. Otherwise return an empty list.
+
+Separately, check every specific factual claim, commitment, number, date, or detail in the draft against the thread. List each one that ISN'T directly supported by something in the thread in unsupported_claims, briefly stating the claim — even if the rest of the reply is fine. Return an empty list only if every specific claim in the draft traces back to the thread (a generic pleasantry like "happy to help" isn't a claim and doesn't need support).
 
 Check the draft for grammar, spelling, and broken-sentence issues. List each one briefly in grammar_issues; return an empty list if there are none. Do not flag stylistic choices (e.g. sentence fragments used deliberately, informal contractions) as grammar issues — only genuine errors.
 
