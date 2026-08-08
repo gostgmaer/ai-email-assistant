@@ -3,6 +3,7 @@ import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
+import { ContactModel } from '../../../generated/prisma/models';
 import { AIJobs, QueueNames } from '../../../infrastructure/queue';
 // Leaf-file import rather than the '../../agent' barrel — see the
 // comment below on WorkflowRuleService for why.
@@ -212,11 +213,21 @@ export class AiProcessingProcessor extends WorkerHost {
       .search(account.userId, message.bodyText ?? subject, 3)
       .catch(() => []);
 
-    const { instruction, contactMemoryUsed } = buildContextInstruction(
-      related,
-      contactMemory,
-      documentMatches,
-    );
+    // Multi-agent orchestration §A (see docs/multi-agent-orchestration-plan.md)
+    // — ground the reply in CRM data the same best-effort way as RAG/
+    // contact-memory above. Null (not an error) for the common case: most
+    // senders aren't a known Contact.
+    const crmContact = await this.contactService
+      .findByEmail(account.id, sender.address)
+      .catch(() => null);
+
+    const { instruction, contactMemoryUsed, crmContactUsed } =
+      buildContextInstruction(
+        related,
+        contactMemory,
+        documentMatches,
+        crmContact,
+      );
 
     const reply = await this.aiClientService.generateReply(
       subject,
@@ -228,6 +239,7 @@ export class AiProcessingProcessor extends WorkerHost {
     const generationMetadata: GenerationMetadata = {
       ragUsed: documentMatches.length > 0,
       contactMemoryUsed,
+      crmContactUsed,
       provider: reply.provider,
       model: reply.model,
       usage: reply.usage,
@@ -471,7 +483,12 @@ function buildContextInstruction(
   related: ContactMemoryMatch[],
   current: ContactMemoryResponse,
   documentMatches: DocumentChunkMatch[],
-): { instruction: string | undefined; contactMemoryUsed: boolean } {
+  crmContact: ContactModel | null,
+): {
+  instruction: string | undefined;
+  contactMemoryUsed: boolean;
+  crmContactUsed: boolean;
+} {
   const sections: string[] = [];
 
   const priorContacts = related.filter(
@@ -488,6 +505,25 @@ function buildContextInstruction(
     );
   }
 
+  // Multi-agent orchestration §A (see docs/multi-agent-orchestration-plan.md)
+  // — the sender's CRM record, when one exists. Distinct from
+  // contactMemory above: this is user-entered/curated data (status,
+  // company, notes), not AI-inferred facts.
+  if (crmContact) {
+    const lines: string[] = [];
+    if (crmContact.status) lines.push(`Status: ${crmContact.status}`);
+    if (crmContact.company) lines.push(`Company: ${crmContact.company}`);
+    if (crmContact.notes) lines.push(`Notes: ${crmContact.notes}`);
+    if (crmContact.lastContactedAt) {
+      lines.push(`Last contacted: ${crmContact.lastContactedAt.toISOString()}`);
+    }
+    if (lines.length > 0) {
+      sections.push(
+        `This sender is a known CRM contact${crmContact.name ? ` (${crmContact.name})` : ''}:\n${lines.join('\n')}`,
+      );
+    }
+  }
+
   if (documentMatches.length > 0) {
     const lines = documentMatches.map(
       (match) => `- (from "${match.filename}"): ${match.content}`,
@@ -500,5 +536,6 @@ function buildContextInstruction(
   return {
     instruction: sections.length > 0 ? sections.join('\n\n') : undefined,
     contactMemoryUsed: priorContacts.length > 0,
+    crmContactUsed: !!crmContact,
   };
 }

@@ -116,4 +116,35 @@ describe('ContactService', () => {
       expect(prisma.contact.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('findByEmail', () => {
+    it('looks up by the accountId + email compound key, without an ownership check', async () => {
+      const { service, prisma, emailAccountService } = buildDeps();
+      prisma.contact.findUnique.mockResolvedValue({
+        id: 'contact-1',
+        accountId,
+        email: 'a@b.com',
+      });
+
+      const result = await service.findByEmail(accountId, 'a@b.com');
+
+      expect(prisma.contact.findUnique).toHaveBeenCalledWith({
+        where: { accountId_email: { accountId, email: 'a@b.com' } },
+      });
+      expect(result).toMatchObject({ id: 'contact-1' });
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
+      expect(
+        emailAccountService.getAccessibleAccountOrThrow,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('returns null when there is no matching contact', async () => {
+      const { service, prisma } = buildDeps();
+      prisma.contact.findUnique.mockResolvedValue(null);
+
+      const result = await service.findByEmail(accountId, 'stranger@example.com');
+
+      expect(result).toBeNull();
+    });
+  });
 });

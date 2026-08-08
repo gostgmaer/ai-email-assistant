@@ -126,4 +126,18 @@ export class ContactService {
       data: { lastContactedAt: new Date() },
     });
   }
+
+  /**
+   * Read-only lookup for AiProcessingProcessor's reply-context enrichment
+   * (multi-agent orchestration §A — see docs/multi-agent-orchestration-plan.md):
+   * if the sender is a known Contact, the reply can be grounded in that
+   * (status, company, notes) the same way contactMemory/RAG results
+   * already are. Same no-ownership-check reasoning as
+   * touchLastContacted — background pipeline, not a user request.
+   */
+  async findByEmail(accountId: string, email: string) {
+    return this.prisma.contact.findUnique({
+      where: { accountId_email: { accountId, email } },
+    });
+  }
 }
