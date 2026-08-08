@@ -102,6 +102,21 @@ export interface Agent {
   updatedAt: string;
 }
 
+export interface Contact {
+  id: string;
+  accountId: string;
+  email: string;
+  name: string | null;
+  company: string | null;
+  phone: string | null;
+  notes: string | null;
+  tags: string[];
+  status: string | null;
+  lastContactedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ThreadAssignee {
   id: string;
   email: string;
