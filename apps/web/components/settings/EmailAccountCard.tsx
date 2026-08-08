@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { AGENT_TEMPLATES } from "@/lib/agent-templates";
 import type {
   Agent,
   EmailAccount,
@@ -910,6 +911,28 @@ function AgentsPanel({
             else createMutation.mutate();
           }}
         >
+          {!editingId && (
+            <div>
+              <p className="mb-1 text-xs font-medium text-zinc-600">
+                Start from a template (optional):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {AGENT_TEMPLATES.map((template) => (
+                  <button
+                    key={template.name}
+                    type="button"
+                    onClick={() => {
+                      setName(template.name);
+                      setSystemPrompt(template.systemPrompt);
+                    }}
+                    className="rounded-full px-3 py-1 text-xs font-medium text-zinc-600 ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
+                  >
+                    {template.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <input
             type="text"
             required

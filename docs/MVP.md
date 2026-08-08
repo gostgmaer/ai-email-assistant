@@ -337,12 +337,20 @@ A user should be able to:
 - [x] Opt-in full automation toggle (`EmailAccount.autoScheduleMeetings`, off by default)
 
 ## v2.0
-- [ ] Client Deployment (real hosted environment — not just local Docker Compose)
-- [ ] Shared Inbox
-- [ ] Team Collaboration
-- [ ] Workflow Builder
-- [ ] AI Agents
+- [x] Client Deployment (CI + Railway runbook; provisioning itself still needs your account/billing)
+- [x] Shared Inbox (account-level sharing, assign, internal notes)
+- [x] Team Collaboration (covered by Shared Inbox's membership model)
+- [x] Workflow Builder (rules engine, replaced the old hardcoded auto-send logic)
+- [x] AI Agents (persona system built and wired in; pre-built templates for the 5 named personas below still pending)
+  - [ ] Customer Support Agent (template)
+  - [ ] Sales Agent (template)
+  - [ ] HR Agent (template)
+  - [ ] Finance Agent (template)
+  - [ ] Executive Assistant (template)
 
 ## v3.0
 - [ ] Multi-tenancy
-- [ ] Enterprise Features (moved from v2.0 — depends on multi-tenancy existing first)
+- [ ] Enterprise Features (RBAC, Audit Logs, SSO, SCIM, API Keys, Webhooks, Compliance, Security Controls — depends on multi-tenancy existing first)
+- [ ] Integrations (Slack, Teams, Jira, Notion, Linear, HubSpot, Salesforce, Discord — moved from v2.0, none started)
+- [ ] Analytics (Response Time, Inbox Health, Productivity Metrics, AI Usage, Team Performance, SLA Tracking — moved from v2.0, none started)
+- [ ] True multi-step Approval Chains (today's Workflow Builder only has a single auto-send-vs-draft gate, not sequential multi-person approval)
