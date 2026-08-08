@@ -1,0 +1,25 @@
+name: Deploy
+
+# Manual trigger by default — a production deploy shouldn't fire just
+# because someone pushed to master. Run it from the Actions tab once
+# ci.yml is green on the commit you want live. If you'd rather have
+# push-to-deploy, change this to `push: { branches: [master] }` and
+# consider gating the `production` environment below with a required
+# reviewer instead, so there's still a manual approval step.
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: SSH and run deploy script
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: ${{ secrets.DEPLOY_PATH }}/scripts/deploy.sh

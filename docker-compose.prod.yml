@@ -1,0 +1,155 @@
+# Production compose for a VM / dedicated server. Standalone rather than an
+# override on top of docker-compose.yml (dev): Compose merges list fields
+# like `ports` across -f files by CONCATENATION, not replacement, so an
+# override can't reliably drop a port dev needs published — only recent
+# Compose versions support the `!reset` merge-tag that would allow that,
+# and this shouldn't depend on which Compose version happens to be
+# installed on the server. A standalone file is unambiguous instead.
+#
+# Usage: docker compose -f docker-compose.prod.yml up -d --build
+# See docs/deployment.md for full VM setup steps.
+#
+# Differences from docker-compose.yml (dev):
+#   - postgres/redis/ai/api/web do NOT publish ports to the host — only
+#     reachable over the internal Docker network. Publishing them on a
+#     public server bypasses whatever firewall (ufw etc.) you've set up:
+#     Docker inserts its own iptables rules for published ports, which
+#     most host firewalls don't intercept by default.
+#   - No pgadmin — a dev convenience tool with a default admin/admin
+#     login has no business being reachable from the internet.
+#   - postgres password and web's baked-in API URL come from a root .env
+#     (see docs/deployment.md) instead of hardcoded dev defaults.
+#   - caddy is the only thing binding 80/443 on the host; it reverse
+#     proxies to api/web over the internal network and terminates TLS via
+#     Let's Encrypt automatically.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: ai-email-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_email
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_email"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-email-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai:
+    build:
+      context: ./apps/ai
+      dockerfile: Dockerfile
+    container_name: ai-email-ai
+    restart: unless-stopped
+    env_file:
+      - apps/ai/.env
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: ai-email-api
+    restart: unless-stopped
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/ai_email?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_SERVICE_URL: http://ai:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: ai-email-worker
+    restart: unless-stopped
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/ai_email?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_SERVICE_URL: http://ai:8000
+    command: ["node", "dist/main.worker.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai:
+        condition: service_started
+      api:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: ai-email-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ai-email-caddy
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

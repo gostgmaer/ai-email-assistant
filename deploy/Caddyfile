@@ -1,0 +1,19 @@
+# Reverse proxy + automatic HTTPS (Let's Encrypt) for the VM deploy.
+# DOMAIN/API_DOMAIN/ACME_EMAIL come from the root .env — see
+# docker-compose.prod.yml and docs/deployment.md.
+#
+# Requires DNS: an A record for both DOMAIN and API_DOMAIN pointing at
+# this server's public IP, resolvable *before* first start — Caddy's
+# ACME challenge needs that to issue certificates.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	reverse_proxy web:3000
+}
+
+{$API_DOMAIN} {
+	reverse_proxy api:3000
+}

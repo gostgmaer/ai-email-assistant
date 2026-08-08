@@ -203,7 +203,7 @@ Ship a production-ready MVP in **5 days** that allows users to sign in with thei
 - [x] Docker Compose
 - [x] Production Environment Variables (local .env; not cloud-managed secrets)
 - [x] Production Build (NODE_ENV=production images)
-- [x] Deploy (CI workflow + Railway runbook — see docs/deployment.md; actual provisioning still needs your account/billing)
+- [x] Deploy (CI workflow + self-hosted VM runbook, Docker Compose + Caddy — see docs/deployment.md; actual server/DNS provisioning still needs your VM)
 - [x] Documentation (docs/deployment.md runbook, alongside this file + Swagger)
 
 ### ✅ Deliverable
@@ -337,7 +337,7 @@ A user should be able to:
 - [x] Opt-in full automation toggle (`EmailAccount.autoScheduleMeetings`, off by default)
 
 ## v2.0
-- [x] Client Deployment (CI + Railway runbook; provisioning itself still needs your account/billing)
+- [x] Client Deployment (CI + self-hosted VM runbook, Docker Compose + Caddy; provisioning itself still needs your VM/DNS)
 - [x] Shared Inbox (account-level sharing, assign, internal notes)
 - [x] Team Collaboration (covered by Shared Inbox's membership model)
 - [x] Workflow Builder (rules engine, replaced the old hardcoded auto-send logic)
