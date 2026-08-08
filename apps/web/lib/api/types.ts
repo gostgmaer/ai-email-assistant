@@ -19,6 +19,8 @@ export interface User {
   updatedAt: string;
 }
 
+export type AccountRole = "OWNER" | "MEMBER";
+
 export interface EmailAccount {
   id: string;
   provider: EmailProvider;
@@ -29,7 +31,6 @@ export interface EmailAccount {
   syncStatus: SyncStatus;
   lastSyncedAt: string | null;
   lastSyncError: string | null;
-  autoSendCategories: string[];
   autoScheduleMeetings: boolean;
   filterMarketing: boolean;
   filterOtp: boolean;
@@ -38,6 +39,73 @@ export interface EmailAccount {
   filterShipping: boolean;
   filterCalendar: boolean;
   createdAt: string;
+  /** This user's Shared Inbox role on this account — OWNER can change
+   * settings/disconnect/invite members, MEMBER can only work threads. */
+  myRole: AccountRole;
+}
+
+export interface AccountMember {
+  id: string;
+  accountId: string;
+  userId: string;
+  role: AccountRole;
+  invitedByUserId: string | null;
+  createdAt: string;
+  user: { id: string; email: string; displayName: string | null; avatar: string | null };
+}
+
+export interface ThreadNote {
+  id: string;
+  threadId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  author: { id: string; email: string; displayName: string | null };
+}
+
+export type WorkflowConditionField = "category" | "priority" | "sender";
+export type WorkflowConditionOperator = "equals" | "contains";
+
+export interface WorkflowCondition {
+  field: WorkflowConditionField;
+  operator: WorkflowConditionOperator;
+  value: string;
+}
+
+export type WorkflowAction =
+  | { type: "AUTO_REPLY"; agentId?: string }
+  | { type: "ASSIGN_TO"; userId: string }
+  | { type: "NOTIFY"; userId: string; message?: string }
+  | { type: "REQUIRE_APPROVAL" };
+
+export type WorkflowActionType = WorkflowAction["type"];
+
+export interface WorkflowRule {
+  id: string;
+  accountId: string;
+  name: string;
+  enabled: boolean;
+  order: number;
+  conditions: WorkflowCondition[];
+  actions: WorkflowAction[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Agent {
+  id: string;
+  accountId: string;
+  name: string;
+  systemPrompt: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ThreadAssignee {
+  id: string;
+  email: string;
+  displayName: string | null;
 }
 
 export interface Participant {
@@ -102,6 +170,7 @@ export interface EmailThreadSummary {
     account: { id: string; provider: EmailProvider; email: string };
   };
   messages: EmailMessage[];
+  assignedTo: ThreadAssignee | null;
   _count: { messages: number };
 }
 
@@ -125,6 +194,8 @@ export interface EmailThreadDetail {
     providerFolderId: string | null;
   };
   messages: EmailMessage[];
+  assignedTo: ThreadAssignee | null;
+  notes: ThreadNote[];
 }
 
 export interface Pagination {

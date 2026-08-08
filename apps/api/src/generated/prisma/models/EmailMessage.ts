@@ -39,6 +39,8 @@ export type EmailMessageMinAggregateOutputType = {
   priority: string | null
   sentiment: string | null
   isSpam: boolean | null
+  language: string | null
+  containsPii: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -58,6 +60,8 @@ export type EmailMessageMaxAggregateOutputType = {
   priority: string | null
   sentiment: string | null
   isSpam: boolean | null
+  language: string | null
+  containsPii: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -82,6 +86,9 @@ export type EmailMessageCountAggregateOutputType = {
   priority: number
   sentiment: number
   isSpam: number
+  language: number
+  containsPii: number
+  piiTypes: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -103,6 +110,8 @@ export type EmailMessageMinAggregateInputType = {
   priority?: true
   sentiment?: true
   isSpam?: true
+  language?: true
+  containsPii?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -122,6 +131,8 @@ export type EmailMessageMaxAggregateInputType = {
   priority?: true
   sentiment?: true
   isSpam?: true
+  language?: true
+  containsPii?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -146,6 +157,9 @@ export type EmailMessageCountAggregateInputType = {
   priority?: true
   sentiment?: true
   isSpam?: true
+  language?: true
+  containsPii?: true
+  piiTypes?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -243,6 +257,9 @@ export type EmailMessageGroupByOutputType = {
   priority: string | null
   sentiment: string | null
   isSpam: boolean
+  language: string | null
+  containsPii: boolean
+  piiTypes: string[]
   createdAt: Date
   updatedAt: Date
   _count: EmailMessageCountAggregateOutputType | null
@@ -288,6 +305,9 @@ export type EmailMessageWhereInput = {
   priority?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
   sentiment?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
   isSpam?: Prisma.BoolFilter<"EmailMessage"> | boolean
+  language?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
+  containsPii?: Prisma.BoolFilter<"EmailMessage"> | boolean
+  piiTypes?: Prisma.StringNullableListFilter<"EmailMessage">
   createdAt?: Prisma.DateTimeFilter<"EmailMessage"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EmailMessage"> | Date | string
   thread?: Prisma.XOR<Prisma.EmailThreadScalarRelationFilter, Prisma.EmailThreadWhereInput>
@@ -316,6 +336,9 @@ export type EmailMessageOrderByWithRelationInput = {
   priority?: Prisma.SortOrderInput | Prisma.SortOrder
   sentiment?: Prisma.SortOrderInput | Prisma.SortOrder
   isSpam?: Prisma.SortOrder
+  language?: Prisma.SortOrderInput | Prisma.SortOrder
+  containsPii?: Prisma.SortOrder
+  piiTypes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   thread?: Prisma.EmailThreadOrderByWithRelationInput
@@ -348,6 +371,9 @@ export type EmailMessageWhereUniqueInput = Prisma.AtLeast<{
   priority?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
   sentiment?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
   isSpam?: Prisma.BoolFilter<"EmailMessage"> | boolean
+  language?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
+  containsPii?: Prisma.BoolFilter<"EmailMessage"> | boolean
+  piiTypes?: Prisma.StringNullableListFilter<"EmailMessage">
   createdAt?: Prisma.DateTimeFilter<"EmailMessage"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EmailMessage"> | Date | string
   thread?: Prisma.XOR<Prisma.EmailThreadScalarRelationFilter, Prisma.EmailThreadWhereInput>
@@ -376,6 +402,9 @@ export type EmailMessageOrderByWithAggregationInput = {
   priority?: Prisma.SortOrderInput | Prisma.SortOrder
   sentiment?: Prisma.SortOrderInput | Prisma.SortOrder
   isSpam?: Prisma.SortOrder
+  language?: Prisma.SortOrderInput | Prisma.SortOrder
+  containsPii?: Prisma.SortOrder
+  piiTypes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.EmailMessageCountOrderByAggregateInput
@@ -406,6 +435,9 @@ export type EmailMessageScalarWhereWithAggregatesInput = {
   priority?: Prisma.StringNullableWithAggregatesFilter<"EmailMessage"> | string | null
   sentiment?: Prisma.StringNullableWithAggregatesFilter<"EmailMessage"> | string | null
   isSpam?: Prisma.BoolWithAggregatesFilter<"EmailMessage"> | boolean
+  language?: Prisma.StringNullableWithAggregatesFilter<"EmailMessage"> | string | null
+  containsPii?: Prisma.BoolWithAggregatesFilter<"EmailMessage"> | boolean
+  piiTypes?: Prisma.StringNullableListFilter<"EmailMessage">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"EmailMessage"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"EmailMessage"> | Date | string
 }
@@ -428,6 +460,9 @@ export type EmailMessageCreateInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
@@ -456,6 +491,9 @@ export type EmailMessageUncheckedCreateInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
@@ -480,6 +518,9 @@ export type EmailMessageUpdateInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
@@ -508,6 +549,9 @@ export type EmailMessageUncheckedUpdateInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
@@ -534,6 +578,9 @@ export type EmailMessageCreateManyInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -556,6 +603,9 @@ export type EmailMessageUpdateManyMutationInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -580,6 +630,9 @@ export type EmailMessageUncheckedUpdateManyInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -624,6 +677,9 @@ export type EmailMessageCountOrderByAggregateInput = {
   priority?: Prisma.SortOrder
   sentiment?: Prisma.SortOrder
   isSpam?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  containsPii?: Prisma.SortOrder
+  piiTypes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -643,6 +699,8 @@ export type EmailMessageMaxOrderByAggregateInput = {
   priority?: Prisma.SortOrder
   sentiment?: Prisma.SortOrder
   isSpam?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  containsPii?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -662,6 +720,8 @@ export type EmailMessageMinOrderByAggregateInput = {
   priority?: Prisma.SortOrder
   sentiment?: Prisma.SortOrder
   isSpam?: Prisma.SortOrder
+  language?: Prisma.SortOrder
+  containsPii?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -708,6 +768,10 @@ export type EmailMessageUncheckedUpdateManyWithoutThreadNestedInput = {
   deleteMany?: Prisma.EmailMessageScalarWhereInput | Prisma.EmailMessageScalarWhereInput[]
 }
 
+export type EmailMessageCreatepiiTypesInput = {
+  set: string[]
+}
+
 export type EmailMessageCreateNestedOneWithoutDraftRepliesInput = {
   create?: Prisma.XOR<Prisma.EmailMessageCreateWithoutDraftRepliesInput, Prisma.EmailMessageUncheckedCreateWithoutDraftRepliesInput>
   connectOrCreate?: Prisma.EmailMessageCreateOrConnectWithoutDraftRepliesInput
@@ -726,6 +790,11 @@ export type EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput = {
   connectOrCreate?: Prisma.EmailMessageCreateOrConnectWithoutInReplyToInput | Prisma.EmailMessageCreateOrConnectWithoutInReplyToInput[]
   createMany?: Prisma.EmailMessageCreateManyInReplyToInputEnvelope
   connect?: Prisma.EmailMessageWhereUniqueInput | Prisma.EmailMessageWhereUniqueInput[]
+}
+
+export type EmailMessageUpdatepiiTypesInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 export type EmailMessageUpdateOneWithoutDraftRepliesNestedInput = {
@@ -800,6 +869,9 @@ export type EmailMessageCreateWithoutThreadInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   inReplyTo?: Prisma.EmailMessageCreateNestedOneWithoutDraftRepliesInput
@@ -826,6 +898,9 @@ export type EmailMessageUncheckedCreateWithoutThreadInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
@@ -881,6 +956,9 @@ export type EmailMessageScalarWhereInput = {
   priority?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
   sentiment?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
   isSpam?: Prisma.BoolFilter<"EmailMessage"> | boolean
+  language?: Prisma.StringNullableFilter<"EmailMessage"> | string | null
+  containsPii?: Prisma.BoolFilter<"EmailMessage"> | boolean
+  piiTypes?: Prisma.StringNullableListFilter<"EmailMessage">
   createdAt?: Prisma.DateTimeFilter<"EmailMessage"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"EmailMessage"> | Date | string
 }
@@ -903,6 +981,9 @@ export type EmailMessageCreateWithoutDraftRepliesInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
@@ -930,6 +1011,9 @@ export type EmailMessageUncheckedCreateWithoutDraftRepliesInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutEmailMessageInput
@@ -958,6 +1042,9 @@ export type EmailMessageCreateWithoutInReplyToInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
@@ -984,6 +1071,9 @@ export type EmailMessageUncheckedCreateWithoutInReplyToInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
@@ -1029,6 +1119,9 @@ export type EmailMessageUpdateWithoutDraftRepliesInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
@@ -1056,6 +1149,9 @@ export type EmailMessageUncheckedUpdateWithoutDraftRepliesInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutEmailMessageNestedInput
@@ -1095,6 +1191,9 @@ export type EmailMessageCreateWithoutTasksInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
@@ -1122,6 +1221,9 @@ export type EmailMessageUncheckedCreateWithoutTasksInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
@@ -1161,6 +1263,9 @@ export type EmailMessageUpdateWithoutTasksInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
@@ -1188,6 +1293,9 @@ export type EmailMessageUncheckedUpdateWithoutTasksInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
@@ -1212,6 +1320,9 @@ export type EmailMessageCreateManyThreadInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1234,6 +1345,9 @@ export type EmailMessageUpdateWithoutThreadInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   inReplyTo?: Prisma.EmailMessageUpdateOneWithoutDraftRepliesNestedInput
@@ -1260,6 +1374,9 @@ export type EmailMessageUncheckedUpdateWithoutThreadInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
@@ -1285,6 +1402,9 @@ export type EmailMessageUncheckedUpdateManyWithoutThreadInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1308,6 +1428,9 @@ export type EmailMessageCreateManyInReplyToInput = {
   priority?: string | null
   sentiment?: string | null
   isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1330,6 +1453,9 @@ export type EmailMessageUpdateWithoutInReplyToInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
@@ -1356,6 +1482,9 @@ export type EmailMessageUncheckedUpdateWithoutInReplyToInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
@@ -1381,6 +1510,9 @@ export type EmailMessageUncheckedUpdateManyWithoutInReplyToInput = {
   priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1445,6 +1577,9 @@ export type EmailMessageSelect<ExtArgs extends runtime.Types.Extensions.Internal
   priority?: boolean
   sentiment?: boolean
   isSpam?: boolean
+  language?: boolean
+  containsPii?: boolean
+  piiTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   thread?: boolean | Prisma.EmailThreadDefaultArgs<ExtArgs>
@@ -1474,6 +1609,9 @@ export type EmailMessageSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   priority?: boolean
   sentiment?: boolean
   isSpam?: boolean
+  language?: boolean
+  containsPii?: boolean
+  piiTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   thread?: boolean | Prisma.EmailThreadDefaultArgs<ExtArgs>
@@ -1500,6 +1638,9 @@ export type EmailMessageSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   priority?: boolean
   sentiment?: boolean
   isSpam?: boolean
+  language?: boolean
+  containsPii?: boolean
+  piiTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   thread?: boolean | Prisma.EmailThreadDefaultArgs<ExtArgs>
@@ -1526,11 +1667,14 @@ export type EmailMessageSelectScalar = {
   priority?: boolean
   sentiment?: boolean
   isSpam?: boolean
+  language?: boolean
+  containsPii?: boolean
+  piiTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type EmailMessageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "threadId" | "providerMessageId" | "from" | "to" | "cc" | "bcc" | "subject" | "bodyText" | "bodyHtml" | "receivedAt" | "isRead" | "inReplyToMessageId" | "aiProcessedAt" | "generationMetadata" | "category" | "priority" | "sentiment" | "isSpam" | "createdAt" | "updatedAt", ExtArgs["result"]["emailMessage"]>
+export type EmailMessageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "threadId" | "providerMessageId" | "from" | "to" | "cc" | "bcc" | "subject" | "bodyText" | "bodyHtml" | "receivedAt" | "isRead" | "inReplyToMessageId" | "aiProcessedAt" | "generationMetadata" | "category" | "priority" | "sentiment" | "isSpam" | "language" | "containsPii" | "piiTypes" | "createdAt" | "updatedAt", ExtArgs["result"]["emailMessage"]>
 export type EmailMessageInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   thread?: boolean | Prisma.EmailThreadDefaultArgs<ExtArgs>
   inReplyTo?: boolean | Prisma.EmailMessage$inReplyToArgs<ExtArgs>
@@ -1582,6 +1726,9 @@ export type $EmailMessagePayload<ExtArgs extends runtime.Types.Extensions.Intern
     priority: string | null
     sentiment: string | null
     isSpam: boolean
+    language: string | null
+    containsPii: boolean
+    piiTypes: string[]
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["emailMessage"]>
@@ -2030,6 +2177,9 @@ export interface EmailMessageFieldRefs {
   readonly priority: Prisma.FieldRef<"EmailMessage", 'String'>
   readonly sentiment: Prisma.FieldRef<"EmailMessage", 'String'>
   readonly isSpam: Prisma.FieldRef<"EmailMessage", 'Boolean'>
+  readonly language: Prisma.FieldRef<"EmailMessage", 'String'>
+  readonly containsPii: Prisma.FieldRef<"EmailMessage", 'Boolean'>
+  readonly piiTypes: Prisma.FieldRef<"EmailMessage", 'String[]'>
   readonly createdAt: Prisma.FieldRef<"EmailMessage", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"EmailMessage", 'DateTime'>
 }

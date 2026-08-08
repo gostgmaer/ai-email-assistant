@@ -7,7 +7,9 @@ from .state import ReplyState
 
 
 def load_prompt(state: ReplyState):
-    state["system_prompt"] = prompt_loader.load("reply")
+    state["system_prompt"] = state.get("system_prompt_override") or prompt_loader.load(
+        "reply"
+    )
     return state
 
 

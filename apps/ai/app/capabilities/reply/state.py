@@ -26,6 +26,7 @@ class ReplyState(TypedDict):
     tone: str
     language: str
     instruction: NotRequired[str]
+    system_prompt_override: NotRequired[str]
 
     # Runtime
     system_prompt: NotRequired[str]

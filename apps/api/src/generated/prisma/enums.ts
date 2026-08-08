@@ -58,6 +58,14 @@ export const DocumentStatus = {
 export type DocumentStatus = (typeof DocumentStatus)[keyof typeof DocumentStatus]
 
 
+export const AccountRole = {
+  OWNER: 'OWNER',
+  MEMBER: 'MEMBER'
+} as const
+
+export type AccountRole = (typeof AccountRole)[keyof typeof AccountRole]
+
+
 export const CalendarProvider = {
   GOOGLE: 'GOOGLE',
   MICROSOFT: 'MICROSOFT'

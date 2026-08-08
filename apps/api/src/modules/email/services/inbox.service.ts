@@ -1,11 +1,11 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
 import { Prisma } from '../../../generated/prisma/client';
+// Leaf-file import rather than the '../../email-account' barrel — see
+// the comment in documents.controller.ts for why (avoids a Jest-only
+// circular require).
+import { EmailAccountService } from '../../email-account/services/email-account.service';
 import { ListThreadsDto } from '../dto';
 import { NormalizedParticipant } from '../interfaces';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
@@ -15,6 +15,7 @@ export class InboxService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailProviderFactory: MailProviderFactory,
+    private readonly emailAccountService: EmailAccountService,
   ) {}
 
   async listThreads(userId: string, query: ListThreadsDto) {
@@ -64,7 +65,7 @@ export class InboxService {
     const where: Prisma.EmailThreadWhereInput = {
       account: {
         id: query.accountId,
-        userId,
+        members: { some: { userId } },
         deletedAt: null,
       },
       folder: {
@@ -93,6 +94,9 @@ export class InboxService {
             orderBy: { receivedAt: 'desc' },
             take: 1,
           },
+          assignedTo: {
+            select: { id: true, email: true, displayName: true },
+          },
           _count: { select: { messages: true } },
         },
       }),
@@ -114,7 +118,7 @@ export class InboxService {
    * DocumentsService.remove() / TasksService.updateStatus()). */
   async snooze(userId: string, threadId: string, until: Date): Promise<void> {
     const { count } = await this.prisma.emailThread.updateMany({
-      where: { id: threadId, account: { userId } },
+      where: { id: threadId, account: { members: { some: { userId } } } },
       data: { snoozedUntil: until },
     });
 
@@ -125,13 +129,107 @@ export class InboxService {
 
   async unsnooze(userId: string, threadId: string): Promise<void> {
     const { count } = await this.prisma.emailThread.updateMany({
-      where: { id: threadId, account: { userId } },
+      where: { id: threadId, account: { members: { some: { userId } } } },
       data: { snoozedUntil: null },
     });
 
     if (count === 0) {
       throw new NotFoundException('Thread not found');
     }
+  }
+
+  /**
+   * Shared Inbox (v2.0): claim/reassign/unassign a thread. Any member can
+   * do this (not owner-only) — matches how shared mailboxes elsewhere
+   * (Front, Help Scout) treat assignment as a team-workflow action, not a
+   * privileged one. `assigneeUserId: null` unassigns.
+   */
+  async assignThread(
+    userId: string,
+    threadId: string,
+    assigneeUserId: string | null | undefined,
+  ): Promise<void> {
+    const thread = await this.prisma.emailThread.findUnique({
+      where: { id: threadId },
+      select: { accountId: true },
+    });
+
+    if (!thread) {
+      throw new NotFoundException('Thread not found');
+    }
+
+    // Throws if the requester can't act on this thread's account at all.
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      thread.accountId,
+    );
+
+    if (assigneeUserId) {
+      // The assignee must themselves have Shared Inbox access to this
+      // account — assigning to someone who can't see the thread would be
+      // a dead end.
+      await this.emailAccountService.getAccessibleAccountOrThrow(
+        assigneeUserId,
+        thread.accountId,
+      );
+    }
+
+    await this.prisma.emailThread.update({
+      where: { id: threadId },
+      data: { assignedToUserId: assigneeUserId ?? null },
+    });
+  }
+
+  /** Shared Inbox (v2.0) internal note — any member can add one; never
+   * sent externally, never included in AI prompt context (see
+   * ThreadNote's schema comment). */
+  async addNote(userId: string, threadId: string, body: string) {
+    const thread = await this.prisma.emailThread.findUnique({
+      where: { id: threadId },
+      select: { accountId: true },
+    });
+
+    if (!thread) {
+      throw new NotFoundException('Thread not found');
+    }
+
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      thread.accountId,
+    );
+
+    return this.prisma.threadNote.create({
+      data: { threadId, authorId: userId, body },
+      include: {
+        author: { select: { id: true, email: true, displayName: true } },
+      },
+    });
+  }
+
+  /** Any member can delete any note on an account they have access to —
+   * matches Internal Notes being a shared team scratchpad, not a
+   * per-author-only record. Revisit if that turns out to be the wrong
+   * call once this sees real usage. */
+  async deleteNote(
+    userId: string,
+    threadId: string,
+    noteId: string,
+  ): Promise<void> {
+    const note = await this.prisma.threadNote.findUnique({
+      where: { id: noteId },
+      select: { threadId: true, thread: { select: { accountId: true } } },
+    });
+
+    if (!note || note.threadId !== threadId) {
+      throw new NotFoundException('Note not found');
+    }
+
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      note.thread.accountId,
+    );
+
+    await this.prisma.threadNote.delete({ where: { id: noteId } });
   }
 
   /**
@@ -156,7 +254,7 @@ export class InboxService {
 
     const threads = await this.prisma.emailThread.findMany({
       where: {
-        account: { userId, deletedAt: null },
+        account: { members: { some: { userId } }, deletedAt: null },
         lastMessageAt: { lt: threshold },
         OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: new Date() } }],
       },
@@ -205,6 +303,15 @@ export class InboxService {
         },
         folder: true,
         messages: { orderBy: { receivedAt: 'asc' } },
+        assignedTo: {
+          select: { id: true, email: true, displayName: true },
+        },
+        notes: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            author: { select: { id: true, email: true, displayName: true } },
+          },
+        },
       },
     });
 
@@ -212,9 +319,13 @@ export class InboxService {
       throw new NotFoundException('Thread not found');
     }
 
-    if (thread.account.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this thread');
-    }
+    // Throws NotFoundException/ForbiddenException itself — centralizing
+    // the membership check in EmailAccountService instead of duplicating
+    // an `account.members.some(...)` query per call site.
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      thread.account.id,
+    );
 
     return thread;
   }
@@ -236,9 +347,10 @@ export class InboxService {
       throw new NotFoundException('Message not found');
     }
 
-    if (message.thread.account.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this message');
-    }
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      message.thread.account.id,
+    );
 
     return message;
   }

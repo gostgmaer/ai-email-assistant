@@ -194,7 +194,13 @@ export class CalendarService {
       body.attendees = [{ email: event.attendeeEmail }];
     }
 
-    const response = await fetch(GOOGLE_EVENTS_URL, {
+    // sendUpdates defaults to not notifying anyone if omitted — without
+    // this, the attendee never gets Google's own invite email, silently.
+    // Harmless to always include: Google ignores it when there are no
+    // attendees to notify.
+    const url = `${GOOGLE_EVENTS_URL}?sendUpdates=${event.attendeeEmail ? 'all' : 'none'}`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,

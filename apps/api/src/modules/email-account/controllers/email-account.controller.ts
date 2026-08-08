@@ -25,7 +25,7 @@ import { QueueService } from '../../../infrastructure/queue';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
-import { ConnectImapDto, UpdateEmailAccountDto } from '../dto';
+import { ConnectImapDto, InviteMemberDto, UpdateEmailAccountDto } from '../dto';
 import { GoogleConnectGuard } from '../guards/google-connect.guard';
 import { MicrosoftConnectGuard } from '../guards/microsoft-connect.guard';
 import { MailConnectResult } from '../interfaces';
@@ -134,8 +134,53 @@ export class EmailAccountController {
   })
   @ApiResponse({ status: 202, description: 'Sync enqueued' })
   async triggerSync(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    await this.emailAccountService.getOwnedAccountOrThrow(user.sub, id);
+    await this.emailAccountService.getAccessibleAccountOrThrow(user.sub, id);
     await this.queueService.enqueueIncrementalSync(id);
+    return { success: true };
+  }
+
+  @Get(':id/members')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'List everyone with Shared Inbox access to this account',
+  })
+  @ApiResponse({ status: 200, description: 'The account members' })
+  async listMembers(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.emailAccountService.listMembers(user.sub, id);
+  }
+
+  @Post(':id/members')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary:
+      'Grant an existing registered user Shared Inbox access to this account (owner only)',
+  })
+  @ApiResponse({ status: 201, description: 'The membership grant' })
+  @ApiResponse({
+    status: 404,
+    description: 'No registered user with that email',
+  })
+  async inviteMember(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: InviteMemberDto,
+  ) {
+    return this.emailAccountService.inviteMember(user.sub, id, dto.email);
+  }
+
+  @Delete(':id/members/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary:
+      "Revoke a member's Shared Inbox access to this account (owner only)",
+  })
+  @ApiResponse({ status: 200, description: 'The member was removed' })
+  async removeMember(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Param('userId') targetUserId: string,
+  ) {
+    await this.emailAccountService.removeMember(user.sub, id, targetUserId);
     return { success: true };
   }
 

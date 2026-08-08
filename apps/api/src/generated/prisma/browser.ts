@@ -43,6 +43,49 @@ export type RefreshToken = Prisma.RefreshTokenModel
  */
 export type EmailAccount = Prisma.EmailAccountModel
 /**
+ * Model AccountMember
+ * *
+ *  * Shared Inbox access grant — deliberately scoped to one EmailAccount, not
+ *  * an org/workspace. See docs/v2.0-plan.md: v2.0 does account-level
+ *  * sharing, full multi-tenancy (organizations, cross-account RBAC, SSO) is
+ *  * v3.0. A row here (including the OWNER row, created alongside the
+ *  * account itself) is the single source of truth for "can this user act on
+ *  * this account" — see AccountRole's comment.
+ */
+export type AccountMember = Prisma.AccountMemberModel
+/**
+ * Model WorkflowRule
+ * *
+ *  * Workflow Builder (v2.0 §3) — a user-configurable generalization of what
+ *  * WAS three hardcoded checks (auto-send-by-category, and this same shape
+ *  * again for auto-schedule-meetings). Evaluated against NEW_MESSAGE
+ *  * classification only for now (see docs/v2.0-plan.md §3) — first
+ *  * enabled rule (ordered by `order`) whose `conditions` all match wins;
+ *  * its `actions` execute in order. No match falls through to today's
+ *  * default: draft the reply for human review.
+ *  *
+ *  * `conditions`/`actions` are typed at the application layer
+ *  * (WorkflowCondition[] / WorkflowAction[] in workflow-rule.types.ts) —
+ *  * kept as Json rather than normalized tables for the same reason
+ *  * `imapConfig`/`generationMetadata` are: the shape is genuinely
+ *  * heterogeneous (an ASSIGN_TO action carries a userId, a NOTIFY action
+ *  * carries a message) and this is a v1 rules engine, not a stable wire
+ *  * format other systems depend on yet.
+ */
+export type WorkflowRule = Prisma.WorkflowRuleModel
+/**
+ * Model Agent
+ * *
+ *  * AI Agents (v2.0 §4) — a named persona (system prompt), not new
+ *  * generation infrastructure. Layers on the existing reply capability:
+ *  * WorkflowRule's AUTO_REPLY action can carry an agentId, and when it does,
+ *  * apps/ai's reply.md default prompt is replaced entirely by this agent's
+ *  * systemPrompt (see ReplyRequest.system_prompt_override). Genuinely
+ *  * autonomous multi-step agents beyond what a WorkflowRule chain already
+ *  * does are deliberately out of scope — see docs/v2.0-plan.md §4.
+ */
+export type Agent = Prisma.AgentModel
+/**
  * Model EmailCredential
  * 
  */
@@ -67,6 +110,16 @@ export type MailFolder = Prisma.MailFolderModel
  * 
  */
 export type EmailThread = Prisma.EmailThreadModel
+/**
+ * Model ThreadNote
+ * *
+ *  * Shared Inbox (v2.0) internal note on a thread — visible only to the
+ *  * account's members, never sent to the external party or included in any
+ *  * AI prompt context. Deliberately its own model rather than reusing
+ *  * EmailMessage: a note isn't a message (no from/to/provider IDs, doesn't
+ *  * sync anywhere, can be deleted freely without touching provider state).
+ */
+export type ThreadNote = Prisma.ThreadNoteModel
 /**
  * Model EmailMessage
  * 

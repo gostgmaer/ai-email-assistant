@@ -13,7 +13,11 @@ import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner, Spinner } from "@/components/ui/Spinner";
 import { summarize, toAiThreadMessage } from "@/lib/services/ai.service";
+import { listAccountMembers } from "@/lib/services/email-accounts.service";
 import {
+  addThreadNote,
+  assignThread,
+  deleteThreadNote,
   getThread,
   markMessageRead,
   snoozeThread,
@@ -44,6 +48,8 @@ export default function ThreadPage() {
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [showNotes, setShowNotes] = useState(false);
+  const [noteText, setNoteText] = useState("");
 
   const {
     data: thread,
@@ -53,6 +59,35 @@ export default function ThreadPage() {
   } = useQuery({
     queryKey: ["thread", threadId],
     queryFn: () => getThread(threadId),
+  });
+
+  // Shared Inbox: who can this thread be assigned to. Only fetched once
+  // the account is known, so this can't run before `thread` loads.
+  const { data: members } = useQuery({
+    queryKey: ["account-members", thread?.account.id],
+    queryFn: () => listAccountMembers(thread!.account.id),
+    enabled: Boolean(thread?.account.id),
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: (assigneeUserId: string | null) =>
+      assignThread(threadId, assigneeUserId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["thread", threadId] }),
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: (body: string) => addThreadNote(threadId, body),
+    onSuccess: () => {
+      setNoteText("");
+      void queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: string) => deleteThreadNote(threadId, noteId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["thread", threadId] }),
   });
 
   const markReadMutation = useMutation({ mutationFn: markMessageRead });
@@ -135,6 +170,31 @@ export default function ThreadPage() {
         >
           {thread.account.email}
         </span>
+        {members && members.length > 1 && (
+          <select
+            value={thread.assignedTo?.id ?? ""}
+            disabled={assignMutation.isPending}
+            onChange={(event) =>
+              assignMutation.mutate(event.target.value || null)
+            }
+            aria-label="Assign this thread"
+            className="hidden shrink-0 rounded-full border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 sm:inline-block"
+          >
+            <option value="">Unassigned</option>
+            {members.map((member) => (
+              <option key={member.userId} value={member.userId}>
+                {member.user.displayName ?? member.user.email}
+              </option>
+            ))}
+          </select>
+        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => setShowNotes((v) => !v)}
+        >
+          Notes {thread.notes.length > 0 ? `(${thread.notes.length})` : ""}
+        </Button>
         {isSnoozed ? (
           <Button
             variant="secondary"
@@ -194,6 +254,60 @@ export default function ThreadPage() {
             AI Summary
           </p>
           {summary}
+        </div>
+      )}
+
+      {showNotes && (
+        <div className="shrink-0 border-b border-amber-100 bg-amber-50 px-4 py-3">
+          <p className="mb-2 text-xs font-semibold tracking-wide text-amber-700 uppercase">
+            Internal notes — never sent, only visible to this account&apos;s
+            shared inbox members
+          </p>
+          <div className="mb-2 space-y-2">
+            {thread.notes.map((note) => (
+              <div
+                key={note.id}
+                className="flex items-start justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="text-zinc-800">{note.body}</p>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    {note.author.displayName ?? note.author.email} ·{" "}
+                    {formatDateTime(note.createdAt)}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteNoteMutation.mutate(note.id)}
+                  loading={
+                    deleteNoteMutation.isPending &&
+                    deleteNoteMutation.variables === note.id
+                  }
+                >
+                  Delete
+                </Button>
+              </div>
+            ))}
+          </div>
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (noteText.trim()) addNoteMutation.mutate(noteText.trim());
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Add a note for your team…"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              className="w-full rounded-md border border-amber-200 bg-white px-3 py-1.5 text-sm"
+            />
+            <Button type="submit" size="sm" loading={addNoteMutation.isPending}>
+              Add
+            </Button>
+          </form>
         </div>
       )}
 

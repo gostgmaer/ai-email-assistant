@@ -10,6 +10,7 @@ from email.policy import default as email_default_policy
 
 import extract_msg
 import pdfplumber
+import pytesseract
 from bs4 import BeautifulSoup
 from docx import Document as DocxDocument
 from docx.table import Table as DocxTable
@@ -223,6 +224,20 @@ def _split_html(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
     )
 
 
+def _ocr_page(page: "pdfplumber.page.Page") -> str:
+    """Rasterizes a page (via pdfplumber's pypdfium2 backend — no external
+    poppler/ImageMagick dependency) and runs it through Tesseract. Used only
+    when a page's text layer is empty, i.e. it's a scanned/image-only page —
+    real text-layer pages never pay this cost. Best-effort: OCR is slow and
+    occasionally fails on unusual page content, and an OCR failure on one
+    page must not fail the whole document."""
+    try:
+        image = page.to_image(resolution=200).original
+        return pytesseract.image_to_string(image).strip()
+    except Exception:
+        return ""
+
+
 def _split_pdf(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
     chunk_size, chunk_overlap = 800, 140
     splitter = RecursiveCharacterTextSplitter(
@@ -233,6 +248,7 @@ def _split_pdf(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
     )
 
     chunks: list[RawChunk] = []
+    ocr_used = False
     with pdfplumber.open(io.BytesIO(raw_bytes)) as pdf:
         page_count = len(pdf.pages)
         for page_number, page in enumerate(pdf.pages, start=1):
@@ -251,13 +267,20 @@ def _split_pdf(raw_bytes: bytes) -> tuple[list[RawChunk], DocumentMeta]:
                     chunks.append(_table_chunk(table_md, {"page": page_number}))
 
             page_text = (page.extract_text() or "").strip()
+            if not page_text:
+                # Empty text layer almost always means a scanned/image-only
+                # page rather than a genuinely blank one — OCR it rather
+                # than silently contributing nothing for this page.
+                page_text = _ocr_page(page)
+                if page_text:
+                    ocr_used = True
             if page_text:
                 chunks.extend(
                     _split_unit(splitter, page_text, {"page": page_number})
                 )
 
     return chunks, DocumentMeta(
-        parser="pdf",
+        parser="pdf+ocr" if ocr_used else "pdf",
         splitter="recursive",
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,

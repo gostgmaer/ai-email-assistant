@@ -25,10 +25,12 @@ describe('TasksService.createFromExtraction', () => {
 
   function buildPrismaMock() {
     let nextId = 0;
-    const create = jest.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) => {
-      nextId += 1;
-      return Promise.resolve({ id: `task-${nextId}`, ...data });
-    });
+    const create = jest
+      .fn()
+      .mockImplementation(({ data }: { data: Record<string, unknown> }) => {
+        nextId += 1;
+        return Promise.resolve({ id: `task-${nextId}`, ...data });
+      });
 
     return {
       task: { create },
@@ -36,9 +38,9 @@ describe('TasksService.createFromExtraction', () => {
       // resolves once every one settles; Promise.all is an accurate stand-in
       // since our `create` mock never actually needs interactive-transaction
       // semantics.
-      $transaction: jest.fn().mockImplementation((ops: Promise<unknown>[]) =>
-        Promise.all(ops),
-      ),
+      $transaction: jest
+        .fn()
+        .mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops)),
     };
   }
 

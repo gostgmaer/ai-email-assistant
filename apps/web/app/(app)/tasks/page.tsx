@@ -400,7 +400,7 @@ export default function TasksPage() {
   const [view, setView] = useState<"tasks" | "follow-ups">("tasks");
 
   return (
-    <div className="mx-auto w-full max-w-3xl flex-1 space-y-6 p-4">
+    <div className="mx-auto w-full  flex-1 space-y-6 p-4">
       <div>
         <h1 className="text-lg font-semibold text-zinc-900">
           Tasks &amp; Follow-ups

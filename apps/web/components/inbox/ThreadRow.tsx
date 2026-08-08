@@ -100,6 +100,16 @@ export function ThreadRow({
               {thread.folder.account.email.split("@")[0]}
             </span>
           )}
+          {thread.assignedTo && (
+            <span
+              title={`Assigned to ${thread.assignedTo.displayName ?? thread.assignedTo.email}`}
+              className="ml-1.5 rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600"
+            >
+              {(thread.assignedTo.displayName ?? thread.assignedTo.email).split(
+                " ",
+              )[0]}
+            </span>
+          )}
         </p>
       </div>
 

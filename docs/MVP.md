@@ -203,8 +203,8 @@ Ship a production-ready MVP in **5 days** that allows users to sign in with thei
 - [x] Docker Compose
 - [x] Production Environment Variables (local .env; not cloud-managed secrets)
 - [x] Production Build (NODE_ENV=production images)
-- [ ] Deploy (no live cloud deployment yet — runs via local Docker Compose)
-- [ ] Documentation (this file + Swagger only; no separate deployment/runbook doc)
+- [x] Deploy (CI workflow + self-hosted VM runbook, Docker Compose + Caddy — see docs/deployment.md; actual server/DNS provisioning still needs your VM)
+- [x] Documentation (docs/deployment.md runbook, alongside this file + Swagger)
 
 ### ✅ Deliverable
 
@@ -337,12 +337,22 @@ A user should be able to:
 - [x] Opt-in full automation toggle (`EmailAccount.autoScheduleMeetings`, off by default)
 
 ## v2.0
-- [ ] Client Deployment (real hosted environment — not just local Docker Compose)
-- [ ] Shared Inbox
-- [ ] Team Collaboration
-- [ ] Workflow Builder
-- [ ] AI Agents
+- [x] Client Deployment (CI + self-hosted VM runbook, Docker Compose + Caddy; provisioning itself still needs your VM/DNS)
+- [x] Shared Inbox (account-level sharing, assign, internal notes)
+- [x] Team Collaboration (covered by Shared Inbox's membership model)
+- [x] Workflow Builder (rules engine, replaced the old hardcoded auto-send logic)
+- [x] AI Agents (persona system built and wired in, plus 5 pre-built templates)
+  - [x] Customer Support Agent (template)
+  - [x] Sales Agent (template)
+  - [x] HR Agent (template)
+  - [x] Finance Agent (template)
+  - [x] Executive Assistant (template)
+- [x] Meeting confirmation replies actually include the real calendar event link (`sendUpdates` + deterministic link-append; previously the invite silently never reached the attendee)
+- [x] Every newly-connected account is seeded with a starter Agent + a disabled catch-all auto-reply WorkflowRule, so auto-reply is one toggle away instead of an empty, undiscoverable Settings page
 
 ## v3.0
 - [ ] Multi-tenancy
-- [ ] Enterprise Features (moved from v2.0 — depends on multi-tenancy existing first)
+- [ ] Enterprise Features (RBAC, Audit Logs, SSO, SCIM, API Keys, Webhooks, Compliance, Security Controls — depends on multi-tenancy existing first)
+- [ ] Integrations (Slack, Teams, Jira, Notion, Linear, HubSpot, Salesforce, Discord — moved from v2.0, none started)
+- [ ] Analytics (Response Time, Inbox Health, Productivity Metrics, AI Usage, Team Performance, SLA Tracking — moved from v2.0, none started)
+- [ ] True multi-step Approval Chains (today's Workflow Builder only has a single auto-send-vs-draft gate, not sequential multi-person approval)
