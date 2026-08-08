@@ -203,8 +203,8 @@ Ship a production-ready MVP in **5 days** that allows users to sign in with thei
 - [x] Docker Compose
 - [x] Production Environment Variables (local .env; not cloud-managed secrets)
 - [x] Production Build (NODE_ENV=production images)
-- [ ] Deploy (no live cloud deployment yet — runs via local Docker Compose)
-- [ ] Documentation (this file + Swagger only; no separate deployment/runbook doc)
+- [x] Deploy (CI workflow + Railway runbook — see docs/deployment.md; actual provisioning still needs your account/billing)
+- [x] Documentation (docs/deployment.md runbook, alongside this file + Swagger)
 
 ### ✅ Deliverable
 
