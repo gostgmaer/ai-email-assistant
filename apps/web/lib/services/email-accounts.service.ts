@@ -56,6 +56,7 @@ export async function updateEmailAccount(
     filterBilling?: boolean;
     filterShipping?: boolean;
     filterCalendar?: boolean;
+    prohibitedPhrases?: string[];
   },
 ): Promise<EmailAccount> {
   return apiFetch<EmailAccount>(`/email-accounts/${id}`, {

@@ -73,6 +73,7 @@ export function EmailAccountCard({
   onDisconnect,
   onUpdateFilters,
   onUpdateAutoScheduleMeetings,
+  onUpdateProhibitedPhrases,
   busy,
 }: {
   account: EmailAccount;
@@ -82,6 +83,7 @@ export function EmailAccountCard({
   onDisconnect: () => void;
   onUpdateFilters: (filters: Partial<Record<SyncFilterKey, boolean>>) => void;
   onUpdateAutoScheduleMeetings: (enabled: boolean) => void;
+  onUpdateProhibitedPhrases: (phrases: string[]) => void;
   busy: boolean;
 }) {
   const [showWorkflows, setShowWorkflows] = useState(false);
@@ -89,6 +91,10 @@ export function EmailAccountCard({
   const [showMembers, setShowMembers] = useState(false);
   const [showAgents, setShowAgents] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  const [showPolicy, setShowPolicy] = useState(false);
+  const [policyInput, setPolicyInput] = useState(() =>
+    account.prohibitedPhrases.join(", "),
+  );
   const isOwner = account.myRole === "OWNER";
 
   function toggleFilter(key: SyncFilterKey) {
@@ -186,6 +192,13 @@ export function EmailAccountCard({
                 Sync filters ({activeFilterCount})
               </Button>
               <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowPolicy((v) => !v)}
+              >
+                Policy ({account.prohibitedPhrases.length})
+              </Button>
+              <Button
                 variant={account.autoScheduleMeetings ? "primary" : "secondary"}
                 size="sm"
                 disabled={busy}
@@ -244,6 +257,40 @@ export function EmailAccountCard({
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {showPolicy && (
+        <div className="mt-4 border-t border-zinc-100 pt-3">
+          <p className="mb-2 text-xs text-zinc-500">
+            Case-insensitive phrases that block an AI reply from auto-sending
+            if present (e.g. &quot;refund&quot;, &quot;guarantee&quot;) — held
+            for review instead. Empty by default; nothing is pre-populated,
+            since this account defines its own policy.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Comma-separated, e.g. refund, guarantee, discount"
+              value={policyInput}
+              onChange={(e) => setPolicyInput(e.target.value)}
+              className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 text-sm"
+            />
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                onUpdateProhibitedPhrases(
+                  policyInput
+                    .split(",")
+                    .map((phrase) => phrase.trim())
+                    .filter(Boolean),
+                )
+              }
+            >
+              Save
+            </Button>
           </div>
         </div>
       )}

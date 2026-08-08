@@ -38,6 +38,7 @@ export interface EmailAccount {
   filterBilling: boolean;
   filterShipping: boolean;
   filterCalendar: boolean;
+  prohibitedPhrases: string[];
   createdAt: string;
   /** This user's Shared Inbox role on this account — OWNER can change
    * settings/disconnect/invite members, MEMBER can only work threads. */
