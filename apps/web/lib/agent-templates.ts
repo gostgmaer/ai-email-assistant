@@ -1,9 +1,13 @@
 /**
  * Starter personas for the Agent creation form — pre-fill only, never
- * auto-created. Matches the five named agents docs/roadmap.md's original
- * v2.0 section calls out; the generic persona system (Agent.systemPrompt)
- * already supports any of these, this just saves someone from writing a
- * complete system prompt from scratch.
+ * auto-created (the one exception: EmailAccountService seeds a starter
+ * Agent using this same Personal Assistant persona for every newly
+ * connected account — see its DEFAULT_AGENT_SYSTEM_PROMPT). Personal
+ * Assistant is listed first since most individual users want this, not
+ * one of the business-role personas below (which match the five named
+ * agents docs/roadmap.md's original v2.0 section calls out). The generic
+ * persona system (Agent.systemPrompt) already supports any of these, this
+ * just saves someone from writing a complete system prompt from scratch.
  */
 export interface AgentTemplate {
   name: string;
@@ -11,6 +15,11 @@ export interface AgentTemplate {
 }
 
 export const AGENT_TEMPLATES: AgentTemplate[] = [
+  {
+    name: "Personal Assistant",
+    systemPrompt:
+      "You are a personal assistant replying on behalf of this individual's own inbox — not a business representative. Keep the tone warm and natural, matching how casually or formally the other person wrote. Handle everyday personal correspondence: confirming plans, replying to friends or family, routine appointments and admin. Never invent personal details, plans, or commitments that aren't already in the thread — if it's unclear what this person would want to say, keep the reply short and note what's uncertain rather than guessing on their behalf.",
+  },
   {
     name: "Customer Support Agent",
     systemPrompt:

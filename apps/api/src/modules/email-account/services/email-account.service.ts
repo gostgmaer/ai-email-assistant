@@ -18,6 +18,14 @@ import { refreshOAuthToken } from '../../oauth';
 import { ConnectImapDto } from '../dto';
 import { ImapConfig, MailConnectResult } from '../interfaces';
 
+// Matches apps/web/lib/agent-templates.ts's "Personal Assistant" template
+// word-for-word — most individual users connecting an inbox want this, not
+// one of the business-role personas, so it's what gets seeded automatically.
+const DEFAULT_AGENT_NAME = 'Personal Assistant';
+const DEFAULT_AGENT_SYSTEM_PROMPT =
+  "You are a personal assistant replying on behalf of this individual's own inbox — not a business representative. Keep the tone warm and natural, matching how casually or formally the other person wrote. Handle everyday personal correspondence: confirming plans, replying to friends or family, routine appointments and admin. Never invent personal details, plans, or commitments that aren't already in the thread — if it's unclear what this person would want to say, keep the reply short and note what's uncertain rather than guessing on their behalf.";
+const DEFAULT_WORKFLOW_RULE_NAME = 'Auto-reply — all messages (starter rule)';
+
 @Injectable()
 export class EmailAccountService {
   private readonly logger = new Logger(EmailAccountService.name);
@@ -177,6 +185,9 @@ export class EmailAccountService {
     });
 
     await this.ensureOwnerMembership(account.id, userId);
+    if (!existing) {
+      await this.seedDefaultAutomation(account.id);
+    }
     await this.queueService.enqueueInitialSync(account.id);
 
     return account;
@@ -250,6 +261,9 @@ export class EmailAccountService {
     });
 
     await this.ensureOwnerMembership(account.id, userId);
+    if (!existing) {
+      await this.seedDefaultAutomation(account.id);
+    }
     await this.queueService.enqueueInitialSync(account.id);
 
     return account;
@@ -266,6 +280,40 @@ export class EmailAccountService {
       where: { accountId_userId: { accountId, userId } },
       create: { accountId, userId, role: 'OWNER' },
       update: {},
+    });
+  }
+
+  /**
+   * Gives every newly-connected account a working starter Agent + auto-reply
+   * WorkflowRule instead of leaving Settings empty — otherwise "auto-reply"
+   * is a feature that exists in the schema but that nobody discovers on
+   * their own. The rule is created **disabled**: this only makes auto-reply
+   * one click away in Settings, it does not start sending real email
+   * replies without the account owner opting in — same human-approval-first
+   * posture as autoScheduleMeetings and every other auto-send toggle in
+   * this codebase. Only called for genuinely new accounts (not reconnects),
+   * so it never fights with a user who already deleted or edited the
+   * starter rule.
+   */
+  private async seedDefaultAutomation(accountId: string): Promise<void> {
+    const agent = await this.prisma.agent.create({
+      data: {
+        accountId,
+        name: DEFAULT_AGENT_NAME,
+        systemPrompt: DEFAULT_AGENT_SYSTEM_PROMPT,
+        enabled: true,
+      },
+    });
+
+    await this.prisma.workflowRule.create({
+      data: {
+        accountId,
+        name: DEFAULT_WORKFLOW_RULE_NAME,
+        enabled: false,
+        order: 1000,
+        conditions: [],
+        actions: [{ type: 'AUTO_REPLY', agentId: agent.id }],
+      },
     });
   }
 

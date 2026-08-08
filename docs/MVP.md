@@ -341,12 +341,14 @@ A user should be able to:
 - [x] Shared Inbox (account-level sharing, assign, internal notes)
 - [x] Team Collaboration (covered by Shared Inbox's membership model)
 - [x] Workflow Builder (rules engine, replaced the old hardcoded auto-send logic)
-- [x] AI Agents (persona system built and wired in; pre-built templates for the 5 named personas below still pending)
-  - [ ] Customer Support Agent (template)
-  - [ ] Sales Agent (template)
-  - [ ] HR Agent (template)
-  - [ ] Finance Agent (template)
-  - [ ] Executive Assistant (template)
+- [x] AI Agents (persona system built and wired in, plus 5 pre-built templates)
+  - [x] Customer Support Agent (template)
+  - [x] Sales Agent (template)
+  - [x] HR Agent (template)
+  - [x] Finance Agent (template)
+  - [x] Executive Assistant (template)
+- [x] Meeting confirmation replies actually include the real calendar event link (`sendUpdates` + deterministic link-append; previously the invite silently never reached the attendee)
+- [x] Every newly-connected account is seeded with a starter Agent + a disabled catch-all auto-reply WorkflowRule, so auto-reply is one toggle away instead of an empty, undiscoverable Settings page
 
 ## v3.0
 - [ ] Multi-tenancy
