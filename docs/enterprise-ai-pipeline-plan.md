@@ -6,7 +6,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 **How to read the status column:** ✅ Built · 🟡 Partial (something exists but doesn't do what the name implies) · ⬜ Not started.
 
-**Update:** the whole "Small" list (language detection, PII detection, wiring `summarize` into the pipeline, OCR), a minimal version of the "Medium" output validation pipeline (output-side PII scan + a second-LLM-call "does this reply address the thread" check, both gating auto-send), and CRM v1 with a Settings UI panel (`apps/api/src/modules/crm` — structured `Contact` records, member-accessible CRUD, `lastContactedAt` auto-updated by the pipeline on an existing match) have all since shipped — see §2–§4, §6, §7 below. §1's Deduplication/Metadata extraction and §3's Spam detection also turned out to already be complete on closer inspection (the original audit undersold them) — see their rows. Document language detection (`Document.language`, via `langdetect`) has also shipped, closing §3's one remaining doc-side gap. Only multi-agent orchestration, the learning pipeline, and confidence scoring remain — see "What needs to be covered" below for why each is blocked on a decision rather than just unbuilt.
+**Update:** the whole "Small" list, a minimal "Medium" output validation pipeline, and CRM v1 with a Settings UI panel have all shipped — see §2–§4, §6, §7. §1 and §3 are now fully built end to end (Dedup/Metadata/Spam turned out already complete; document language detection shipped via `langdetect`). Multi-agent orchestration is now scoped in `docs/multi-agent-orchestration-plan.md`, and its cheapest slice (Option A — CRM data grounding replies) has shipped too, see §4/§5. Remaining: multi-agent orchestration's Option B (Calendar Agent — needs a decision first), the learning pipeline, and confidence scoring.
 
 ---
 
@@ -52,17 +52,17 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 | Item | Status | Evidence |
 |---|---|---|
 | Workflow router | ✅ | `WorkflowRuleService.evaluate`/`executeActions` — category/priority/sender conditions → AUTO_REPLY/ASSIGN_TO/NOTIFY/REQUIRE_APPROVAL |
-| Specialized agents (Calendar/Task/Support/Sales/CRM/Knowledge as separate executable units) | 🟡 — **this is the biggest conceptual gap** | `Agent` is `{name, systemPrompt, enabled}` — a system-prompt override on **one shared** `generateReply` call. There is no per-agent tool access, no parallel execution, no agent-specific logic. "Calendar Agent" in the vision doc implies something that checks availability and creates events as part of answering a message; today, calendar scheduling is a **separate, human-triggered flow** (`MeetingSchedulingService`), not something a "Calendar Agent" invokes mid-reply. |
+| Specialized agents (Calendar/Task/Support/Sales/CRM/Knowledge as separate executable units) | 🟡 | `Agent` is still `{name, systemPrompt, enabled}` — a system-prompt override on **one shared** `generateReply` call, no per-agent tool access or parallel execution. What's new: the reply's context is now enriched from multiple real sources (contact-memory, RAG documents, and CRM `Contact` data — see `docs/multi-agent-orchestration-plan.md` §A), so it's closer to "orchestrated" than a bare persona override, even though it's still one LLM call, not parallel agents feeding an aggregator. |
 | CRM functionality | 🟡 | v1 shipped: `Contact` model (`apps/api/src/modules/crm`) — structured, member-accessible, user-created records (email/name/company/phone/notes/tags/status), auto-updated `lastContactedAt` from the pipeline, plus a Settings UI panel (`ContactsPanel`). Still missing: pipeline/deal stages, lead qualification, pricing lookup |
 | Knowledge Agent / RAG search+rerank | ✅ | Real pipeline: pgvector cosine search with metadata filtering, then MMR re-ranking over a wider candidate pool |
 
-**Verdict:** the Workflow Router and RAG pipeline are genuinely built and load-bearing. "Specialized agents" as the vision doc means them — separate units with their own tools, running in parallel, feeding a shared aggregator — do not exist. Today's "Agent" is a persona/tone layer on top of one reply call, not an orchestration primitive. CRM now has a real data layer (v1), but nothing resembling a "CRM Agent" invoking it mid-reply — that's downstream of multi-agent orchestration, still not started.
+**Verdict:** the Workflow Router and RAG pipeline are genuinely built and load-bearing. "Specialized agents" as the vision doc means them — separate units with their own tools, running in parallel, feeding a shared aggregator — do not exist, and won't without the architecture decision in `docs/multi-agent-orchestration-plan.md`. What's shipped instead (its Option A): CRM data now actively grounds replies the same way contact-memory/RAG already did — real value, without the execution-model risk. Calendar Agent (Option B) is the next scoped piece if wanted; it needs one more decision first (can a reply suggest a specific time without human review of availability, or only offer to check).
 
 ## 5. Orchestration & LLM
 
 | Item | Status | Evidence |
 |---|---|---|
-| Prompt construction (system + tenant + history + RAG + workflow-results merge) | 🟡 | Simpler in practice: `SystemMessage` (default `reply.md` or an agent's override) + one `HumanMessage` per thread email + one optional trailing instruction block (contact-memory facts + RAG snippets). No "tenant prompt" layer (no multi-tenancy yet — see v3.0), no structured "workflow results" injection beyond the agent override itself. |
+| Prompt construction (system + tenant + history + RAG + workflow-results merge) | 🟡 | Simpler in practice: `SystemMessage` (default `reply.md` or an agent's override) + one `HumanMessage` per thread email + one optional trailing instruction block — now three real sources merged in (contact-memory facts, RAG document snippets, CRM `Contact` data). No "tenant prompt" layer (no multi-tenancy yet — see v3.0), no structured "workflow results" injection from parallel agents (there are none yet — see §4). |
 | Multi-provider LLM routing | ✅ | `LLM_PROVIDER` config switches among **6** providers: OpenAI, Google/Gemini, Anthropic/Claude, Groq, Ollama (local), OpenRouter — actually exceeds the vision doc's 4 |
 
 **Verdict:** LLM routing is already ahead of the vision doc. Prompt construction is simpler than the target but functional — the gap is really "no workflow-results aggregation" because there's no multi-agent execution to aggregate (see §4).
@@ -119,7 +119,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 **Large (genuinely new subsystems, each deserving its own plan doc before implementation, same way v2.0's four areas each got scoped separately):**
 - ✅ **CRM v1 shipped** (contact records + Settings UI panel — see §4/§7) — **still open:** pipeline/deal stages, lead qualification, pricing lookup
-- **Multi-agent parallel orchestration** — turning "Agent" from a prompt override into actual separate units (Calendar/Task/Sales/CRM/Support) that can each run, return structured results, and feed a real aggregator. This is an architecture change to `AiProcessingProcessor`/`reply` graph, not an incremental addition — worth its own design pass (parallel execution + aggregation + failure handling per agent all need real decisions). Would be the thing that actually wires the new CRM data into a reply, e.g. via a "CRM Agent."
+- **Multi-agent parallel orchestration** — scoped in `docs/multi-agent-orchestration-plan.md`. Option A (✅ shipped — CRM data now grounds replies, no architecture change) was the cheap, safe slice. Option B (Calendar Agent + per-rule agent selection) is next if wanted, but needs a decision on how far into autonomous scheduling-suggestion behavior a reply should go. Option C (true parallel agent execution + aggregator) is explicitly not scoped yet — premature before B proves the shape is worth it.
 - **Learning pipeline** — feedback capture, prompt optimization, auto-updating the knowledge base, model evaluation. Depends on having enough real usage data to be worth building at all; premature before the app has real production traffic.
 
 **Already planned elsewhere — don't duplicate:**
@@ -129,4 +129,7 @@ Source vision doc: [`apps/ai/addd.md`](../apps/ai/addd.md) — a target-state ar
 
 ## Recommended next step
 
-Small, Medium, and CRM v1 (data layer + UI panel) are all done. What's left: multi-agent orchestration, the learning pipeline, and confidence scoring (blocked on a decision — where does the score come from). Multi-agent orchestration and the learning pipeline each still deserve their own short scoping pass before any code, the same way each of v2.0's four sections got one — multi-agent orchestration in particular is an architecture change to `AiProcessingProcessor`, not an incremental addition.
+Small, Medium, CRM v1, §1, §3, and multi-agent orchestration's Option A are all done. What's left, each blocked on a real decision rather than just unbuilt:
+- **Multi-agent orchestration Option B** (Calendar Agent) — needs a decision: can a reply suggest a specific time without a human reviewing availability first, or should it only offer to check? See `docs/multi-agent-orchestration-plan.md`.
+- **Learning pipeline** — needs real production traffic to be worth building; premature right now.
+- **Confidence scoring** — needs a decided score source (LLM self-report? a second classifier?).

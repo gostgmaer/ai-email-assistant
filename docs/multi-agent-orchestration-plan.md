@@ -35,9 +35,9 @@ The honest read: this already *is* a form of orchestration — several capabilit
 
 ## Three ways to close the gap, smallest to largest
 
-### Option A — Enrich context, no architecture change (~1 day)
+### Option A — Enrich context, no architecture change — ✅ shipped
 
-Add `Contact` lookup (already built, §CRM v1) to `buildContextInstruction`, the same way `contactMemory` and RAG document matches already get merged in: if the sender matches an existing `Contact`, include their name/company/status/tags/last-contacted in the instruction block the LLM sees.
+Added `Contact` lookup (already built, §CRM v1) to `buildContextInstruction`, the same way `contactMemory` and RAG document matches already get merged in: if the sender matches an existing `Contact`, its status/company/notes/lastContactedAt are included in the instruction block the LLM sees. `ContactService.findByEmail` (read-only, no ownership check — background pipeline) + `GenerationMetadata.crmContactUsed` for the audit trail.
 
 - **Risk:** near zero. Same shape as three things already in that function.
 - **Value:** a reply can now say "since you're already a customer..." or route tone based on `status`. This is most of what a "CRM Agent" would contribute in practice, without inventing an agent execution model.
@@ -69,4 +69,4 @@ Not scoping this further now — not worth the design cost until Option B's Cale
 
 ## Recommendation
 
-**Start with Option A now** (near-zero risk, real value, an hour of work) and **fold Option B's Calendar Agent in as the next scoped piece** if you want to keep going after that — it's the first thing that actually needs the "agent" concept to mean more than a prompt override, and it's small enough to design-review in one pass rather than needing its own doc. Hold Option C until B ships and there's a second real capability agent that justifies the parallel-execution machinery — building the aggregator for one agent is premature.
+Option A is done. **Option B's Calendar Agent is the next scoped piece** if you want to keep going — it's the first thing that actually needs the "agent" concept to mean more than a prompt override, and it's small enough to design-review in one pass rather than needing its own doc. It does need a real decision before code, though: should a calendar-aware reply ever suggest a specific time without a human reviewing availability first, or should it stay at "I'll check and follow up"? That's a step further into autonomous behavior than anything else this session shipped. Hold Option C until B ships and there's a second real capability agent that justifies the parallel-execution machinery — building the aggregator for one agent is premature.
