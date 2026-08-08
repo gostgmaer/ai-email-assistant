@@ -20,6 +20,11 @@ from app.capabilities.contact_memory.schemas import (
     ContactMemoryResponse,
 )
 from app.capabilities.contact_memory.graph import contact_memory_graph
+from app.capabilities.validate_reply.schemas import (
+    ValidateReplyRequest,
+    ValidateReplyResponse,
+)
+from app.capabilities.validate_reply.graph import validate_reply_graph
 class EmailAIService:
     """Email AI service."""
 
@@ -108,6 +113,22 @@ class EmailAIService:
         return ContactMemoryResponse(
             facts=result["facts"],
             embedding=result["embedding"],
+            provider=result["provider"],
+            model=result["model"],
+            usage=result["usage"],
+        )
+
+    async def validate_reply(
+        self,
+        request: ValidateReplyRequest,
+    ) -> ValidateReplyResponse:
+        """Check a drafted reply against its thread before it's allowed to
+        auto-send."""
+
+        result = await validate_reply_graph.ainvoke(request.model_dump())
+
+        return ValidateReplyResponse(
+            validation=result["validation"],
             provider=result["provider"],
             model=result["model"],
             usage=result["usage"],

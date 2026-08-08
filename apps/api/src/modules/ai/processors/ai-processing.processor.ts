@@ -35,6 +35,7 @@ import {
   ContactMemoryMatch,
   ContactMemoryService,
 } from '../services/contact-memory.service';
+import { scanOutputForPii } from '../utils/output-pii-scan.util';
 
 interface AiProcessingJobData {
   messageId: string;
@@ -222,6 +223,15 @@ export class AiProcessingProcessor extends WorkerHost {
       })),
     };
 
+    // Output validation (minimal first pass — see docs/enterprise-ai-pipeline-plan.md
+    // §6): a deterministic scan of what the LLM actually generated, not
+    // just the account's own settings. Catches an LLM inventing a
+    // plausible-looking SSN/account number that was never in the thread —
+    // the input-side classification alone can't catch that, since it only
+    // ever looks at the INCOMING message. Free (regex, no LLM call), so
+    // computed unconditionally rather than gated behind matchedActions.
+    const outputPiiScan = scanOutputForPii(reply.reply);
+
     // Workflow Builder (v2.0 §3): the account's WorkflowRule rows decide
     // whether this reply auto-sends (and any other actions — assign,
     // notify). matchedActions was already computed above (before reply
@@ -235,14 +245,50 @@ export class AiProcessingProcessor extends WorkerHost {
         matchedActions,
         { accountId: account.id, threadId: message.threadId, messageId },
       );
-      // Hard safety rail, not rule-overridable: classify.md's prompt
-      // returns "Urgent" (capitalized) — matched case-insensitively here.
-      // A past bug compared against lowercase 'urgent' directly and so
-      // never actually excluded urgent messages from auto-send; keeping
-      // the same guarantee even though the decision now otherwise comes
-      // from rules.
+
+      // Hard safety rails, not rule-overridable, cheapest first — each
+      // short-circuits before paying for the next:
+      // - classify.md's prompt returns "Urgent" (capitalized) — matched
+      //   case-insensitively here. A past bug compared against lowercase
+      //   'urgent' directly and so never actually excluded urgent
+      //   messages from auto-send; keeping the same guarantee even
+      //   though the decision now otherwise comes from rules.
+      // - outputPiiScan: never auto-send text that looks like it
+      //   contains an SSN/account number.
+      // - validateReply: a second, more expensive LLM call checking the
+      //   draft actually addresses the thread — only paid for once the
+      //   cheaper rails already passed and this is genuinely the last
+      //   thing standing between the reply and a real auto-send. A
+      //   message that was always going to be drafted for human review
+      //   doesn't need it — the human already provides this check.
+      const passesUrgentRail =
+        classification.priority.toLowerCase() !== 'urgent';
+      const passesPiiRail = !outputPiiScan.detected;
+
+      let passesValidationRail = false;
+      if (autoReply && passesUrgentRail && passesPiiRail) {
+        const { validation } = await this.aiClientService.validateReply(
+          subject,
+          thread,
+          reply.reply,
+        );
+        passesValidationRail = validation.addressesThread;
+
+        if (!passesValidationRail) {
+          this.logger.warn(
+            `Generated reply for message ${messageId} was held for review — doesn't address the thread (${validation.concerns.join(', ') || 'no specific concern given'}).`,
+          );
+        }
+      }
+
       isSafeToAutoSend =
-        autoReply && classification.priority.toLowerCase() !== 'urgent';
+        autoReply && passesUrgentRail && passesPiiRail && passesValidationRail;
+    }
+
+    if (outputPiiScan.detected) {
+      this.logger.warn(
+        `Generated reply for message ${messageId} contains a possible ${outputPiiScan.types.join(', ')} — will not auto-send regardless of matching rules.`,
+      );
     }
 
     if (isSafeToAutoSend) {

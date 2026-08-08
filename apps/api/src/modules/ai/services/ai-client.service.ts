@@ -53,6 +53,18 @@ export interface ClassifyResponse {
   usage: TokenUsage;
 }
 
+export interface ReplyValidationResult {
+  addressesThread: boolean;
+  concerns: string[];
+}
+
+export interface ValidateReplyResponse {
+  validation: ReplyValidationResult;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
 export interface ExtractionResult {
   people: string[];
   emails: string[];
@@ -134,6 +146,18 @@ interface RawClassificationResult {
 
 interface RawClassifyResponse {
   classification: RawClassificationResult;
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
+interface RawReplyValidationResult {
+  addresses_thread: boolean;
+  concerns: string[];
+}
+
+interface RawValidateReplyResponse {
+  validation: RawReplyValidationResult;
   provider: string;
   model: string;
   usage: RawUsage;
@@ -341,6 +365,31 @@ export class AiClientService {
         language: res.classification.language,
         containsPii: res.classification.contains_pii,
         piiTypes: res.classification.pii_types,
+      },
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
+  }
+
+  /** Output validation (v2.0+ pipeline hardening — see
+   * docs/enterprise-ai-pipeline-plan.md §6): checks a drafted reply
+   * against its own thread before AiProcessingProcessor allows it to
+   * auto-send. */
+  async validateReply(
+    subject: string,
+    thread: EmailMessageDto[],
+    draftReply: string,
+  ): Promise<ValidateReplyResponse> {
+    const res = await this.post<RawValidateReplyResponse>(
+      '/email/validate-reply',
+      { subject, thread, draft_reply: draftReply },
+    );
+
+    return {
+      validation: {
+        addressesThread: res.validation.addresses_thread,
+        concerns: res.validation.concerns,
       },
       provider: res.provider,
       model: res.model,
