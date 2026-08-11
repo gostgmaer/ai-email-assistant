@@ -49,6 +49,18 @@ export const envSchema = z.object({
   SLACK_CLIENT_SECRET: z.string().optional(),
   SLACK_CALLBACK_URL: z.string().optional(),
 
+  // Microsoft Teams — reuses the same Azure AD app registration as
+  // MICROSOFT_CLIENT_ID/SECRET above (Microsoft Graph), just a different
+  // redirect URI and scope set (Team.ReadBasic.All, Channel.ReadBasic.All,
+  // ChannelMessage.Send) requested at connect time. Optional, same posture
+  // as Slack above.
+  MICROSOFT_TEAMS_CALLBACK_URL: z.string().optional(),
+
+  // HubSpot — optional, same posture as Slack above.
+  HUBSPOT_CLIENT_ID: z.string().optional(),
+  HUBSPOT_CLIENT_SECRET: z.string().optional(),
+  HUBSPOT_CALLBACK_URL: z.string().optional(),
+
   // AI
   AI_SERVICE_URL: z.url(),
   AI_SERVICE_API_KEY: z.string().optional(),

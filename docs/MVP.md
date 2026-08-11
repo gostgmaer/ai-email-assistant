@@ -353,10 +353,10 @@ A user should be able to:
 ## v3.0
 - [ ] Multi-tenancy
 - [ ] Enterprise Features (RBAC, Audit Logs, SSO, SCIM, API Keys, Webhooks, Compliance, Security Controls — depends on multi-tenancy existing first)
-- [ ] Integrations (moved from v2.0, phase 1 in progress — build incrementally, starting with the highest-value few and adding the rest over time)
+- [x] Integrations phase 1 (Slack, Teams, HubSpot) — moved from v2.0; phase 2 (Jira, Notion, Linear, Salesforce, Discord) not started
   - [x] Slack — OAuth connect (per-account, mirrors Google/Microsoft connect flow), channel picker, and a `POST_TO_SLACK` Workflow rule action (e.g. "notify #support when a thread is assigned"). Built end-to-end first as the template for Teams/HubSpot, per docs/v2.0-plan.md §5.
-  - [ ] Microsoft Teams (phase 1)
-  - [ ] HubSpot (phase 1)
+  - [x] Microsoft Teams — OAuth via the same Azure AD app registration as Microsoft mail/calendar (Graph scopes: Team/Channel.ReadBasic.All, ChannelMessage.Send, offline_access, real refresh-token handling since Graph tokens expire ~1hr). Two-level team → channel picker (`GET /integrations/:id/teams-channels`) and a `POST_TO_TEAMS` Workflow rule action.
+  - [x] HubSpot — OAuth (refreshable, ~30min token expiry) and a `CREATE_HUBSPOT_CONTACT` Workflow rule action that upserts the matched message's sender as a HubSpot contact via the CRM v3 batch-upsert endpoint (keyed on email).
   - [ ] Jira (phase 2)
   - [ ] Notion (phase 2)
   - [ ] Linear (phase 2)

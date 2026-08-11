@@ -37,6 +37,24 @@ export type WorkflowAction =
       channelId: string;
       message?: string;
     }
+  /** Post a message to a Microsoft Teams channel via a connected
+   * Integration (v3.0, same shape as POST_TO_SLACK) — integrationId must
+   * reference a TEAMS Integration on this same account; teamId/channelId
+   * identify the specific channel (Teams' two-level team → channel
+   * hierarchy, unlike Slack's flat channel list). */
+  | {
+      type: 'POST_TO_TEAMS';
+      integrationId: string;
+      teamId: string;
+      channelId: string;
+      message?: string;
+    }
+  /** Create or update a HubSpot contact for the message's sender via a
+   * connected Integration (v3.0, same best-effort posture as
+   * POST_TO_SLACK) — integrationId must reference a HUBSPOT Integration
+   * on this same account. The sender's email/name come from the message
+   * being processed, not user input — see WorkflowRuleService.executeActions. */
+  | { type: 'CREATE_HUBSPOT_CONTACT'; integrationId: string }
   /** Explicit no-op: falls through to the existing default (draft the
    * reply for human review). Exists so a rule can be written to say "for
    * messages matching X, don't auto-reply" without needing an empty

@@ -30,6 +30,8 @@ const ACTION_TYPES: WorkflowAction['type'][] = [
   'ASSIGN_TO',
   'NOTIFY',
   'POST_TO_SLACK',
+  'POST_TO_TEAMS',
+  'CREATE_HUBSPOT_CONTACT',
   'REQUIRE_APPROVAL',
   'REQUIRE_APPROVAL_CHAIN',
 ];
@@ -44,6 +46,10 @@ export interface WorkflowActionContext {
   accountId: string;
   threadId: string;
   messageId: string;
+  // Only needed for CREATE_HUBSPOT_CONTACT — the sender of the message
+  // that triggered this rule, not user input.
+  senderEmail: string;
+  senderName?: string;
 }
 
 @Injectable()
@@ -230,6 +236,29 @@ export class WorkflowRuleService {
                 `A workflow rule matched a new message (thread ${context.threadId}).`,
             );
             break;
+
+          case 'POST_TO_TEAMS':
+            await this.integrationService.postToTeamsChannel(
+              action.integrationId,
+              action.teamId,
+              action.channelId,
+              action.message ??
+                `A workflow rule matched a new message (thread ${context.threadId}).`,
+            );
+            break;
+
+          case 'CREATE_HUBSPOT_CONTACT': {
+            const [firstName, ...rest] = (context.senderName ?? '').split(' ');
+            await this.integrationService.upsertHubspotContact(
+              action.integrationId,
+              {
+                email: context.senderEmail,
+                firstName: firstName || undefined,
+                lastName: rest.join(' ') || undefined,
+              },
+            );
+            break;
+          }
         }
       } catch (error) {
         this.logger.warn(
@@ -332,6 +361,38 @@ export class WorkflowRuleService {
             'action.channelId is required for POST_TO_SLACK',
           );
         }
+      }
+
+      if (a.type === 'POST_TO_TEAMS') {
+        const teamsAction = a as {
+          integrationId?: unknown;
+          teamId?: unknown;
+          channelId?: unknown;
+        };
+        if (typeof teamsAction.integrationId !== 'string') {
+          throw new BadRequestException(
+            'action.integrationId is required for POST_TO_TEAMS',
+          );
+        }
+        if (typeof teamsAction.teamId !== 'string') {
+          throw new BadRequestException(
+            'action.teamId is required for POST_TO_TEAMS',
+          );
+        }
+        if (typeof teamsAction.channelId !== 'string') {
+          throw new BadRequestException(
+            'action.channelId is required for POST_TO_TEAMS',
+          );
+        }
+      }
+
+      if (
+        a.type === 'CREATE_HUBSPOT_CONTACT' &&
+        typeof (a as { integrationId?: unknown }).integrationId !== 'string'
+      ) {
+        throw new BadRequestException(
+          'action.integrationId is required for CREATE_HUBSPOT_CONTACT',
+        );
       }
 
       if (a.type === 'REQUIRE_APPROVAL_CHAIN') {

@@ -8,9 +8,11 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
 import { EmailAccountModule } from '../email-account';
 import { IntegrationController } from './controllers/integration.controller';
+import { HubspotService } from './services/hubspot.service';
 import { IntegrationConnectStateService } from './services/integration-connect-state.service';
 import { IntegrationService } from './services/integration.service';
 import { SlackService } from './services/slack.service';
+import { TeamsService } from './services/teams.service';
 
 // AuthModule doesn't depend back on this module, but forwardRef() is still
 // required here: AuthModule's own load (triggered near the top of
@@ -26,7 +28,13 @@ import { SlackService } from './services/slack.service';
 
   controllers: [IntegrationController],
 
-  providers: [IntegrationService, SlackService, IntegrationConnectStateService],
+  providers: [
+    IntegrationService,
+    SlackService,
+    TeamsService,
+    HubspotService,
+    IntegrationConnectStateService,
+  ],
 
   exports: [IntegrationService],
 })

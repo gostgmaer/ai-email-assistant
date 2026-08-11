@@ -11,7 +11,7 @@ const CONNECT_STATE_TTL = '10m';
  * generalizing ConnectStateService — that one is shared by two existing,
  * working flows (mail, calendar) and isn't worth risking for a third,
  * differently-shaped consumer. */
-export type IntegrationProviderName = 'SLACK';
+export type IntegrationProviderName = 'SLACK' | 'TEAMS' | 'HUBSPOT';
 
 interface IntegrationConnectStatePayload {
   purpose: 'integration-connect';

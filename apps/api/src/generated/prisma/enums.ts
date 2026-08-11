@@ -86,7 +86,9 @@ export type ApprovalStepStatus = (typeof ApprovalStepStatus)[keyof typeof Approv
 
 
 export const IntegrationProvider = {
-  SLACK: 'SLACK'
+  SLACK: 'SLACK',
+  TEAMS: 'TEAMS',
+  HUBSPOT: 'HUBSPOT'
 } as const
 
 export type IntegrationProvider = (typeof IntegrationProvider)[keyof typeof IntegrationProvider]

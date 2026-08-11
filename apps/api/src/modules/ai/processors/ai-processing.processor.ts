@@ -293,6 +293,8 @@ export class AiProcessingProcessor extends WorkerHost {
           accountId: account.id,
           threadId: message.threadId,
           messageId,
+          senderEmail: sender.address,
+          senderName: sender.name,
         });
       approvalChainApproverUserIds = chainApprovers;
 

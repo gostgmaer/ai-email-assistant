@@ -16,16 +16,19 @@ import type * as Prisma from "../internal/prismaNamespace"
  * Model Integration
  * *
  *  * v3.0 Integrations (docs/MVP.md) — external services a WorkflowRule's
- *  * actions can post to (e.g. POST_TO_SLACK). Scoped to an EmailAccount, not
- *  * a User: same shape as Agent/WorkflowRule, since a connection is meant to
- *  * be used by that account's rules, and different accounts may want
- *  * different Slack workspaces. Slack is the first provider — built
- *  * end-to-end as the template for Teams/HubSpot/etc. (see
- *  * docs/v2.0-plan.md §5, which explicitly recommends this over building a
- *  * generic "integrations framework" speculatively). Token storage mirrors
- *  * EmailCredential (AES-256-GCM via EncryptionService); unlike OAuth mail
- *  * tokens, Slack bot tokens don't expire/rotate, so there's no
- *  * refreshToken/expiresAt to track.
+ *  * actions can post to (e.g. POST_TO_SLACK, POST_TO_TEAMS,
+ *  * CREATE_HUBSPOT_CONTACT). Scoped to an EmailAccount, not a User: same
+ *  * shape as Agent/WorkflowRule, since a connection is meant to be used by
+ *  * that account's rules, and different accounts may want different
+ *  * workspaces/tenants/portals. Slack was the first provider, built
+ *  * end-to-end as the template for the rest (see docs/v2.0-plan.md §5,
+ *  * which explicitly recommends this over building a generic "integrations
+ *  * framework" speculatively) — Teams and HubSpot follow the exact same
+ *  * shape. Token storage mirrors EmailCredential (AES-256-GCM via
+ *  * EncryptionService). refreshToken/expiresAt are null for Slack (its bot
+ *  * tokens don't expire/rotate) but required in practice for Teams
+ *  * (Microsoft Graph, ~1hr access tokens) and HubSpot (~30min) — see
+ *  * IntegrationService.getValidAccessToken's refresh handling.
  */
 export type IntegrationModel = runtime.Types.Result.DefaultSelection<Prisma.$IntegrationPayload>
 
@@ -42,6 +45,8 @@ export type IntegrationMinAggregateOutputType = {
   workspaceId: string | null
   workspaceName: string | null
   accessToken: string | null
+  refreshToken: string | null
+  expiresAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -54,6 +59,8 @@ export type IntegrationMaxAggregateOutputType = {
   workspaceId: string | null
   workspaceName: string | null
   accessToken: string | null
+  refreshToken: string | null
+  expiresAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -66,6 +73,8 @@ export type IntegrationCountAggregateOutputType = {
   workspaceId: number
   workspaceName: number
   accessToken: number
+  refreshToken: number
+  expiresAt: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -80,6 +89,8 @@ export type IntegrationMinAggregateInputType = {
   workspaceId?: true
   workspaceName?: true
   accessToken?: true
+  refreshToken?: true
+  expiresAt?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -92,6 +103,8 @@ export type IntegrationMaxAggregateInputType = {
   workspaceId?: true
   workspaceName?: true
   accessToken?: true
+  refreshToken?: true
+  expiresAt?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -104,6 +117,8 @@ export type IntegrationCountAggregateInputType = {
   workspaceId?: true
   workspaceName?: true
   accessToken?: true
+  refreshToken?: true
+  expiresAt?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -189,6 +204,8 @@ export type IntegrationGroupByOutputType = {
   workspaceId: string | null
   workspaceName: string | null
   accessToken: string
+  refreshToken: string | null
+  expiresAt: Date | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -222,6 +239,8 @@ export type IntegrationWhereInput = {
   workspaceId?: Prisma.StringNullableFilter<"Integration"> | string | null
   workspaceName?: Prisma.StringNullableFilter<"Integration"> | string | null
   accessToken?: Prisma.StringFilter<"Integration"> | string
+  refreshToken?: Prisma.StringNullableFilter<"Integration"> | string | null
+  expiresAt?: Prisma.DateTimeNullableFilter<"Integration"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Integration"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Integration"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Integration"> | Date | string | null
@@ -235,6 +254,8 @@ export type IntegrationOrderByWithRelationInput = {
   workspaceId?: Prisma.SortOrderInput | Prisma.SortOrder
   workspaceName?: Prisma.SortOrderInput | Prisma.SortOrder
   accessToken?: Prisma.SortOrder
+  refreshToken?: Prisma.SortOrderInput | Prisma.SortOrder
+  expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -252,6 +273,8 @@ export type IntegrationWhereUniqueInput = Prisma.AtLeast<{
   workspaceId?: Prisma.StringNullableFilter<"Integration"> | string | null
   workspaceName?: Prisma.StringNullableFilter<"Integration"> | string | null
   accessToken?: Prisma.StringFilter<"Integration"> | string
+  refreshToken?: Prisma.StringNullableFilter<"Integration"> | string | null
+  expiresAt?: Prisma.DateTimeNullableFilter<"Integration"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Integration"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Integration"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Integration"> | Date | string | null
@@ -265,6 +288,8 @@ export type IntegrationOrderByWithAggregationInput = {
   workspaceId?: Prisma.SortOrderInput | Prisma.SortOrder
   workspaceName?: Prisma.SortOrderInput | Prisma.SortOrder
   accessToken?: Prisma.SortOrder
+  refreshToken?: Prisma.SortOrderInput | Prisma.SortOrder
+  expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -283,6 +308,8 @@ export type IntegrationScalarWhereWithAggregatesInput = {
   workspaceId?: Prisma.StringNullableWithAggregatesFilter<"Integration"> | string | null
   workspaceName?: Prisma.StringNullableWithAggregatesFilter<"Integration"> | string | null
   accessToken?: Prisma.StringWithAggregatesFilter<"Integration"> | string
+  refreshToken?: Prisma.StringNullableWithAggregatesFilter<"Integration"> | string | null
+  expiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Integration"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Integration"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Integration"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Integration"> | Date | string | null
@@ -294,6 +321,8 @@ export type IntegrationCreateInput = {
   workspaceId?: string | null
   workspaceName?: string | null
   accessToken: string
+  refreshToken?: string | null
+  expiresAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -307,6 +336,8 @@ export type IntegrationUncheckedCreateInput = {
   workspaceId?: string | null
   workspaceName?: string | null
   accessToken: string
+  refreshToken?: string | null
+  expiresAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -318,6 +349,8 @@ export type IntegrationUpdateInput = {
   workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workspaceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accessToken?: Prisma.StringFieldUpdateOperationsInput | string
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -331,6 +364,8 @@ export type IntegrationUncheckedUpdateInput = {
   workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workspaceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accessToken?: Prisma.StringFieldUpdateOperationsInput | string
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -343,6 +378,8 @@ export type IntegrationCreateManyInput = {
   workspaceId?: string | null
   workspaceName?: string | null
   accessToken: string
+  refreshToken?: string | null
+  expiresAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -354,6 +391,8 @@ export type IntegrationUpdateManyMutationInput = {
   workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workspaceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accessToken?: Prisma.StringFieldUpdateOperationsInput | string
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -366,6 +405,8 @@ export type IntegrationUncheckedUpdateManyInput = {
   workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workspaceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accessToken?: Prisma.StringFieldUpdateOperationsInput | string
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -393,6 +434,8 @@ export type IntegrationCountOrderByAggregateInput = {
   workspaceId?: Prisma.SortOrder
   workspaceName?: Prisma.SortOrder
   accessToken?: Prisma.SortOrder
+  refreshToken?: Prisma.SortOrder
+  expiresAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -405,6 +448,8 @@ export type IntegrationMaxOrderByAggregateInput = {
   workspaceId?: Prisma.SortOrder
   workspaceName?: Prisma.SortOrder
   accessToken?: Prisma.SortOrder
+  refreshToken?: Prisma.SortOrder
+  expiresAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -417,6 +462,8 @@ export type IntegrationMinOrderByAggregateInput = {
   workspaceId?: Prisma.SortOrder
   workspaceName?: Prisma.SortOrder
   accessToken?: Prisma.SortOrder
+  refreshToken?: Prisma.SortOrder
+  expiresAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -474,6 +521,8 @@ export type IntegrationCreateWithoutAccountInput = {
   workspaceId?: string | null
   workspaceName?: string | null
   accessToken: string
+  refreshToken?: string | null
+  expiresAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -485,6 +534,8 @@ export type IntegrationUncheckedCreateWithoutAccountInput = {
   workspaceId?: string | null
   workspaceName?: string | null
   accessToken: string
+  refreshToken?: string | null
+  expiresAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -526,6 +577,8 @@ export type IntegrationScalarWhereInput = {
   workspaceId?: Prisma.StringNullableFilter<"Integration"> | string | null
   workspaceName?: Prisma.StringNullableFilter<"Integration"> | string | null
   accessToken?: Prisma.StringFilter<"Integration"> | string
+  refreshToken?: Prisma.StringNullableFilter<"Integration"> | string | null
+  expiresAt?: Prisma.DateTimeNullableFilter<"Integration"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Integration"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Integration"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Integration"> | Date | string | null
@@ -537,6 +590,8 @@ export type IntegrationCreateManyAccountInput = {
   workspaceId?: string | null
   workspaceName?: string | null
   accessToken: string
+  refreshToken?: string | null
+  expiresAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -548,6 +603,8 @@ export type IntegrationUpdateWithoutAccountInput = {
   workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workspaceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accessToken?: Prisma.StringFieldUpdateOperationsInput | string
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -559,6 +616,8 @@ export type IntegrationUncheckedUpdateWithoutAccountInput = {
   workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workspaceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accessToken?: Prisma.StringFieldUpdateOperationsInput | string
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -570,6 +629,8 @@ export type IntegrationUncheckedUpdateManyWithoutAccountInput = {
   workspaceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workspaceName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accessToken?: Prisma.StringFieldUpdateOperationsInput | string
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -584,6 +645,8 @@ export type IntegrationSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   workspaceId?: boolean
   workspaceName?: boolean
   accessToken?: boolean
+  refreshToken?: boolean
+  expiresAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -597,6 +660,8 @@ export type IntegrationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   workspaceId?: boolean
   workspaceName?: boolean
   accessToken?: boolean
+  refreshToken?: boolean
+  expiresAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -610,6 +675,8 @@ export type IntegrationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   workspaceId?: boolean
   workspaceName?: boolean
   accessToken?: boolean
+  refreshToken?: boolean
+  expiresAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -623,12 +690,14 @@ export type IntegrationSelectScalar = {
   workspaceId?: boolean
   workspaceName?: boolean
   accessToken?: boolean
+  refreshToken?: boolean
+  expiresAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type IntegrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "accountId" | "provider" | "workspaceId" | "workspaceName" | "accessToken" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["integration"]>
+export type IntegrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "accountId" | "provider" | "workspaceId" | "workspaceName" | "accessToken" | "refreshToken" | "expiresAt" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["integration"]>
 export type IntegrationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   account?: boolean | Prisma.EmailAccountDefaultArgs<ExtArgs>
 }
@@ -651,6 +720,8 @@ export type $IntegrationPayload<ExtArgs extends runtime.Types.Extensions.Interna
     workspaceId: string | null
     workspaceName: string | null
     accessToken: string
+    refreshToken: string | null
+    expiresAt: Date | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -1084,6 +1155,8 @@ export interface IntegrationFieldRefs {
   readonly workspaceId: Prisma.FieldRef<"Integration", 'String'>
   readonly workspaceName: Prisma.FieldRef<"Integration", 'String'>
   readonly accessToken: Prisma.FieldRef<"Integration", 'String'>
+  readonly refreshToken: Prisma.FieldRef<"Integration", 'String'>
+  readonly expiresAt: Prisma.FieldRef<"Integration", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Integration", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Integration", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"Integration", 'DateTime'>

@@ -78,7 +78,7 @@ function EmailAccountsContent() {
       {connected && (
         <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           Connected {connected}
-          {connected !== "slack" &&
+          {!["slack", "teams", "hubspot"].includes(connected) &&
             " — the initial sync is running in the background."}
         </p>
       )}
@@ -119,7 +119,9 @@ function EmailAccountsContent() {
             account={account}
             busy={pendingId === account.id}
             autoExpandIntegrations={
-              connected === "slack" && connectedAccountId === account.id
+              !!connected &&
+              ["slack", "teams", "hubspot"].includes(connected) &&
+              connectedAccountId === account.id
             }
             onMakePrimary={() =>
               updateMutation.mutate({ id: account.id, data: { isPrimary: true } })

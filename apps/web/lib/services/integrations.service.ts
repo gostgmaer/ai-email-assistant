@@ -1,6 +1,6 @@
 import { apiFetch, apiUrl } from "../api/client";
 import { getAccessToken } from "../auth/token-storage";
-import type { Integration, IntegrationChannel } from "../api/types";
+import type { Integration, IntegrationChannel, TeamsChannel } from "../api/types";
 
 export async function listIntegrations(
   accountId: string,
@@ -11,18 +11,31 @@ export async function listIntegrations(
 }
 
 /**
- * Slack connect is a full-page redirect (to slack.com), so it can't carry
- * an Authorization header — the access token and target account ride
- * along as query params instead (the API's JwtStrategy accepts a `token`
- * query param; the connect route reads `accountId` the same way).
+ * Connect is a full-page redirect to the provider's own consent screen, so
+ * it can't carry an Authorization header — the access token and target
+ * account ride along as query params instead (the API's JwtStrategy
+ * accepts a `token` query param; the connect route reads `accountId` the
+ * same way).
  */
-export function connectSlackUrl(accountId: string): string {
+function connectUrl(provider: "slack" | "teams" | "hubspot", accountId: string): string {
   const token = getAccessToken();
   const params = new URLSearchParams({
     accountId,
     token: token ?? "",
   });
-  return `${apiUrl("/integrations/connect/slack")}?${params.toString()}`;
+  return `${apiUrl(`/integrations/connect/${provider}`)}?${params.toString()}`;
+}
+
+export function connectSlackUrl(accountId: string): string {
+  return connectUrl("slack", accountId);
+}
+
+export function connectTeamsUrl(accountId: string): string {
+  return connectUrl("teams", accountId);
+}
+
+export function connectHubspotUrl(accountId: string): string {
+  return connectUrl("hubspot", accountId);
 }
 
 export async function listSlackChannels(
@@ -30,6 +43,14 @@ export async function listSlackChannels(
 ): Promise<IntegrationChannel[]> {
   return apiFetch<IntegrationChannel[]>(
     `/integrations/${integrationId}/channels`,
+  );
+}
+
+export async function listTeamsChannels(
+  integrationId: string,
+): Promise<TeamsChannel[]> {
+  return apiFetch<TeamsChannel[]>(
+    `/integrations/${integrationId}/teams-channels`,
   );
 }
 

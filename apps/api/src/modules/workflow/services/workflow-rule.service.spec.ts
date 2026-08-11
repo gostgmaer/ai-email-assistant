@@ -40,6 +40,8 @@ describe('WorkflowRuleService', () => {
 
     const integrationService = {
       postMessage: jest.fn(),
+      postToTeamsChannel: jest.fn(),
+      upsertHubspotContact: jest.fn(),
     } as unknown as jest.Mocked<IntegrationService>;
 
     const service = new WorkflowRuleService(
@@ -177,7 +179,13 @@ describe('WorkflowRuleService', () => {
   });
 
   describe('executeActions', () => {
-    const context = { accountId, threadId: 'thread-1', messageId: 'msg-1' };
+    const context = {
+      accountId,
+      threadId: 'thread-1',
+      messageId: 'msg-1',
+      senderEmail: 'sender@example.com',
+      senderName: 'Sender Name',
+    };
 
     it('reports autoReply: true only when AUTO_REPLY is present', async () => {
       const { service } = buildDeps();
@@ -259,6 +267,46 @@ describe('WorkflowRuleService', () => {
         'integration-1',
         'C123',
         'new message!',
+      );
+    });
+
+    it('posts to Teams for POST_TO_TEAMS', async () => {
+      const { service, integrationService } = buildDeps();
+
+      await service.executeActions(
+        [
+          {
+            type: 'POST_TO_TEAMS',
+            integrationId: 'integration-2',
+            teamId: 'team-1',
+            channelId: 'channel-1',
+            message: 'new message!',
+          },
+        ],
+        context,
+      );
+
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
+      expect(integrationService.postToTeamsChannel).toHaveBeenCalledWith(
+        'integration-2',
+        'team-1',
+        'channel-1',
+        'new message!',
+      );
+    });
+
+    it('upserts a HubSpot contact from the message sender for CREATE_HUBSPOT_CONTACT', async () => {
+      const { service, integrationService } = buildDeps();
+
+      await service.executeActions(
+        [{ type: 'CREATE_HUBSPOT_CONTACT', integrationId: 'integration-3' }],
+        context,
+      );
+
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
+      expect(integrationService.upsertHubspotContact).toHaveBeenCalledWith(
+        'integration-3',
+        { email: 'sender@example.com', firstName: 'Sender', lastName: 'Name' },
       );
     });
 
@@ -354,6 +402,36 @@ describe('WorkflowRuleService', () => {
           name: 'Test',
           conditions: [],
           actions: [{ type: 'POST_TO_SLACK', integrationId: 'i1' } as never],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a POST_TO_TEAMS action with no teamId', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [
+            {
+              type: 'POST_TO_TEAMS',
+              integrationId: 'i1',
+              channelId: 'c1',
+            } as never,
+          ],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a CREATE_HUBSPOT_CONTACT action with no integrationId', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [{ type: 'CREATE_HUBSPOT_CONTACT' } as never],
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });

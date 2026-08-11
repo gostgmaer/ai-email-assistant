@@ -55,6 +55,30 @@ export function SlackIcon() {
   );
 }
 
+export function TeamsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <rect width="24" height="24" rx="4" fill="#5059C9" />
+      <circle cx="17" cy="7.2" r="2.2" fill="#7B83EB" />
+      <rect x="14.3" y="10" width="6" height="6.5" rx="1.2" fill="#7B83EB" />
+      <circle cx="9.3" cy="8" r="3.2" fill="#fff" />
+      <path fill="#fff" d="M9.3 12c-2.7 0-4.8 1.7-4.8 4.5v.5h9.6v-.5c0-2.8-2.1-4.5-4.8-4.5Z" />
+    </svg>
+  );
+}
+
+export function HubSpotIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <circle cx="12" cy="12" r="11" fill="#FF7A59" />
+      <path
+        fill="#fff"
+        d="M16.5 10.2V8.1a1.9 1.9 0 1 0-1.4 0v2.1a4.4 4.4 0 0 0-2.1 1L8.6 7.9a2.1 2.1 0 1 0-1 1.2l4.3 3.2a4.4 4.4 0 1 0 6.8 3.7 4.4 4.4 0 0 0-2.2-3.8Zm-.7 6.4a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"
+      />
+    </svg>
+  );
+}
+
 interface IconProps {
   className?: string;
 }

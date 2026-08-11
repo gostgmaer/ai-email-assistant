@@ -3,7 +3,7 @@ import { clsx } from "clsx";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { SlackIcon } from "@/components/icons";
+import { HubSpotIcon, SlackIcon, TeamsIcon } from "@/components/icons";
 import { AGENT_TEMPLATES } from "@/lib/agent-templates";
 import type {
   AccountMember,
@@ -35,10 +35,13 @@ import {
   removeAccountMember,
 } from "@/lib/services/email-accounts.service";
 import {
+  connectHubspotUrl,
   connectSlackUrl,
+  connectTeamsUrl,
   disconnectIntegration,
   listIntegrations,
   listSlackChannels,
+  listTeamsChannels,
 } from "@/lib/services/integrations.service";
 import {
   createWorkflowRule,
@@ -460,6 +463,8 @@ const ACTION_TYPES: { value: WorkflowActionType; label: string }[] = [
   { value: "ASSIGN_TO", label: "Assign to teammate" },
   { value: "NOTIFY", label: "Notify teammate" },
   { value: "POST_TO_SLACK", label: "Post to Slack channel" },
+  { value: "POST_TO_TEAMS", label: "Post to Teams channel" },
+  { value: "CREATE_HUBSPOT_CONTACT", label: "Sync sender to HubSpot" },
   { value: "REQUIRE_APPROVAL", label: "Hold as draft (no auto-reply)" },
   { value: "REQUIRE_APPROVAL_CHAIN", label: "Require multi-step approval" },
 ];
@@ -470,6 +475,25 @@ function emptyCondition(): WorkflowCondition {
 
 function emptyAction(): WorkflowAction {
   return { type: "AUTO_REPLY" };
+}
+
+function actionOfType(type: WorkflowActionType, members: AccountMember[] | undefined): WorkflowAction {
+  switch (type) {
+    case "ASSIGN_TO":
+    case "NOTIFY":
+      return { type, userId: members?.[0]?.userId ?? "" };
+    case "POST_TO_SLACK":
+      return { type, integrationId: "", channelId: "" };
+    case "POST_TO_TEAMS":
+      return { type, integrationId: "", teamId: "", channelId: "" };
+    case "CREATE_HUBSPOT_CONTACT":
+      return { type, integrationId: "" };
+    case "REQUIRE_APPROVAL_CHAIN":
+      return { type, approverUserIds: [] };
+    case "AUTO_REPLY":
+    case "REQUIRE_APPROVAL":
+      return { type };
+  }
 }
 
 function WorkflowRulesPanel({
@@ -564,6 +588,18 @@ function WorkflowRulesPanel({
           (i) => i.id === action.integrationId,
         );
         return `Post to Slack${integration ? ` (${integration.workspaceName ?? "workspace"})` : ""}`;
+      }
+      case "POST_TO_TEAMS": {
+        const integration = integrations?.find(
+          (i) => i.id === action.integrationId,
+        );
+        return `Post to Teams${integration ? ` (${integration.workspaceName ?? "tenant"})` : ""}`;
+      }
+      case "CREATE_HUBSPOT_CONTACT": {
+        const integration = integrations?.find(
+          (i) => i.id === action.integrationId,
+        );
+        return `Sync sender to HubSpot${integration ? ` (${integration.workspaceName ?? "portal"})` : ""}`;
       }
       case "REQUIRE_APPROVAL":
         return "Hold as draft";
@@ -762,14 +798,7 @@ function WorkflowRulesPanel({
                     value={action.type}
                     onChange={(e) => {
                       const type = e.target.value as WorkflowActionType;
-                      const next: WorkflowAction =
-                        type === "ASSIGN_TO" || type === "NOTIFY"
-                          ? { type, userId: members?.[0]?.userId ?? "" }
-                          : type === "POST_TO_SLACK"
-                            ? { type, integrationId: "", channelId: "" }
-                            : type === "REQUIRE_APPROVAL_CHAIN"
-                              ? { type, approverUserIds: [] }
-                              : { type };
+                      const next = actionOfType(type, members);
                       setActions(actions.map((a, j) => (j === i ? next : a)));
                     }}
                     className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
@@ -831,6 +860,24 @@ function WorkflowRulesPanel({
                   )}
                   {action.type === "POST_TO_SLACK" && (
                     <SlackActionFields
+                      action={action}
+                      integrations={integrations}
+                      onChange={(next) =>
+                        setActions(actions.map((a, j) => (j === i ? next : a)))
+                      }
+                    />
+                  )}
+                  {action.type === "POST_TO_TEAMS" && (
+                    <TeamsActionFields
+                      action={action}
+                      integrations={integrations}
+                      onChange={(next) =>
+                        setActions(actions.map((a, j) => (j === i ? next : a)))
+                      }
+                    />
+                  )}
+                  {action.type === "CREATE_HUBSPOT_CONTACT" && (
+                    <HubspotActionFields
                       action={action}
                       integrations={integrations}
                       onChange={(next) =>
@@ -955,6 +1002,129 @@ function SlackActionFields({
   );
 }
 
+type PostToTeamsAction = Extract<WorkflowAction, { type: "POST_TO_TEAMS" }>;
+
+/** Two-level team → channel picker — Teams doesn't have Slack's flat
+ * channel list, so listTeamsChannels returns one row per (team, channel)
+ * pair and this groups them by team for the first select. */
+function TeamsActionFields({
+  action,
+  integrations,
+  onChange,
+}: {
+  action: PostToTeamsAction;
+  integrations: Integration[] | undefined;
+  onChange: (next: PostToTeamsAction) => void;
+}) {
+  const teamsIntegrations = integrations?.filter((i) => i.provider === "TEAMS");
+
+  const { data: channels, isLoading } = useQuery({
+    queryKey: ["integration-teams-channels", action.integrationId],
+    queryFn: () => listTeamsChannels(action.integrationId),
+    enabled: !!action.integrationId,
+  });
+
+  const teams = Array.from(
+    new Map(channels?.map((c) => [c.teamId, c.teamName])).entries(),
+  );
+  const channelsForTeam = channels?.filter((c) => c.teamId === action.teamId);
+
+  return (
+    <>
+      <select
+        value={action.integrationId}
+        onChange={(e) =>
+          onChange({
+            ...action,
+            integrationId: e.target.value,
+            teamId: "",
+            channelId: "",
+          })
+        }
+        className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+      >
+        <option value="">
+          {teamsIntegrations?.length ? "Select tenant" : "No tenant connected"}
+        </option>
+        {teamsIntegrations?.map((integration) => (
+          <option key={integration.id} value={integration.id}>
+            {integration.workspaceName ?? "Microsoft Teams"}
+          </option>
+        ))}
+      </select>
+      {action.integrationId && (
+        <select
+          value={action.teamId}
+          disabled={isLoading}
+          onChange={(e) =>
+            onChange({ ...action, teamId: e.target.value, channelId: "" })
+          }
+          className="rounded-md border border-zinc-300 px-2 py-1 text-xs disabled:opacity-50"
+        >
+          <option value="">{isLoading ? "Loading teams…" : "Select team"}</option>
+          {teams.map(([teamId, teamName]) => (
+            <option key={teamId} value={teamId}>
+              {teamName}
+            </option>
+          ))}
+        </select>
+      )}
+      {action.teamId && (
+        <select
+          value={action.channelId}
+          onChange={(e) => onChange({ ...action, channelId: e.target.value })}
+          className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+        >
+          <option value="">Select channel</option>
+          {channelsForTeam?.map((channel) => (
+            <option key={channel.id} value={channel.id}>
+              {channel.name}
+            </option>
+          ))}
+        </select>
+      )}
+    </>
+  );
+}
+
+type CreateHubspotContactAction = Extract<
+  WorkflowAction,
+  { type: "CREATE_HUBSPOT_CONTACT" }
+>;
+
+/** Only needs an integration picker — the contact synced is always the
+ * matched message's own sender, not a user-chosen value. */
+function HubspotActionFields({
+  action,
+  integrations,
+  onChange,
+}: {
+  action: CreateHubspotContactAction;
+  integrations: Integration[] | undefined;
+  onChange: (next: CreateHubspotContactAction) => void;
+}) {
+  const hubspotIntegrations = integrations?.filter(
+    (i) => i.provider === "HUBSPOT",
+  );
+
+  return (
+    <select
+      value={action.integrationId}
+      onChange={(e) => onChange({ ...action, integrationId: e.target.value })}
+      className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+    >
+      <option value="">
+        {hubspotIntegrations?.length ? "Select portal" : "No portal connected"}
+      </option>
+      {hubspotIntegrations?.map((integration) => (
+        <option key={integration.id} value={integration.id}>
+          {integration.workspaceName ?? "HubSpot"}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 type ApprovalChainAction = Extract<
   WorkflowAction,
   { type: "REQUIRE_APPROVAL_CHAIN" }
@@ -1063,7 +1233,20 @@ function ApprovalChainActionFields({
 
 const INTEGRATION_LABEL: Record<Integration["provider"], string> = {
   SLACK: "Slack",
+  TEAMS: "Microsoft Teams",
+  HUBSPOT: "HubSpot",
 };
+
+function IntegrationProviderIcon({ provider }: { provider: Integration["provider"] }) {
+  switch (provider) {
+    case "SLACK":
+      return <SlackIcon />;
+    case "TEAMS":
+      return <TeamsIcon />;
+    case "HUBSPOT":
+      return <HubSpotIcon />;
+  }
+}
 
 function IntegrationsPanel({
   accountId,
@@ -1087,14 +1270,28 @@ function IntegrationsPanel({
       }),
   });
 
-  const hasSlack = integrations?.some((i) => i.provider === "SLACK");
+  const connected = new Set(integrations?.map((i) => i.provider));
+
+  const CONNECT_OPTIONS: {
+    provider: Integration["provider"];
+    label: string;
+    href: string;
+  }[] = [
+    { provider: "SLACK", label: "Connect Slack", href: connectSlackUrl(accountId) },
+    { provider: "TEAMS", label: "Connect Teams", href: connectTeamsUrl(accountId) },
+    {
+      provider: "HUBSPOT",
+      label: "Connect HubSpot",
+      href: connectHubspotUrl(accountId),
+    },
+  ];
 
   return (
     <div className="mt-4 border-t border-zinc-100 pt-3">
       <p className="mb-2 text-xs text-zinc-500">
-        Connect a workspace here, then reference it from a &quot;Post to
-        Slack&quot; workflow action above (e.g. notify a channel whenever a
-        thread is assigned to you).
+        Connect a workspace/tenant/portal here, then reference it from a
+        workflow action above — post to a Slack or Teams channel, or sync
+        the sender to HubSpot, whenever a rule matches.
       </p>
 
       {isLoading && (
@@ -1108,14 +1305,14 @@ function IntegrationsPanel({
             className="flex items-center justify-between rounded-md border border-zinc-200 p-3"
           >
             <div className="flex items-center gap-2">
-              <SlackIcon />
+              <IntegrationProviderIcon provider={integration.provider} />
               <div>
                 <p className="text-sm font-medium text-zinc-900">
                   {integration.workspaceName ??
                     INTEGRATION_LABEL[integration.provider]}
                 </p>
                 <p className="text-xs text-zinc-500">
-                  {INTEGRATION_LABEL[integration.provider]} workspace
+                  {INTEGRATION_LABEL[integration.provider]}
                 </p>
               </div>
             </div>
@@ -1139,13 +1336,21 @@ function IntegrationsPanel({
         )}
       </ul>
 
-      {isOwner && !hasSlack && (
-        <a
-          href={connectSlackUrl(accountId)}
-          className="flex w-fit items-center gap-2 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
-        >
-          <SlackIcon /> Connect Slack
-        </a>
+      {isOwner && (
+        <div className="flex flex-wrap gap-2">
+          {CONNECT_OPTIONS.filter((o) => !connected.has(o.provider)).map(
+            (option) => (
+              <a
+                key={option.provider}
+                href={option.href}
+                className="flex w-fit items-center gap-2 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+              >
+                <IntegrationProviderIcon provider={option.provider} />
+                {option.label}
+              </a>
+            ),
+          )}
+        </div>
       )}
     </div>
   );

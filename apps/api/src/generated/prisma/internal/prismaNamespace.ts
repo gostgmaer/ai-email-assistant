@@ -2371,6 +2371,8 @@ export const IntegrationScalarFieldEnum = {
   workspaceId: 'workspaceId',
   workspaceName: 'workspaceName',
   accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
