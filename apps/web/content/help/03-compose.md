@@ -41,6 +41,10 @@ Opening a draft from the **Drafts** folder in Inbox takes you back to this same 
 - **Discard draft** — permanently deletes the draft (with a confirmation prompt) from both the app and the real mailbox's Drafts folder.
 - **Save draft** / **Send** work the same as above.
 
+**Gated by an Approval Chain?** If a [Workflow rule](/help/07-settings-accounts#true-multi-step-approval-chains) required multi-step approval for this reply, you'll see a banner at the top explaining what's happening:
+- **Still pending** (amber banner) — shows which step it's on and who's next. **Send** is disabled until every approver signs off — see [Approvals](/help/11-approvals).
+- **Rejected** (red banner) — an approver sent it back for rework. Edit it as needed; **Send** is enabled again immediately (rejecting doesn't lock the draft forever).
+
 ## What happens
 
 - **Save draft** creates/updates a real draft in the connected provider's mailbox (e.g. a genuine Gmail draft) — it is not just stored locally.

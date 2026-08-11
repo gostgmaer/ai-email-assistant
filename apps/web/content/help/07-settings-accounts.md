@@ -22,6 +22,7 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 | Contacts | everyone | Opens the [CRM contacts](#crm-contacts) panel |
 | Workflows | owner only | Opens [Workflow rules](#workflow-rules) |
 | Agents | owner only | Opens [AI Agents (personas)](#ai-agents-personas) |
+| Integrations | owner only | Opens [Integrations](#integrations-slack-teams-hubspot) — connect Slack, Teams, or HubSpot for this account |
 | Sync filters (N) | owner only | Opens [Sync filters](#sync-filters) — N = how many are currently active |
 | Policy (N) | owner only | Opens [Policy](#policy) — N = how many prohibited phrases are set |
 | Auto-schedule meetings (on/off) | owner only | Toggles automatic calendar scheduling — see [Tasks → Suggest a time](/help/04-tasks-and-followups#suggest-a-time-ai-meeting-scheduling) |
@@ -95,9 +96,26 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 
 ---
 
+## Integrations (Slack, Teams, HubSpot)
+
+**What it is:** connects this account to an external Slack workspace, Microsoft Teams tenant, or HubSpot portal, so a [Workflow rule](#workflow-rules) can post a message or sync a contact there when it matches. Each integration is scoped to this account — connecting Slack for one mailbox doesn't make it available to another.
+
+**How to connect:**
+1. Click **Integrations** on the account card.
+2. Click **Connect Slack**, **Connect Teams**, or **Connect HubSpot**.
+3. You're redirected to that provider's own consent screen — sign in and approve access.
+4. You're redirected back here, and the connection now appears in the list with the workspace/tenant/portal's name.
+5. To remove a connection, click **Disconnect** next to it — any Workflow rule action that referenced it will simply fail silently (best-effort) until you reconnect or edit the rule.
+
+**Example:** connecting **Slack** for a `support@yourcompany.com` account lets a Workflow rule post "🚨 New urgent support request" to a `#support` channel the moment a matching email arrives — without anyone needing to check the inbox directly.
+
+**What happens:** the connection itself does nothing on its own — it only becomes active once referenced by a Workflow rule action (**Post to Slack channel**, **Post to Teams channel**, or **Sync sender to HubSpot**, see below). Access tokens are stored encrypted; Teams and HubSpot tokens are refreshed automatically as they expire, Slack's do not expire.
+
+---
+
 ## Workflow rules
 
-**What it is:** the actual automation engine — the rules that decide, for every new message on this account, whether the AI auto-sends a reply, holds it for review, assigns it to a teammate, or just notifies someone.
+**What it is:** the actual automation engine — the rules that decide, for every new message on this account, whether the AI auto-sends a reply, holds it for review, assigns it to a teammate, posts to a chat app, syncs a CRM contact, or requires multi-person sign-off before sending.
 
 **How rules run:** in order, top to bottom, after AI classification of the message. **The first rule whose conditions all match wins** — only its actions run. If no rule matches, the AI reply is held as a draft for you to review (safe default).
 
@@ -113,10 +131,14 @@ Every new account starts with one starter rule: *"Auto-reply — all messages"* 
    - Value: free text, e.g. `billing`, `urgent`, or `@bigclient.com`.
    - Click **+ Add condition** for more (all conditions must match — it's an AND, not an OR).
 5. Add an **action** ("Then do this"):
-   - **Auto-send the AI reply** — optionally pick a specific [AI Agent persona](#ai-agents-personas) to use instead of the default prompt.
+   - **Auto-send the AI reply** — optionally pick a specific [AI Agent persona](#ai-agents-personas) to use instead of the default prompt. Has its own **Calendar-aware replies** checkbox (on by default) — see [Calendar-aware replies](#calendar-aware-replies) below.
    - **Assign to teammate** — requires 2+ [Members](#shared-inbox-members).
    - **Notify teammate** — sends an in-app [notification](/help/06-notifications) without touching the reply.
+   - **Post to Slack channel** — requires a connected [Slack integration](#integrations-slack-teams-hubspot); pick the workspace, then the channel.
+   - **Post to Teams channel** — requires a connected [Teams integration](#integrations-slack-teams-hubspot); pick the tenant, then the team, then the channel.
+   - **Sync sender to HubSpot** — requires a connected [HubSpot integration](#integrations-slack-teams-hubspot); creates or updates a HubSpot contact for whoever sent the matching message (email, and name if available) — no picker needed beyond selecting which portal.
    - **Hold as draft (no auto-reply)** — always draft, never auto-send, regardless of confidence.
+   - **Require multi-step approval** — see [True multi-step Approval Chains](#true-multi-step-approval-chains) below.
    - Click **+ Add action** for more than one action per rule.
 6. Click **Save rule**.
 
@@ -125,6 +147,36 @@ Every new account starts with one starter rule: *"Auto-reply — all messages"* 
 **Example:** a rule named "Escalate VIP billing" with condition `Sender address contains @bigclient.com` and action `Assign to teammate` + `Notify teammate` ensures anything from that domain skips auto-reply entirely and gets a human's attention immediately — as long as it's placed *above* the catch-all starter rule (since the first match wins).
 
 **What happens:** every incoming message is evaluated against your rule list top-to-bottom; whichever rule matches first determines the action. Reordering matters — put more specific rules above general ones.
+
+---
+
+## Calendar-aware replies
+
+**What it is:** when a message is classified as a **Meeting** (scheduling request, calendar invite, rescheduling), the AI checks your connected [calendar's](/help/08-settings-calendars) real availability for the next 7 days before drafting a reply — so the tone reflects reality ("I have some flexibility this week" vs. "my calendar's pretty packed") instead of guessing.
+
+**Important:** this never proposes or commits to a specific date or time on its own — by design, it always says it'll confirm a time shortly rather than naming one, even when your calendar is wide open. If you want the AI to propose an actual time slot, that's a separate, always-human-reviewed flow — see [Suggest a time](/help/04-tasks-and-followups#suggest-a-time-ai-meeting-scheduling) on the Tasks page.
+
+**How to turn it off:** uncheck **Calendar-aware replies** on a rule's **Auto-send the AI reply** action. It's on by default for every rule; unchecking it only affects that one rule.
+
+**What happens:** when it fires, the resulting message shows a small **"Calendar-aware"** badge in the Inbox thread view (next to the "Grounded in your documents" badge, if both applied). No calendar connected, or the lookup fails? The AI just drafts the reply without this context — never blocks or delays the reply.
+
+---
+
+## True multi-step Approval Chains
+
+**What it is:** gates a drafted reply behind sign-off from one or more specific people, in order, before it's allowed to send — for anything sensitive enough that one person's judgment (or the AI's own confidence score) isn't enough on its own.
+
+**How to set it up:**
+1. In a Workflow rule's action list, choose **Require multi-step approval**.
+2. Click **+ Add approver** and pick an [account member](#shared-inbox-members) — repeat to add more. Order matters: they sign off one at a time, in the order listed.
+3. Use the **↑ / ↓** arrows to reorder, or **✕** to remove someone.
+4. Save the rule as usual.
+
+**How approving works:** whenever it's your turn, the drafted reply shows up on your **Approvals** page (left sidebar) — see [Approvals](/help/11-approvals) for the full walkthrough. Approving your step passes it to the next approver; approving the *final* step sends the reply immediately, with no further action needed. Rejecting stops the chain entirely and returns the draft to Drafts for editing — it is **not** a permanent lock, the draft can still be sent manually once reworked.
+
+**Example:** a rule matching `Category equals Sales` with **Require multi-step approval** set to `[Sales Manager, VP of Sales]` means every AI-drafted sales reply needs both people to sign off, in that order, before it goes out — the VP never even sees it unless the Sales Manager already approved.
+
+**What happens:** this always wins over **Auto-send the AI reply** if both are somehow on the same rule — a chain can never be silently skipped. While a chain is pending, the draft cannot be sent manually from the Compose/Drafts screen either; the **Send** button stays disabled with an explanation until every step approves.
 
 ---
 

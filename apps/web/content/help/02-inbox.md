@@ -26,7 +26,7 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 
 **How:** click any row in the thread list.
 
-**What happens:** the right-hand pane loads every message in that thread in chronological order, each showing sender, recipient, timestamp, and body. If a reply was AI-generated using one of your uploaded [Documents](/help/05-documents), you'll see a **"Grounded in your documents"** badge on that message — hover it to see which files it drew from.
+**What happens:** the right-hand pane loads every message in that thread in chronological order, each showing sender, recipient, timestamp, and body. If a reply was AI-generated using one of your uploaded [Documents](/help/05-documents), you'll see a **"Grounded in your documents"** badge on that message — hover it to see which files it drew from. If it was drafted for a meeting/scheduling request, you may also see a **"Calendar-aware"** badge — see [Calendar-aware replies](/help/07-settings-accounts#calendar-aware-replies).
 
 ---
 
