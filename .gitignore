@@ -25,3 +25,5 @@ __pycache__
 .agents/
 .claude/
 .windsurf/
+/e2e-screenshots
+/e2e-screenshots-extended

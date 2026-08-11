@@ -96,6 +96,32 @@ export type AccountMember = Prisma.AccountMemberModel
  */
 export type WorkflowRule = Prisma.WorkflowRuleModel
 /**
+ * Model ApprovalChain
+ * *
+ *  * v3.0 True multi-step Approval Chains (docs/MVP.md) — extends the
+ *  * Workflow Builder's existing single auto-send-vs-draft gate (a
+ *  * REQUIRE_APPROVAL_CHAIN WorkflowAction) with sequential multi-person
+ *  * sign-off before a drafted AI reply is allowed to send. One row per
+ *  * matched action, created right after the gated reply is saved as a
+ *  * draft — see AiProcessingProcessor. 1:1 with the draft EmailMessage via
+ *  * a unique FK: each drafted reply that matches a chain rule gets its own
+ *  * approval run, never reused across drafts.
+ *  *
+ *  * Steps run in `order`, one pending approver at a time (see
+ *  * ApprovalChainService.approve/reject) — approving a non-final step just
+ *  * advances to the next approver; approving the final step sends the
+ *  * draft immediately (same human-approval-first posture as AUTO_REPLY,
+ *  * just gated behind N humans instead of zero). Rejecting any step is
+ *  * terminal: the chain stops, the draft is left alone in Drafts for
+ *  * manual rework, same as today's default hold-for-review outcome.
+ */
+export type ApprovalChain = Prisma.ApprovalChainModel
+/**
+ * Model ApprovalStep
+ * 
+ */
+export type ApprovalStep = Prisma.ApprovalStepModel
+/**
  * Model Agent
  * *
  *  * AI Agents (v2.0 §4) — a named persona (system prompt), not new
@@ -127,6 +153,25 @@ export type Contact = Prisma.ContactModel
  * 
  */
 export type EmailCredential = Prisma.EmailCredentialModel
+/**
+ * Model Integration
+ * *
+ *  * v3.0 Integrations (docs/MVP.md) — external services a WorkflowRule's
+ *  * actions can post to (e.g. POST_TO_SLACK, POST_TO_TEAMS,
+ *  * CREATE_HUBSPOT_CONTACT). Scoped to an EmailAccount, not a User: same
+ *  * shape as Agent/WorkflowRule, since a connection is meant to be used by
+ *  * that account's rules, and different accounts may want different
+ *  * workspaces/tenants/portals. Slack was the first provider, built
+ *  * end-to-end as the template for the rest (see docs/v2.0-plan.md §5,
+ *  * which explicitly recommends this over building a generic "integrations
+ *  * framework" speculatively) — Teams and HubSpot follow the exact same
+ *  * shape. Token storage mirrors EmailCredential (AES-256-GCM via
+ *  * EncryptionService). refreshToken/expiresAt are null for Slack (its bot
+ *  * tokens don't expire/rotate) but required in practice for Teams
+ *  * (Microsoft Graph, ~1hr access tokens) and HubSpot (~30min) — see
+ *  * IntegrationService.getValidAccessToken's refresh handling.
+ */
+export type Integration = Prisma.IntegrationModel
 /**
  * Model CalendarAccount
  * 

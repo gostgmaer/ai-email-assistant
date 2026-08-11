@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
+  ApprovalIcon,
   DocumentIcon,
   HelpIcon,
   InboxIcon,
@@ -15,6 +16,7 @@ import {
 const NAV_ITEMS = [
   { href: "/inbox", label: "Inbox", icon: InboxIcon },
   { href: "/tasks", label: "Tasks", icon: TaskIcon },
+  { href: "/approvals", label: "Approvals", icon: ApprovalIcon },
   { href: "/documents", label: "Documents", icon: DocumentIcon },
   { href: "/help", label: "Help", icon: HelpIcon },
 ];

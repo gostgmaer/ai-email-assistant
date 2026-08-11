@@ -314,6 +314,7 @@ export type EmailMessageWhereInput = {
   inReplyTo?: Prisma.XOR<Prisma.EmailMessageNullableScalarRelationFilter, Prisma.EmailMessageWhereInput> | null
   draftReplies?: Prisma.EmailMessageListRelationFilter
   tasks?: Prisma.TaskListRelationFilter
+  approvalChain?: Prisma.XOR<Prisma.ApprovalChainNullableScalarRelationFilter, Prisma.ApprovalChainWhereInput> | null
 }
 
 export type EmailMessageOrderByWithRelationInput = {
@@ -345,6 +346,7 @@ export type EmailMessageOrderByWithRelationInput = {
   inReplyTo?: Prisma.EmailMessageOrderByWithRelationInput
   draftReplies?: Prisma.EmailMessageOrderByRelationAggregateInput
   tasks?: Prisma.TaskOrderByRelationAggregateInput
+  approvalChain?: Prisma.ApprovalChainOrderByWithRelationInput
 }
 
 export type EmailMessageWhereUniqueInput = Prisma.AtLeast<{
@@ -380,6 +382,7 @@ export type EmailMessageWhereUniqueInput = Prisma.AtLeast<{
   inReplyTo?: Prisma.XOR<Prisma.EmailMessageNullableScalarRelationFilter, Prisma.EmailMessageWhereInput> | null
   draftReplies?: Prisma.EmailMessageListRelationFilter
   tasks?: Prisma.TaskListRelationFilter
+  approvalChain?: Prisma.XOR<Prisma.ApprovalChainNullableScalarRelationFilter, Prisma.ApprovalChainWhereInput> | null
 }, "id" | "threadId_providerMessageId">
 
 export type EmailMessageOrderByWithAggregationInput = {
@@ -469,6 +472,7 @@ export type EmailMessageCreateInput = {
   inReplyTo?: Prisma.EmailMessageCreateNestedOneWithoutDraftRepliesInput
   draftReplies?: Prisma.EmailMessageCreateNestedManyWithoutInReplyToInput
   tasks?: Prisma.TaskCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageUncheckedCreateInput = {
@@ -498,6 +502,7 @@ export type EmailMessageUncheckedCreateInput = {
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainUncheckedCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageUpdateInput = {
@@ -527,6 +532,7 @@ export type EmailMessageUpdateInput = {
   inReplyTo?: Prisma.EmailMessageUpdateOneWithoutDraftRepliesNestedInput
   draftReplies?: Prisma.EmailMessageUpdateManyWithoutInReplyToNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUncheckedUpdateInput = {
@@ -556,6 +562,7 @@ export type EmailMessageUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUncheckedUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageCreateManyInput = {
@@ -635,6 +642,11 @@ export type EmailMessageUncheckedUpdateManyInput = {
   piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type EmailMessageScalarRelationFilter = {
+  is?: Prisma.EmailMessageWhereInput
+  isNot?: Prisma.EmailMessageWhereInput
 }
 
 export type EmailMessageListRelationFilter = {
@@ -724,6 +736,20 @@ export type EmailMessageMinOrderByAggregateInput = {
   containsPii?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type EmailMessageCreateNestedOneWithoutApprovalChainInput = {
+  create?: Prisma.XOR<Prisma.EmailMessageCreateWithoutApprovalChainInput, Prisma.EmailMessageUncheckedCreateWithoutApprovalChainInput>
+  connectOrCreate?: Prisma.EmailMessageCreateOrConnectWithoutApprovalChainInput
+  connect?: Prisma.EmailMessageWhereUniqueInput
+}
+
+export type EmailMessageUpdateOneRequiredWithoutApprovalChainNestedInput = {
+  create?: Prisma.XOR<Prisma.EmailMessageCreateWithoutApprovalChainInput, Prisma.EmailMessageUncheckedCreateWithoutApprovalChainInput>
+  connectOrCreate?: Prisma.EmailMessageCreateOrConnectWithoutApprovalChainInput
+  upsert?: Prisma.EmailMessageUpsertWithoutApprovalChainInput
+  connect?: Prisma.EmailMessageWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmailMessageUpdateToOneWithWhereWithoutApprovalChainInput, Prisma.EmailMessageUpdateWithoutApprovalChainInput>, Prisma.EmailMessageUncheckedUpdateWithoutApprovalChainInput>
 }
 
 export type EmailMessageCreateNestedManyWithoutThreadInput = {
@@ -851,6 +877,138 @@ export type EmailMessageUpdateOneWithoutTasksNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EmailMessageUpdateToOneWithWhereWithoutTasksInput, Prisma.EmailMessageUpdateWithoutTasksInput>, Prisma.EmailMessageUncheckedUpdateWithoutTasksInput>
 }
 
+export type EmailMessageCreateWithoutApprovalChainInput = {
+  id?: string
+  providerMessageId: string
+  from: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  to: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bcc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  subject?: string | null
+  bodyText?: string | null
+  bodyHtml?: string | null
+  receivedAt: Date | string
+  isRead?: boolean
+  aiProcessedAt?: Date | string | null
+  generationMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: string | null
+  priority?: string | null
+  sentiment?: string | null
+  isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
+  inReplyTo?: Prisma.EmailMessageCreateNestedOneWithoutDraftRepliesInput
+  draftReplies?: Prisma.EmailMessageCreateNestedManyWithoutInReplyToInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutEmailMessageInput
+}
+
+export type EmailMessageUncheckedCreateWithoutApprovalChainInput = {
+  id?: string
+  threadId: string
+  providerMessageId: string
+  from: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  to: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bcc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  subject?: string | null
+  bodyText?: string | null
+  bodyHtml?: string | null
+  receivedAt: Date | string
+  isRead?: boolean
+  inReplyToMessageId?: string | null
+  aiProcessedAt?: Date | string | null
+  generationMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: string | null
+  priority?: string | null
+  sentiment?: string | null
+  isSpam?: boolean
+  language?: string | null
+  containsPii?: boolean
+  piiTypes?: Prisma.EmailMessageCreatepiiTypesInput | string[]
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutEmailMessageInput
+}
+
+export type EmailMessageCreateOrConnectWithoutApprovalChainInput = {
+  where: Prisma.EmailMessageWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmailMessageCreateWithoutApprovalChainInput, Prisma.EmailMessageUncheckedCreateWithoutApprovalChainInput>
+}
+
+export type EmailMessageUpsertWithoutApprovalChainInput = {
+  update: Prisma.XOR<Prisma.EmailMessageUpdateWithoutApprovalChainInput, Prisma.EmailMessageUncheckedUpdateWithoutApprovalChainInput>
+  create: Prisma.XOR<Prisma.EmailMessageCreateWithoutApprovalChainInput, Prisma.EmailMessageUncheckedCreateWithoutApprovalChainInput>
+  where?: Prisma.EmailMessageWhereInput
+}
+
+export type EmailMessageUpdateToOneWithWhereWithoutApprovalChainInput = {
+  where?: Prisma.EmailMessageWhereInput
+  data: Prisma.XOR<Prisma.EmailMessageUpdateWithoutApprovalChainInput, Prisma.EmailMessageUncheckedUpdateWithoutApprovalChainInput>
+}
+
+export type EmailMessageUpdateWithoutApprovalChainInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  providerMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  from?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  to?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bcc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bodyText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bodyHtml?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isRead?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aiProcessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  generationMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
+  inReplyTo?: Prisma.EmailMessageUpdateOneWithoutDraftRepliesNestedInput
+  draftReplies?: Prisma.EmailMessageUpdateManyWithoutInReplyToNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutEmailMessageNestedInput
+}
+
+export type EmailMessageUncheckedUpdateWithoutApprovalChainInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  threadId?: Prisma.StringFieldUpdateOperationsInput | string
+  providerMessageId?: Prisma.StringFieldUpdateOperationsInput | string
+  from?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  to?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bcc?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  subject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bodyText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bodyHtml?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receivedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isRead?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inReplyToMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiProcessedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  generationMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  priority?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sentiment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isSpam?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  language?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  containsPii?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  piiTypes?: Prisma.EmailMessageUpdatepiiTypesInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutEmailMessageNestedInput
+}
+
 export type EmailMessageCreateWithoutThreadInput = {
   id?: string
   providerMessageId: string
@@ -877,6 +1035,7 @@ export type EmailMessageCreateWithoutThreadInput = {
   inReplyTo?: Prisma.EmailMessageCreateNestedOneWithoutDraftRepliesInput
   draftReplies?: Prisma.EmailMessageCreateNestedManyWithoutInReplyToInput
   tasks?: Prisma.TaskCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageUncheckedCreateWithoutThreadInput = {
@@ -905,6 +1064,7 @@ export type EmailMessageUncheckedCreateWithoutThreadInput = {
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainUncheckedCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageCreateOrConnectWithoutThreadInput = {
@@ -989,6 +1149,7 @@ export type EmailMessageCreateWithoutDraftRepliesInput = {
   thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
   inReplyTo?: Prisma.EmailMessageCreateNestedOneWithoutDraftRepliesInput
   tasks?: Prisma.TaskCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageUncheckedCreateWithoutDraftRepliesInput = {
@@ -1017,6 +1178,7 @@ export type EmailMessageUncheckedCreateWithoutDraftRepliesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainUncheckedCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageCreateOrConnectWithoutDraftRepliesInput = {
@@ -1050,6 +1212,7 @@ export type EmailMessageCreateWithoutInReplyToInput = {
   thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
   draftReplies?: Prisma.EmailMessageCreateNestedManyWithoutInReplyToInput
   tasks?: Prisma.TaskCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageUncheckedCreateWithoutInReplyToInput = {
@@ -1078,6 +1241,7 @@ export type EmailMessageUncheckedCreateWithoutInReplyToInput = {
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutEmailMessageInput
+  approvalChain?: Prisma.ApprovalChainUncheckedCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageCreateOrConnectWithoutInReplyToInput = {
@@ -1127,6 +1291,7 @@ export type EmailMessageUpdateWithoutDraftRepliesInput = {
   thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
   inReplyTo?: Prisma.EmailMessageUpdateOneWithoutDraftRepliesNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUncheckedUpdateWithoutDraftRepliesInput = {
@@ -1155,6 +1320,7 @@ export type EmailMessageUncheckedUpdateWithoutDraftRepliesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUncheckedUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUpsertWithWhereUniqueWithoutInReplyToInput = {
@@ -1199,6 +1365,7 @@ export type EmailMessageCreateWithoutTasksInput = {
   thread: Prisma.EmailThreadCreateNestedOneWithoutMessagesInput
   inReplyTo?: Prisma.EmailMessageCreateNestedOneWithoutDraftRepliesInput
   draftReplies?: Prisma.EmailMessageCreateNestedManyWithoutInReplyToInput
+  approvalChain?: Prisma.ApprovalChainCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageUncheckedCreateWithoutTasksInput = {
@@ -1227,6 +1394,7 @@ export type EmailMessageUncheckedCreateWithoutTasksInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   draftReplies?: Prisma.EmailMessageUncheckedCreateNestedManyWithoutInReplyToInput
+  approvalChain?: Prisma.ApprovalChainUncheckedCreateNestedOneWithoutDraftMessageInput
 }
 
 export type EmailMessageCreateOrConnectWithoutTasksInput = {
@@ -1271,6 +1439,7 @@ export type EmailMessageUpdateWithoutTasksInput = {
   thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
   inReplyTo?: Prisma.EmailMessageUpdateOneWithoutDraftRepliesNestedInput
   draftReplies?: Prisma.EmailMessageUpdateManyWithoutInReplyToNestedInput
+  approvalChain?: Prisma.ApprovalChainUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUncheckedUpdateWithoutTasksInput = {
@@ -1299,6 +1468,7 @@ export type EmailMessageUncheckedUpdateWithoutTasksInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
+  approvalChain?: Prisma.ApprovalChainUncheckedUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageCreateManyThreadInput = {
@@ -1353,6 +1523,7 @@ export type EmailMessageUpdateWithoutThreadInput = {
   inReplyTo?: Prisma.EmailMessageUpdateOneWithoutDraftRepliesNestedInput
   draftReplies?: Prisma.EmailMessageUpdateManyWithoutInReplyToNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUncheckedUpdateWithoutThreadInput = {
@@ -1381,6 +1552,7 @@ export type EmailMessageUncheckedUpdateWithoutThreadInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUncheckedUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUncheckedUpdateManyWithoutThreadInput = {
@@ -1461,6 +1633,7 @@ export type EmailMessageUpdateWithoutInReplyToInput = {
   thread?: Prisma.EmailThreadUpdateOneRequiredWithoutMessagesNestedInput
   draftReplies?: Prisma.EmailMessageUpdateManyWithoutInReplyToNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUncheckedUpdateWithoutInReplyToInput = {
@@ -1489,6 +1662,7 @@ export type EmailMessageUncheckedUpdateWithoutInReplyToInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   draftReplies?: Prisma.EmailMessageUncheckedUpdateManyWithoutInReplyToNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutEmailMessageNestedInput
+  approvalChain?: Prisma.ApprovalChainUncheckedUpdateOneWithoutDraftMessageNestedInput
 }
 
 export type EmailMessageUncheckedUpdateManyWithoutInReplyToInput = {
@@ -1586,6 +1760,7 @@ export type EmailMessageSelect<ExtArgs extends runtime.Types.Extensions.Internal
   inReplyTo?: boolean | Prisma.EmailMessage$inReplyToArgs<ExtArgs>
   draftReplies?: boolean | Prisma.EmailMessage$draftRepliesArgs<ExtArgs>
   tasks?: boolean | Prisma.EmailMessage$tasksArgs<ExtArgs>
+  approvalChain?: boolean | Prisma.EmailMessage$approvalChainArgs<ExtArgs>
   _count?: boolean | Prisma.EmailMessageCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["emailMessage"]>
 
@@ -1680,6 +1855,7 @@ export type EmailMessageInclude<ExtArgs extends runtime.Types.Extensions.Interna
   inReplyTo?: boolean | Prisma.EmailMessage$inReplyToArgs<ExtArgs>
   draftReplies?: boolean | Prisma.EmailMessage$draftRepliesArgs<ExtArgs>
   tasks?: boolean | Prisma.EmailMessage$tasksArgs<ExtArgs>
+  approvalChain?: boolean | Prisma.EmailMessage$approvalChainArgs<ExtArgs>
   _count?: boolean | Prisma.EmailMessageCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmailMessageIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1698,6 +1874,7 @@ export type $EmailMessagePayload<ExtArgs extends runtime.Types.Extensions.Intern
     inReplyTo: Prisma.$EmailMessagePayload<ExtArgs> | null
     draftReplies: Prisma.$EmailMessagePayload<ExtArgs>[]
     tasks: Prisma.$TaskPayload<ExtArgs>[]
+    approvalChain: Prisma.$ApprovalChainPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2129,6 +2306,7 @@ export interface Prisma__EmailMessageClient<T, Null = never, ExtArgs extends run
   inReplyTo<T extends Prisma.EmailMessage$inReplyToArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailMessage$inReplyToArgs<ExtArgs>>): Prisma.Prisma__EmailMessageClient<runtime.Types.Result.GetResult<Prisma.$EmailMessagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   draftReplies<T extends Prisma.EmailMessage$draftRepliesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailMessage$draftRepliesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmailMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tasks<T extends Prisma.EmailMessage$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailMessage$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  approvalChain<T extends Prisma.EmailMessage$approvalChainArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EmailMessage$approvalChainArgs<ExtArgs>>): Prisma.Prisma__ApprovalChainClient<runtime.Types.Result.GetResult<Prisma.$ApprovalChainPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2647,6 +2825,25 @@ export type EmailMessage$tasksArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.TaskScalarFieldEnum | Prisma.TaskScalarFieldEnum[]
+}
+
+/**
+ * EmailMessage.approvalChain
+ */
+export type EmailMessage$approvalChainArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ApprovalChain
+   */
+  select?: Prisma.ApprovalChainSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ApprovalChain
+   */
+  omit?: Prisma.ApprovalChainOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ApprovalChainInclude<ExtArgs> | null
+  where?: Prisma.ApprovalChainWhereInput
 }
 
 /**

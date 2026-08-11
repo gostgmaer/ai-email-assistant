@@ -353,6 +353,18 @@ A user should be able to:
 ## v3.0
 - [ ] Multi-tenancy
 - [ ] Enterprise Features (RBAC, Audit Logs, SSO, SCIM, API Keys, Webhooks, Compliance, Security Controls — depends on multi-tenancy existing first)
-- [ ] Integrations (Slack, Teams, Jira, Notion, Linear, HubSpot, Salesforce, Discord — moved from v2.0, none started)
+- [x] Integrations phase 1 (Slack, Teams, HubSpot) — moved from v2.0; phase 2 (Jira, Notion, Linear, Salesforce, Discord) not started
+  - [x] Slack — OAuth connect (per-account, mirrors Google/Microsoft connect flow), channel picker, and a `POST_TO_SLACK` Workflow rule action (e.g. "notify #support when a thread is assigned"). Built end-to-end first as the template for Teams/HubSpot, per docs/v2.0-plan.md §5.
+  - [x] Microsoft Teams — OAuth via the same Azure AD app registration as Microsoft mail/calendar (Graph scopes: Team/Channel.ReadBasic.All, ChannelMessage.Send, offline_access, real refresh-token handling since Graph tokens expire ~1hr). Two-level team → channel picker (`GET /integrations/:id/teams-channels`) and a `POST_TO_TEAMS` Workflow rule action.
+  - [x] HubSpot — OAuth (refreshable, ~30min token expiry) and a `CREATE_HUBSPOT_CONTACT` Workflow rule action that upserts the matched message's sender as a HubSpot contact via the CRM v3 batch-upsert endpoint (keyed on email).
+  - [ ] Jira (phase 2)
+  - [ ] Notion (phase 2)
+  - [ ] Linear (phase 2)
+  - [ ] Salesforce (phase 2)
+  - [ ] Discord (phase 2)
 - [ ] Analytics (Response Time, Inbox Health, Productivity Metrics, AI Usage, Team Performance, SLA Tracking — moved from v2.0, none started)
-- [ ] True multi-step Approval Chains (today's Workflow Builder only has a single auto-send-vs-draft gate, not sequential multi-person approval)
+- [x] True multi-step Approval Chains — new `REQUIRE_APPROVAL_CHAIN` Workflow rule action (always wins over AUTO_REPLY on the same rule); `ApprovalChain`/`ApprovalStep` models gate a drafted reply behind ordered sign-off. Approving the final step sends the draft automatically; rejecting hands control back to a human (draft stays in Drafts, sendable manually — not a permanent lock). `ComposeService.sendDraft` blocks manual sending only while a chain is still PENDING. New `/approvals` page ("my pending approvals" queue) plus an inline chain-status banner on the compose/draft page.
+  - [x] Multiple sequential approval stages per WorkflowRule (not just single auto-send-vs-draft)
+  - [x] Per-step approver assignment (ordered `approverUserIds`, picked in the Workflow rule builder)
+  - [x] Step progression logic (advance on approval — WAITING → PENDING for the next step; halt on rejection)
+  - [x] Chain status visibility (who approved, who's pending, at which step — `/approvals` and the compose page banner)

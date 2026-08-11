@@ -77,7 +77,22 @@ export type WorkflowAction =
   | { type: "AUTO_REPLY"; agentId?: string }
   | { type: "ASSIGN_TO"; userId: string }
   | { type: "NOTIFY"; userId: string; message?: string }
-  | { type: "REQUIRE_APPROVAL" };
+  | {
+      type: "POST_TO_SLACK";
+      integrationId: string;
+      channelId: string;
+      message?: string;
+    }
+  | {
+      type: "POST_TO_TEAMS";
+      integrationId: string;
+      teamId: string;
+      channelId: string;
+      message?: string;
+    }
+  | { type: "CREATE_HUBSPOT_CONTACT"; integrationId: string }
+  | { type: "REQUIRE_APPROVAL" }
+  | { type: "REQUIRE_APPROVAL_CHAIN"; approverUserIds: string[] };
 
 export type WorkflowActionType = WorkflowAction["type"];
 
@@ -271,6 +286,62 @@ export interface Task {
   calendarEventUrl: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type IntegrationProvider = "SLACK" | "TEAMS" | "HUBSPOT";
+
+export interface Integration {
+  id: string;
+  accountId: string;
+  provider: IntegrationProvider;
+  workspaceId: string | null;
+  workspaceName: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntegrationChannel {
+  id: string;
+  name: string;
+}
+
+export interface TeamsChannel {
+  teamId: string;
+  teamName: string;
+  id: string;
+  name: string;
+}
+
+export type ApprovalChainStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type ApprovalStepStatus = "WAITING" | "PENDING" | "APPROVED" | "REJECTED";
+
+export interface ApprovalStep {
+  id: string;
+  order: number;
+  approverUserId: string;
+  status: ApprovalStepStatus;
+  comment: string | null;
+  decidedAt: string | null;
+  approver: { id: string; email: string; displayName: string | null };
+}
+
+export interface ApprovalChain {
+  id: string;
+  accountId: string;
+  draftMessageId: string;
+  status: ApprovalChainStatus;
+  createdAt: string;
+  updatedAt: string;
+  steps: ApprovalStep[];
+  draftMessage: {
+    id: string;
+    subject: string | null;
+    bodyText: string | null;
+    to: Participant[];
+    threadId: string;
+  };
+  account: { id: string; email: string };
 }
 
 export interface MeetingTimeSuggestion {

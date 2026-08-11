@@ -58,9 +58,12 @@ export const ModelName = {
   EmailAccount: 'EmailAccount',
   AccountMember: 'AccountMember',
   WorkflowRule: 'WorkflowRule',
+  ApprovalChain: 'ApprovalChain',
+  ApprovalStep: 'ApprovalStep',
   Agent: 'Agent',
   Contact: 'Contact',
   EmailCredential: 'EmailCredential',
+  Integration: 'Integration',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
   MailFolder: 'MailFolder',
@@ -203,6 +206,32 @@ export const WorkflowRuleScalarFieldEnum = {
 export type WorkflowRuleScalarFieldEnum = (typeof WorkflowRuleScalarFieldEnum)[keyof typeof WorkflowRuleScalarFieldEnum]
 
 
+export const ApprovalChainScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  draftMessageId: 'draftMessageId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ApprovalChainScalarFieldEnum = (typeof ApprovalChainScalarFieldEnum)[keyof typeof ApprovalChainScalarFieldEnum]
+
+
+export const ApprovalStepScalarFieldEnum = {
+  id: 'id',
+  chainId: 'chainId',
+  order: 'order',
+  approverUserId: 'approverUserId',
+  status: 'status',
+  comment: 'comment',
+  decidedAt: 'decidedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ApprovalStepScalarFieldEnum = (typeof ApprovalStepScalarFieldEnum)[keyof typeof ApprovalStepScalarFieldEnum]
+
+
 export const AgentScalarFieldEnum = {
   id: 'id',
   accountId: 'accountId',
@@ -245,6 +274,23 @@ export const EmailCredentialScalarFieldEnum = {
 } as const
 
 export type EmailCredentialScalarFieldEnum = (typeof EmailCredentialScalarFieldEnum)[keyof typeof EmailCredentialScalarFieldEnum]
+
+
+export const IntegrationScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  provider: 'provider',
+  workspaceId: 'workspaceId',
+  workspaceName: 'workspaceName',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type IntegrationScalarFieldEnum = (typeof IntegrationScalarFieldEnum)[keyof typeof IntegrationScalarFieldEnum]
 
 
 export const CalendarAccountScalarFieldEnum = {

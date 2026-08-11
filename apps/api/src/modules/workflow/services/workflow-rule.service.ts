@@ -10,6 +10,7 @@ import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNa
 // Leaf-file imports — see documents.controller.ts's comment for why
 // (avoids a Jest-only circular require).
 import { EmailAccountService } from '../../email-account/services/email-account.service';
+import { IntegrationService } from '../../integration/services/integration.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import {
   WorkflowAction,
@@ -28,7 +29,11 @@ const ACTION_TYPES: WorkflowAction['type'][] = [
   'AUTO_REPLY',
   'ASSIGN_TO',
   'NOTIFY',
+  'POST_TO_SLACK',
+  'POST_TO_TEAMS',
+  'CREATE_HUBSPOT_CONTACT',
   'REQUIRE_APPROVAL',
+  'REQUIRE_APPROVAL_CHAIN',
 ];
 
 export interface WorkflowClassificationInput {
@@ -41,6 +46,10 @@ export interface WorkflowActionContext {
   accountId: string;
   threadId: string;
   messageId: string;
+  // Only needed for CREATE_HUBSPOT_CONTACT — the sender of the message
+  // that triggered this rule, not user input.
+  senderEmail: string;
+  senderName?: string;
 }
 
 @Injectable()
@@ -51,6 +60,7 @@ export class WorkflowRuleService {
     private readonly prisma: PrismaService,
     private readonly emailAccountService: EmailAccountService,
     private readonly notificationService: NotificationService,
+    private readonly integrationService: IntegrationService,
   ) {}
 
   /** Rules are account configuration — owner-only, same tier as filters/
@@ -172,15 +182,20 @@ export class WorkflowRuleService {
    * Executes a matched rule's actions. Best-effort per action — one
    * failing action (e.g. NOTIFY to a userId that turns out invalid)
    * must not block the others or the reply pipeline itself. Returns
-   * whether an AUTO_REPLY action was present, since that's the one
-   * signal AiProcessingProcessor needs to decide send-vs-draft; the
-   * other actions are fire-and-forget from its point of view.
+   * whether an AUTO_REPLY action was present (the signal
+   * AiProcessingProcessor needs to decide send-vs-draft) and the
+   * approver list for REQUIRE_APPROVAL_CHAIN, if present — the chain
+   * itself is created later by the caller, once a draft message actually
+   * exists to gate (see AiProcessingProcessor). approvalChainApproverUserIds
+   * always forces autoReply to false: a chain must never be skipped just
+   * because the same rule also happens to include AUTO_REPLY.
    */
   async executeActions(
     actions: WorkflowAction[],
     context: WorkflowActionContext,
-  ): Promise<{ autoReply: boolean }> {
+  ): Promise<{ autoReply: boolean; approvalChainApproverUserIds?: string[] }> {
     let autoReply = false;
+    let approvalChainApproverUserIds: string[] | undefined;
 
     for (const action of actions) {
       try {
@@ -190,6 +205,10 @@ export class WorkflowRuleService {
             break;
 
           case 'REQUIRE_APPROVAL':
+            break;
+
+          case 'REQUIRE_APPROVAL_CHAIN':
+            approvalChainApproverUserIds = action.approverUserIds;
             break;
 
           case 'ASSIGN_TO':
@@ -208,6 +227,38 @@ export class WorkflowRuleService {
               { threadId: context.threadId, messageId: context.messageId },
             );
             break;
+
+          case 'POST_TO_SLACK':
+            await this.integrationService.postMessage(
+              action.integrationId,
+              action.channelId,
+              action.message ??
+                `A workflow rule matched a new message (thread ${context.threadId}).`,
+            );
+            break;
+
+          case 'POST_TO_TEAMS':
+            await this.integrationService.postToTeamsChannel(
+              action.integrationId,
+              action.teamId,
+              action.channelId,
+              action.message ??
+                `A workflow rule matched a new message (thread ${context.threadId}).`,
+            );
+            break;
+
+          case 'CREATE_HUBSPOT_CONTACT': {
+            const [firstName, ...rest] = (context.senderName ?? '').split(' ');
+            await this.integrationService.upsertHubspotContact(
+              action.integrationId,
+              {
+                email: context.senderEmail,
+                firstName: firstName || undefined,
+                lastName: rest.join(' ') || undefined,
+              },
+            );
+            break;
+          }
         }
       } catch (error) {
         this.logger.warn(
@@ -216,7 +267,11 @@ export class WorkflowRuleService {
       }
     }
 
-    return { autoReply };
+    if (approvalChainApproverUserIds) {
+      autoReply = false;
+    }
+
+    return { autoReply, approvalChainApproverUserIds };
   }
 
   private async assignThread(
@@ -289,6 +344,69 @@ export class WorkflowRuleService {
         throw new BadRequestException(
           `action.userId is required for ${a.type}`,
         );
+      }
+
+      if (a.type === 'POST_TO_SLACK') {
+        const slackAction = a as {
+          integrationId?: unknown;
+          channelId?: unknown;
+        };
+        if (typeof slackAction.integrationId !== 'string') {
+          throw new BadRequestException(
+            'action.integrationId is required for POST_TO_SLACK',
+          );
+        }
+        if (typeof slackAction.channelId !== 'string') {
+          throw new BadRequestException(
+            'action.channelId is required for POST_TO_SLACK',
+          );
+        }
+      }
+
+      if (a.type === 'POST_TO_TEAMS') {
+        const teamsAction = a as {
+          integrationId?: unknown;
+          teamId?: unknown;
+          channelId?: unknown;
+        };
+        if (typeof teamsAction.integrationId !== 'string') {
+          throw new BadRequestException(
+            'action.integrationId is required for POST_TO_TEAMS',
+          );
+        }
+        if (typeof teamsAction.teamId !== 'string') {
+          throw new BadRequestException(
+            'action.teamId is required for POST_TO_TEAMS',
+          );
+        }
+        if (typeof teamsAction.channelId !== 'string') {
+          throw new BadRequestException(
+            'action.channelId is required for POST_TO_TEAMS',
+          );
+        }
+      }
+
+      if (
+        a.type === 'CREATE_HUBSPOT_CONTACT' &&
+        typeof (a as { integrationId?: unknown }).integrationId !== 'string'
+      ) {
+        throw new BadRequestException(
+          'action.integrationId is required for CREATE_HUBSPOT_CONTACT',
+        );
+      }
+
+      if (a.type === 'REQUIRE_APPROVAL_CHAIN') {
+        const approverUserIds = (a as { approverUserIds?: unknown })
+          .approverUserIds;
+        if (
+          !Array.isArray(approverUserIds) ||
+          approverUserIds.length === 0 ||
+          !approverUserIds.every((id) => typeof id === 'string')
+        ) {
+          throw new BadRequestException(
+            'action.approverUserIds must be a non-empty array of user IDs for REQUIRE_APPROVAL_CHAIN',
+          );
+        }
       }
     }
   }

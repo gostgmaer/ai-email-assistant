@@ -23,6 +23,8 @@ import { TasksModule } from './modules/tasks';
 import { WorkflowModule } from './modules/workflow';
 import { AgentModule } from './modules/agent';
 import { CrmModule } from './modules/crm';
+import { IntegrationModule } from './modules/integration';
+import { ApprovalModule } from './modules/approval';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { CrmModule } from './modules/crm';
     WorkflowModule,
     AgentModule,
     CrmModule,
+    IntegrationModule,
+    ApprovalModule,
   ],
 })
 export class AppModule {}

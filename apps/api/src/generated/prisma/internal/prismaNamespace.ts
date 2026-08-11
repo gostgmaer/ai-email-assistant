@@ -404,9 +404,12 @@ export const ModelName = {
   EmailAccount: 'EmailAccount',
   AccountMember: 'AccountMember',
   WorkflowRule: 'WorkflowRule',
+  ApprovalChain: 'ApprovalChain',
+  ApprovalStep: 'ApprovalStep',
   Agent: 'Agent',
   Contact: 'Contact',
   EmailCredential: 'EmailCredential',
+  Integration: 'Integration',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
   MailFolder: 'MailFolder',
@@ -432,7 +435,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "accountMember" | "workflowRule" | "agent" | "contact" | "emailCredential" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "threadNote" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
+    modelProps: "user" | "verificationToken" | "notification" | "refreshToken" | "emailAccount" | "accountMember" | "workflowRule" | "approvalChain" | "approvalStep" | "agent" | "contact" | "emailCredential" | "integration" | "calendarAccount" | "calendarCredential" | "mailFolder" | "emailThread" | "threadNote" | "emailMessage" | "task" | "contactMemory" | "document" | "documentChunk"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -954,6 +957,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ApprovalChain: {
+      payload: Prisma.$ApprovalChainPayload<ExtArgs>
+      fields: Prisma.ApprovalChainFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ApprovalChainFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ApprovalChainFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>
+        }
+        findFirst: {
+          args: Prisma.ApprovalChainFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ApprovalChainFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>
+        }
+        findMany: {
+          args: Prisma.ApprovalChainFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>[]
+        }
+        create: {
+          args: Prisma.ApprovalChainCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>
+        }
+        createMany: {
+          args: Prisma.ApprovalChainCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ApprovalChainCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>[]
+        }
+        delete: {
+          args: Prisma.ApprovalChainDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>
+        }
+        update: {
+          args: Prisma.ApprovalChainUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>
+        }
+        deleteMany: {
+          args: Prisma.ApprovalChainDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ApprovalChainUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ApprovalChainUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>[]
+        }
+        upsert: {
+          args: Prisma.ApprovalChainUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalChainPayload>
+        }
+        aggregate: {
+          args: Prisma.ApprovalChainAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateApprovalChain>
+        }
+        groupBy: {
+          args: Prisma.ApprovalChainGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ApprovalChainGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ApprovalChainCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ApprovalChainCountAggregateOutputType> | number
+        }
+      }
+    }
+    ApprovalStep: {
+      payload: Prisma.$ApprovalStepPayload<ExtArgs>
+      fields: Prisma.ApprovalStepFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ApprovalStepFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ApprovalStepFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>
+        }
+        findFirst: {
+          args: Prisma.ApprovalStepFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ApprovalStepFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>
+        }
+        findMany: {
+          args: Prisma.ApprovalStepFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>[]
+        }
+        create: {
+          args: Prisma.ApprovalStepCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>
+        }
+        createMany: {
+          args: Prisma.ApprovalStepCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ApprovalStepCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>[]
+        }
+        delete: {
+          args: Prisma.ApprovalStepDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>
+        }
+        update: {
+          args: Prisma.ApprovalStepUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>
+        }
+        deleteMany: {
+          args: Prisma.ApprovalStepDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ApprovalStepUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ApprovalStepUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>[]
+        }
+        upsert: {
+          args: Prisma.ApprovalStepUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalStepPayload>
+        }
+        aggregate: {
+          args: Prisma.ApprovalStepAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateApprovalStep>
+        }
+        groupBy: {
+          args: Prisma.ApprovalStepGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ApprovalStepGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ApprovalStepCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ApprovalStepCountAggregateOutputType> | number
+        }
+      }
+    }
     Agent: {
       payload: Prisma.$AgentPayload<ExtArgs>
       fields: Prisma.AgentFieldRefs
@@ -1173,6 +1324,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.EmailCredentialCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.EmailCredentialCountAggregateOutputType> | number
+        }
+      }
+    }
+    Integration: {
+      payload: Prisma.$IntegrationPayload<ExtArgs>
+      fields: Prisma.IntegrationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.IntegrationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.IntegrationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>
+        }
+        findFirst: {
+          args: Prisma.IntegrationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.IntegrationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>
+        }
+        findMany: {
+          args: Prisma.IntegrationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>[]
+        }
+        create: {
+          args: Prisma.IntegrationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>
+        }
+        createMany: {
+          args: Prisma.IntegrationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.IntegrationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>[]
+        }
+        delete: {
+          args: Prisma.IntegrationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>
+        }
+        update: {
+          args: Prisma.IntegrationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>
+        }
+        deleteMany: {
+          args: Prisma.IntegrationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.IntegrationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.IntegrationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>[]
+        }
+        upsert: {
+          args: Prisma.IntegrationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationPayload>
+        }
+        aggregate: {
+          args: Prisma.IntegrationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateIntegration>
+        }
+        groupBy: {
+          args: Prisma.IntegrationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.IntegrationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.IntegrationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.IntegrationCountAggregateOutputType> | number
         }
       }
     }
@@ -2069,6 +2294,32 @@ export const WorkflowRuleScalarFieldEnum = {
 export type WorkflowRuleScalarFieldEnum = (typeof WorkflowRuleScalarFieldEnum)[keyof typeof WorkflowRuleScalarFieldEnum]
 
 
+export const ApprovalChainScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  draftMessageId: 'draftMessageId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ApprovalChainScalarFieldEnum = (typeof ApprovalChainScalarFieldEnum)[keyof typeof ApprovalChainScalarFieldEnum]
+
+
+export const ApprovalStepScalarFieldEnum = {
+  id: 'id',
+  chainId: 'chainId',
+  order: 'order',
+  approverUserId: 'approverUserId',
+  status: 'status',
+  comment: 'comment',
+  decidedAt: 'decidedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ApprovalStepScalarFieldEnum = (typeof ApprovalStepScalarFieldEnum)[keyof typeof ApprovalStepScalarFieldEnum]
+
+
 export const AgentScalarFieldEnum = {
   id: 'id',
   accountId: 'accountId',
@@ -2111,6 +2362,23 @@ export const EmailCredentialScalarFieldEnum = {
 } as const
 
 export type EmailCredentialScalarFieldEnum = (typeof EmailCredentialScalarFieldEnum)[keyof typeof EmailCredentialScalarFieldEnum]
+
+
+export const IntegrationScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  provider: 'provider',
+  workspaceId: 'workspaceId',
+  workspaceName: 'workspaceName',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type IntegrationScalarFieldEnum = (typeof IntegrationScalarFieldEnum)[keyof typeof IntegrationScalarFieldEnum]
 
 
 export const CalendarAccountScalarFieldEnum = {
@@ -2498,6 +2766,48 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'ApprovalChainStatus'
+ */
+export type EnumApprovalChainStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalChainStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ApprovalChainStatus[]'
+ */
+export type ListEnumApprovalChainStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalChainStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ApprovalStepStatus'
+ */
+export type EnumApprovalStepStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalStepStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ApprovalStepStatus[]'
+ */
+export type ListEnumApprovalStepStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalStepStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'IntegrationProvider'
+ */
+export type EnumIntegrationProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'IntegrationProvider'>
+    
+
+
+/**
+ * Reference to a field of type 'IntegrationProvider[]'
+ */
+export type ListEnumIntegrationProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'IntegrationProvider[]'>
+    
+
+
+/**
  * Reference to a field of type 'CalendarProvider'
  */
 export type EnumCalendarProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CalendarProvider'>
@@ -2738,9 +3048,12 @@ export type GlobalOmitConfig = {
   emailAccount?: Prisma.EmailAccountOmit
   accountMember?: Prisma.AccountMemberOmit
   workflowRule?: Prisma.WorkflowRuleOmit
+  approvalChain?: Prisma.ApprovalChainOmit
+  approvalStep?: Prisma.ApprovalStepOmit
   agent?: Prisma.AgentOmit
   contact?: Prisma.ContactOmit
   emailCredential?: Prisma.EmailCredentialOmit
+  integration?: Prisma.IntegrationOmit
   calendarAccount?: Prisma.CalendarAccountOmit
   calendarCredential?: Prisma.CalendarCredentialOmit
   mailFolder?: Prisma.MailFolderOmit

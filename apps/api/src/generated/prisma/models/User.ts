@@ -241,6 +241,7 @@ export type UserWhereInput = {
   accountMemberships?: Prisma.AccountMemberListRelationFilter
   assignedThreads?: Prisma.EmailThreadListRelationFilter
   threadNotes?: Prisma.ThreadNoteListRelationFilter
+  approvalSteps?: Prisma.ApprovalStepListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -266,6 +267,7 @@ export type UserOrderByWithRelationInput = {
   accountMemberships?: Prisma.AccountMemberOrderByRelationAggregateInput
   assignedThreads?: Prisma.EmailThreadOrderByRelationAggregateInput
   threadNotes?: Prisma.ThreadNoteOrderByRelationAggregateInput
+  approvalSteps?: Prisma.ApprovalStepOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -294,6 +296,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   accountMemberships?: Prisma.AccountMemberListRelationFilter
   assignedThreads?: Prisma.EmailThreadListRelationFilter
   threadNotes?: Prisma.ThreadNoteListRelationFilter
+  approvalSteps?: Prisma.ApprovalStepListRelationFilter
 }, "id" | "email" | "googleId" | "microsoftId">
 
 export type UserOrderByWithAggregationInput = {
@@ -353,6 +356,7 @@ export type UserCreateInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -378,6 +382,7 @@ export type UserUncheckedCreateInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserUpdateInput = {
@@ -403,6 +408,7 @@ export type UserUpdateInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -428,6 +434,7 @@ export type UserUncheckedUpdateInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -610,6 +617,20 @@ export type UserUpdateOneRequiredWithoutAccountMembershipsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAccountMembershipsInput, Prisma.UserUpdateWithoutAccountMembershipsInput>, Prisma.UserUncheckedUpdateWithoutAccountMembershipsInput>
 }
 
+export type UserCreateNestedOneWithoutApprovalStepsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutApprovalStepsInput, Prisma.UserUncheckedCreateWithoutApprovalStepsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutApprovalStepsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutApprovalStepsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutApprovalStepsInput, Prisma.UserUncheckedCreateWithoutApprovalStepsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutApprovalStepsInput
+  upsert?: Prisma.UserUpsertWithoutApprovalStepsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutApprovalStepsInput, Prisma.UserUpdateWithoutApprovalStepsInput>, Prisma.UserUncheckedUpdateWithoutApprovalStepsInput>
+}
+
 export type UserCreateNestedOneWithoutCalendarAccountsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutCalendarAccountsInput, Prisma.UserUncheckedCreateWithoutCalendarAccountsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutCalendarAccountsInput
@@ -718,6 +739,7 @@ export type UserCreateWithoutVerificationTokensInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutVerificationTokensInput = {
@@ -742,6 +764,7 @@ export type UserUncheckedCreateWithoutVerificationTokensInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutVerificationTokensInput = {
@@ -782,6 +805,7 @@ export type UserUpdateWithoutVerificationTokensInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVerificationTokensInput = {
@@ -806,6 +830,7 @@ export type UserUncheckedUpdateWithoutVerificationTokensInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutNotificationsInput = {
@@ -830,6 +855,7 @@ export type UserCreateWithoutNotificationsInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -854,6 +880,7 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -894,6 +921,7 @@ export type UserUpdateWithoutNotificationsInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -918,6 +946,7 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutRefreshTokensInput = {
@@ -942,6 +971,7 @@ export type UserCreateWithoutRefreshTokensInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutRefreshTokensInput = {
@@ -966,6 +996,7 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutRefreshTokensInput = {
@@ -1006,6 +1037,7 @@ export type UserUpdateWithoutRefreshTokensInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRefreshTokensInput = {
@@ -1030,6 +1062,7 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutEmailAccountsInput = {
@@ -1054,6 +1087,7 @@ export type UserCreateWithoutEmailAccountsInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutEmailAccountsInput = {
@@ -1078,6 +1112,7 @@ export type UserUncheckedCreateWithoutEmailAccountsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutEmailAccountsInput = {
@@ -1118,6 +1153,7 @@ export type UserUpdateWithoutEmailAccountsInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEmailAccountsInput = {
@@ -1142,6 +1178,7 @@ export type UserUncheckedUpdateWithoutEmailAccountsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutAccountMembershipsInput = {
@@ -1166,6 +1203,7 @@ export type UserCreateWithoutAccountMembershipsInput = {
   tasks?: Prisma.TaskCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutAccountMembershipsInput = {
@@ -1190,6 +1228,7 @@ export type UserUncheckedCreateWithoutAccountMembershipsInput = {
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutAccountMembershipsInput = {
@@ -1230,6 +1269,7 @@ export type UserUpdateWithoutAccountMembershipsInput = {
   tasks?: Prisma.TaskUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountMembershipsInput = {
@@ -1252,6 +1292,123 @@ export type UserUncheckedUpdateWithoutAccountMembershipsInput = {
   contactMemories?: Prisma.ContactMemoryUncheckedUpdateManyWithoutUserNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutUserNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutUserNestedInput
+  assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
+  threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
+}
+
+export type UserCreateWithoutApprovalStepsInput = {
+  id?: string
+  email: string
+  displayName?: string | null
+  avatar?: string | null
+  passwordHash?: string | null
+  emailVerifiedAt?: Date | string | null
+  googleId?: string | null
+  microsoftId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  emailAccounts?: Prisma.EmailAccountCreateNestedManyWithoutUserInput
+  calendarAccounts?: Prisma.CalendarAccountCreateNestedManyWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  verificationTokens?: Prisma.VerificationTokenCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryCreateNestedManyWithoutUserInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutUserInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutUserInput
+  accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
+  assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
+  threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+}
+
+export type UserUncheckedCreateWithoutApprovalStepsInput = {
+  id?: string
+  email: string
+  displayName?: string | null
+  avatar?: string | null
+  passwordHash?: string | null
+  emailVerifiedAt?: Date | string | null
+  googleId?: string | null
+  microsoftId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  emailAccounts?: Prisma.EmailAccountUncheckedCreateNestedManyWithoutUserInput
+  calendarAccounts?: Prisma.CalendarAccountUncheckedCreateNestedManyWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  verificationTokens?: Prisma.VerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  contactMemories?: Prisma.ContactMemoryUncheckedCreateNestedManyWithoutUserInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutUserInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutUserInput
+  accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
+  assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
+  threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+}
+
+export type UserCreateOrConnectWithoutApprovalStepsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutApprovalStepsInput, Prisma.UserUncheckedCreateWithoutApprovalStepsInput>
+}
+
+export type UserUpsertWithoutApprovalStepsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutApprovalStepsInput, Prisma.UserUncheckedUpdateWithoutApprovalStepsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutApprovalStepsInput, Prisma.UserUncheckedCreateWithoutApprovalStepsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutApprovalStepsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutApprovalStepsInput, Prisma.UserUncheckedUpdateWithoutApprovalStepsInput>
+}
+
+export type UserUpdateWithoutApprovalStepsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  microsoftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailAccounts?: Prisma.EmailAccountUpdateManyWithoutUserNestedInput
+  calendarAccounts?: Prisma.CalendarAccountUpdateManyWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  verificationTokens?: Prisma.VerificationTokenUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUpdateManyWithoutUserNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutUserNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutUserNestedInput
+  accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
+  assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
+  threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+}
+
+export type UserUncheckedUpdateWithoutApprovalStepsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  microsoftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailAccounts?: Prisma.EmailAccountUncheckedUpdateManyWithoutUserNestedInput
+  calendarAccounts?: Prisma.CalendarAccountUncheckedUpdateManyWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  verificationTokens?: Prisma.VerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  contactMemories?: Prisma.ContactMemoryUncheckedUpdateManyWithoutUserNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutUserNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutUserNestedInput
+  accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
 }
@@ -1278,6 +1435,7 @@ export type UserCreateWithoutCalendarAccountsInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutCalendarAccountsInput = {
@@ -1302,6 +1460,7 @@ export type UserUncheckedCreateWithoutCalendarAccountsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutCalendarAccountsInput = {
@@ -1342,6 +1501,7 @@ export type UserUpdateWithoutCalendarAccountsInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCalendarAccountsInput = {
@@ -1366,6 +1526,7 @@ export type UserUncheckedUpdateWithoutCalendarAccountsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutAssignedThreadsInput = {
@@ -1390,6 +1551,7 @@ export type UserCreateWithoutAssignedThreadsInput = {
   tasks?: Prisma.TaskCreateNestedManyWithoutUserInput
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutAssignedThreadsInput = {
@@ -1414,6 +1576,7 @@ export type UserUncheckedCreateWithoutAssignedThreadsInput = {
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutUserInput
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutAssignedThreadsInput = {
@@ -1454,6 +1617,7 @@ export type UserUpdateWithoutAssignedThreadsInput = {
   tasks?: Prisma.TaskUpdateManyWithoutUserNestedInput
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignedThreadsInput = {
@@ -1478,6 +1642,7 @@ export type UserUncheckedUpdateWithoutAssignedThreadsInput = {
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutUserNestedInput
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutThreadNotesInput = {
@@ -1502,6 +1667,7 @@ export type UserCreateWithoutThreadNotesInput = {
   tasks?: Prisma.TaskCreateNestedManyWithoutUserInput
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutThreadNotesInput = {
@@ -1526,6 +1692,7 @@ export type UserUncheckedCreateWithoutThreadNotesInput = {
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutUserInput
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutThreadNotesInput = {
@@ -1566,6 +1733,7 @@ export type UserUpdateWithoutThreadNotesInput = {
   tasks?: Prisma.TaskUpdateManyWithoutUserNestedInput
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutThreadNotesInput = {
@@ -1590,6 +1758,7 @@ export type UserUncheckedUpdateWithoutThreadNotesInput = {
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutUserNestedInput
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutTasksInput = {
@@ -1614,6 +1783,7 @@ export type UserCreateWithoutTasksInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutTasksInput = {
@@ -1638,6 +1808,7 @@ export type UserUncheckedCreateWithoutTasksInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutTasksInput = {
@@ -1678,6 +1849,7 @@ export type UserUpdateWithoutTasksInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTasksInput = {
@@ -1702,6 +1874,7 @@ export type UserUncheckedUpdateWithoutTasksInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutContactMemoriesInput = {
@@ -1726,6 +1899,7 @@ export type UserCreateWithoutContactMemoriesInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutContactMemoriesInput = {
@@ -1750,6 +1924,7 @@ export type UserUncheckedCreateWithoutContactMemoriesInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutContactMemoriesInput = {
@@ -1790,6 +1965,7 @@ export type UserUpdateWithoutContactMemoriesInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutContactMemoriesInput = {
@@ -1814,6 +1990,7 @@ export type UserUncheckedUpdateWithoutContactMemoriesInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 export type UserCreateWithoutDocumentsInput = {
@@ -1838,6 +2015,7 @@ export type UserCreateWithoutDocumentsInput = {
   accountMemberships?: Prisma.AccountMemberCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepCreateNestedManyWithoutApproverInput
 }
 
 export type UserUncheckedCreateWithoutDocumentsInput = {
@@ -1862,6 +2040,7 @@ export type UserUncheckedCreateWithoutDocumentsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedCreateNestedManyWithoutUserInput
   assignedThreads?: Prisma.EmailThreadUncheckedCreateNestedManyWithoutAssignedToInput
   threadNotes?: Prisma.ThreadNoteUncheckedCreateNestedManyWithoutAuthorInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedCreateNestedManyWithoutApproverInput
 }
 
 export type UserCreateOrConnectWithoutDocumentsInput = {
@@ -1902,6 +2081,7 @@ export type UserUpdateWithoutDocumentsInput = {
   accountMemberships?: Prisma.AccountMemberUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUpdateManyWithoutApproverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDocumentsInput = {
@@ -1926,6 +2106,7 @@ export type UserUncheckedUpdateWithoutDocumentsInput = {
   accountMemberships?: Prisma.AccountMemberUncheckedUpdateManyWithoutUserNestedInput
   assignedThreads?: Prisma.EmailThreadUncheckedUpdateManyWithoutAssignedToNestedInput
   threadNotes?: Prisma.ThreadNoteUncheckedUpdateManyWithoutAuthorNestedInput
+  approvalSteps?: Prisma.ApprovalStepUncheckedUpdateManyWithoutApproverNestedInput
 }
 
 
@@ -1945,6 +2126,7 @@ export type UserCountOutputType = {
   accountMemberships: number
   assignedThreads: number
   threadNotes: number
+  approvalSteps: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1959,6 +2141,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   accountMemberships?: boolean | UserCountOutputTypeCountAccountMembershipsArgs
   assignedThreads?: boolean | UserCountOutputTypeCountAssignedThreadsArgs
   threadNotes?: boolean | UserCountOutputTypeCountThreadNotesArgs
+  approvalSteps?: boolean | UserCountOutputTypeCountApprovalStepsArgs
 }
 
 /**
@@ -2048,6 +2231,13 @@ export type UserCountOutputTypeCountThreadNotesArgs<ExtArgs extends runtime.Type
   where?: Prisma.ThreadNoteWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountApprovalStepsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ApprovalStepWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2072,6 +2262,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   accountMemberships?: boolean | Prisma.User$accountMembershipsArgs<ExtArgs>
   assignedThreads?: boolean | Prisma.User$assignedThreadsArgs<ExtArgs>
   threadNotes?: boolean | Prisma.User$threadNotesArgs<ExtArgs>
+  approvalSteps?: boolean | Prisma.User$approvalStepsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2130,6 +2321,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   accountMemberships?: boolean | Prisma.User$accountMembershipsArgs<ExtArgs>
   assignedThreads?: boolean | Prisma.User$assignedThreadsArgs<ExtArgs>
   threadNotes?: boolean | Prisma.User$threadNotesArgs<ExtArgs>
+  approvalSteps?: boolean | Prisma.User$approvalStepsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2149,6 +2341,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     accountMemberships: Prisma.$AccountMemberPayload<ExtArgs>[]
     assignedThreads: Prisma.$EmailThreadPayload<ExtArgs>[]
     threadNotes: Prisma.$ThreadNotePayload<ExtArgs>[]
+    approvalSteps: Prisma.$ApprovalStepPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2567,6 +2760,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   accountMemberships<T extends Prisma.User$accountMembershipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$accountMembershipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccountMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assignedThreads<T extends Prisma.User$assignedThreadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignedThreadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmailThreadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   threadNotes<T extends Prisma.User$threadNotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$threadNotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ThreadNotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  approvalSteps<T extends Prisma.User$approvalStepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$approvalStepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ApprovalStepPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3261,6 +3455,30 @@ export type User$threadNotesArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.ThreadNoteScalarFieldEnum | Prisma.ThreadNoteScalarFieldEnum[]
+}
+
+/**
+ * User.approvalSteps
+ */
+export type User$approvalStepsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ApprovalStep
+   */
+  select?: Prisma.ApprovalStepSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ApprovalStep
+   */
+  omit?: Prisma.ApprovalStepOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ApprovalStepInclude<ExtArgs> | null
+  where?: Prisma.ApprovalStepWhereInput
+  orderBy?: Prisma.ApprovalStepOrderByWithRelationInput | Prisma.ApprovalStepOrderByWithRelationInput[]
+  cursor?: Prisma.ApprovalStepWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ApprovalStepScalarFieldEnum | Prisma.ApprovalStepScalarFieldEnum[]
 }
 
 /**

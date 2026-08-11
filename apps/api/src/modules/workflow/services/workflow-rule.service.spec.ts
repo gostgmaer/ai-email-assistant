@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import type { EmailAccountService } from '../../email-account/services/email-account.service';
+import type { IntegrationService } from '../../integration/services/integration.service';
 import type { NotificationService } from '../../notification/services/notification.service';
 import {
   WorkflowAction,
@@ -37,13 +38,26 @@ describe('WorkflowRuleService', () => {
       create: jest.fn(),
     } as unknown as jest.Mocked<NotificationService>;
 
+    const integrationService = {
+      postMessage: jest.fn(),
+      postToTeamsChannel: jest.fn(),
+      upsertHubspotContact: jest.fn(),
+    } as unknown as jest.Mocked<IntegrationService>;
+
     const service = new WorkflowRuleService(
       prisma as never,
       emailAccountService,
       notificationService,
+      integrationService,
     );
 
-    return { service, prisma, emailAccountService, notificationService };
+    return {
+      service,
+      prisma,
+      emailAccountService,
+      notificationService,
+      integrationService,
+    };
   }
 
   function rule(
@@ -165,7 +179,13 @@ describe('WorkflowRuleService', () => {
   });
 
   describe('executeActions', () => {
-    const context = { accountId, threadId: 'thread-1', messageId: 'msg-1' };
+    const context = {
+      accountId,
+      threadId: 'thread-1',
+      messageId: 'msg-1',
+      senderEmail: 'sender@example.com',
+      senderName: 'Sender Name',
+    };
 
     it('reports autoReply: true only when AUTO_REPLY is present', async () => {
       const { service } = buildDeps();
@@ -225,6 +245,84 @@ describe('WorkflowRuleService', () => {
         'heads up',
         { threadId: context.threadId, messageId: context.messageId },
       );
+    });
+
+    it('posts to Slack for POST_TO_SLACK', async () => {
+      const { service, integrationService } = buildDeps();
+
+      await service.executeActions(
+        [
+          {
+            type: 'POST_TO_SLACK',
+            integrationId: 'integration-1',
+            channelId: 'C123',
+            message: 'new message!',
+          },
+        ],
+        context,
+      );
+
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
+      expect(integrationService.postMessage).toHaveBeenCalledWith(
+        'integration-1',
+        'C123',
+        'new message!',
+      );
+    });
+
+    it('posts to Teams for POST_TO_TEAMS', async () => {
+      const { service, integrationService } = buildDeps();
+
+      await service.executeActions(
+        [
+          {
+            type: 'POST_TO_TEAMS',
+            integrationId: 'integration-2',
+            teamId: 'team-1',
+            channelId: 'channel-1',
+            message: 'new message!',
+          },
+        ],
+        context,
+      );
+
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
+      expect(integrationService.postToTeamsChannel).toHaveBeenCalledWith(
+        'integration-2',
+        'team-1',
+        'channel-1',
+        'new message!',
+      );
+    });
+
+    it('upserts a HubSpot contact from the message sender for CREATE_HUBSPOT_CONTACT', async () => {
+      const { service, integrationService } = buildDeps();
+
+      await service.executeActions(
+        [{ type: 'CREATE_HUBSPOT_CONTACT', integrationId: 'integration-3' }],
+        context,
+      );
+
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
+      expect(integrationService.upsertHubspotContact).toHaveBeenCalledWith(
+        'integration-3',
+        { email: 'sender@example.com', firstName: 'Sender', lastName: 'Name' },
+      );
+    });
+
+    it('returns approverUserIds and forces autoReply false for REQUIRE_APPROVAL_CHAIN, even alongside AUTO_REPLY', async () => {
+      const { service } = buildDeps();
+
+      const result = await service.executeActions(
+        [
+          { type: 'AUTO_REPLY' },
+          { type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: ['u1', 'u2'] },
+        ],
+        context,
+      );
+
+      expect(result.autoReply).toBe(false);
+      expect(result.approvalChainApproverUserIds).toEqual(['u1', 'u2']);
     });
 
     it('does not let one failing action block the others', async () => {
@@ -292,6 +390,62 @@ describe('WorkflowRuleService', () => {
           name: 'Test',
           conditions: [],
           actions: [{ type: 'ASSIGN_TO' } as never],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a POST_TO_SLACK action with no channelId', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [{ type: 'POST_TO_SLACK', integrationId: 'i1' } as never],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a POST_TO_TEAMS action with no teamId', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [
+            {
+              type: 'POST_TO_TEAMS',
+              integrationId: 'i1',
+              channelId: 'c1',
+            } as never,
+          ],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a CREATE_HUBSPOT_CONTACT action with no integrationId', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [{ type: 'CREATE_HUBSPOT_CONTACT' } as never],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a REQUIRE_APPROVAL_CHAIN action with an empty approverUserIds', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [
+            { type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: [] } as never,
+          ],
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
