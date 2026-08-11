@@ -205,11 +205,27 @@ export class ApprovalChainService {
           data: { status: 'APPROVED' },
         });
 
+        // sendApprovedDraft (on success) sends the draft, which deletes the
+        // draft's EmailThread — cascading through EmailMessage to this very
+        // ApprovalChain row (FK on draftMessageId). The re-fetch below would
+        // then throw NotFoundException even though the approval + send both
+        // genuinely succeeded, so return a reconstructed snapshot instead of
+        // querying a row that may no longer exist.
         await this.sendApprovedDraft({
           ownerUserId: chain.account.userId,
           draftMessageId: chain.draftMessageId,
           draftSubject: chain.draftMessage.subject,
         });
+
+        return {
+          ...chain,
+          status: 'APPROVED' as const,
+          steps: chain.steps.map((step) =>
+            step.id === currentStep.id
+              ? { ...step, status: decision, comment, decidedAt: new Date() }
+              : step,
+          ),
+        };
       }
     }
 
