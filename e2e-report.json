@@ -1,12 +1,12 @@
 {
-  "runAt": "2026-08-09T07:01:18.110Z",
+  "runAt": "2026-08-11T15:17:03.144Z",
   "baseUrl": "http://localhost:3001",
-  "testUser": "e2e.test.1786258836265@example.com",
+  "testUser": "e2e.test.1786461380061@example.com",
   "total": 38,
   "passed": 38,
   "failed": 0,
   "skipped": 0,
-  "totalDurationMs": 41282,
+  "totalDurationMs": 42203,
   "consoleErrors": [
     "Failed to load resource: the server responded with a status of 404 (Not Found)",
     "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
@@ -16,43 +16,43 @@
     {
       "name": "App loads at localhost:3001",
       "status": "PASS",
-      "duration": 910,
+      "duration": 1241,
       "screenshot": "001_01_app_loaded.png"
     },
     {
       "name": "Root redirects to /login when unauthenticated",
       "status": "PASS",
-      "duration": 32,
+      "duration": 34,
       "screenshot": "002_02_redirect_to_login.png"
     },
     {
       "name": "Login page renders correctly",
       "status": "PASS",
-      "duration": 753,
+      "duration": 966,
       "screenshot": "003_03_login_page.png"
     },
     {
       "name": "Login page has email/password fields",
       "status": "PASS",
-      "duration": 8,
+      "duration": 6,
       "screenshot": null
     },
     {
       "name": "Login page shows Google and Microsoft OAuth buttons",
       "status": "PASS",
-      "duration": 39,
+      "duration": 25,
       "screenshot": "004_05_oauth_buttons.png"
     },
     {
       "name": "Login form shows validation errors for empty submit",
       "status": "PASS",
-      "duration": 600,
+      "duration": 596,
       "screenshot": "005_06_login_validation.png"
     },
     {
       "name": "Login form shows validation error for invalid email",
       "status": "PASS",
-      "duration": 611,
+      "duration": 602,
       "screenshot": "006_07_invalid_email_error.png"
     },
     {
@@ -64,31 +64,31 @@
     {
       "name": "Login shows 'Create one' registration link",
       "status": "PASS",
-      "duration": 5,
+      "duration": 3,
       "screenshot": null
     },
     {
       "name": "Register page loads",
       "status": "PASS",
-      "duration": 1346,
+      "duration": 848,
       "screenshot": "007_08_register_page.png"
     },
     {
       "name": "Register page has Name, Email, Password fields",
       "status": "PASS",
-      "duration": 8,
+      "duration": 6,
       "screenshot": null
     },
     {
       "name": "Register form shows validation for short password",
       "status": "PASS",
-      "duration": 717,
+      "duration": 714,
       "screenshot": "008_10_register_password_validation.png"
     },
     {
       "name": "Successful registration creates account and redirects",
       "status": "PASS",
-      "duration": 1365,
+      "duration": 1424,
       "screenshot": "009_11_after_registration.png"
     },
     {
@@ -100,25 +100,25 @@
     {
       "name": "Inbox page renders",
       "status": "PASS",
-      "duration": 736,
+      "duration": 702,
       "screenshot": "011_13_inbox_page.png"
     },
     {
       "name": "Navigate to /compose",
       "status": "PASS",
-      "duration": 1763,
+      "duration": 1777,
       "screenshot": "012_14_compose_page.png"
     },
     {
       "name": "Navigate to /tasks",
       "status": "PASS",
-      "duration": 1717,
+      "duration": 1762,
       "screenshot": "013_15_tasks_page.png"
     },
     {
       "name": "Tasks page shows Pending/Done/Dismissed tabs",
       "status": "PASS",
-      "duration": 34,
+      "duration": 44,
       "screenshot": "014_16_tasks_tabs.png"
     },
     {
@@ -130,115 +130,115 @@
     {
       "name": "Switch to Follow-ups view",
       "status": "PASS",
-      "duration": 897,
+      "duration": 892,
       "screenshot": "015_17_follow_ups_view.png"
     },
     {
       "name": "Navigate to /documents",
       "status": "PASS",
-      "duration": 1720,
+      "duration": 1692,
       "screenshot": "016_18_documents_page.png"
     },
     {
       "name": "Navigate to /help",
       "status": "PASS",
-      "duration": 1821,
+      "duration": 1781,
       "screenshot": "017_19_help_page.png"
     },
     {
       "name": "Navigate to /settings/profile",
       "status": "PASS",
-      "duration": 1738,
+      "duration": 1845,
       "screenshot": "018_20_settings_profile.png"
     },
     {
       "name": "Navigate to /settings/email-accounts",
       "status": "PASS",
-      "duration": 1714,
+      "duration": 1700,
       "screenshot": "019_21_settings_email_accounts.png"
     },
     {
       "name": "Navigate to /settings/security",
       "status": "PASS",
-      "duration": 1706,
+      "duration": 1835,
       "screenshot": "020_22_settings_security.png"
     },
     {
       "name": "Navigate to /settings/calendar-accounts",
       "status": "PASS",
-      "duration": 1711,
+      "duration": 1730,
       "screenshot": "021_23_settings_calendar.png"
     },
     {
       "name": "Forgot password page loads",
       "status": "PASS",
-      "duration": 911,
+      "duration": 1000,
       "screenshot": "022_25_forgot_password.png"
     },
     {
       "name": "Forgot password submits and shows success",
       "status": "PASS",
-      "duration": 3085,
+      "duration": 3097,
       "screenshot": "023_26_forgot_password_success.png"
     },
     {
       "name": "Inbox DRAFTS folder",
       "status": "PASS",
-      "duration": 1708,
+      "duration": 1692,
       "screenshot": "024_27_inbox_drafts.png"
     },
     {
       "name": "Inbox SENT folder",
       "status": "PASS",
-      "duration": 1663,
+      "duration": 1730,
       "screenshot": "025_28_inbox_sent.png"
     },
     {
       "name": "Inbox TRASH folder",
       "status": "PASS",
-      "duration": 1699,
+      "duration": 1703,
       "screenshot": "026_29_inbox_trash.png"
     },
     {
       "name": "Unknown route is handled gracefully",
       "status": "PASS",
-      "duration": 1978,
+      "duration": 2126,
       "screenshot": "027_30_404_page.png"
     },
     {
       "name": "Logout clears session and redirects to login",
       "status": "PASS",
-      "duration": 1352,
+      "duration": 1436,
       "screenshot": "028_31_after_logout.png"
     },
     {
       "name": "Unauthenticated user cannot access /tasks",
       "status": "PASS",
-      "duration": 686,
+      "duration": 738,
       "screenshot": "029_32_unauth_tasks_redirect.png"
     },
     {
       "name": "Unauthenticated user cannot access /compose",
       "status": "PASS",
-      "duration": 694,
+      "duration": 726,
       "screenshot": "030_33_unauth_compose_redirect.png"
     },
     {
       "name": "Login with registered credentials succeeds",
       "status": "PASS",
-      "duration": 970,
+      "duration": 1042,
       "screenshot": "031_34_successful_login.png"
     },
     {
       "name": "Login with wrong password shows error",
       "status": "PASS",
-      "duration": 3718,
+      "duration": 3753,
       "screenshot": "032_35_wrong_password_error.png"
     },
     {
       "name": "Login page renders on mobile viewport",
       "status": "PASS",
-      "duration": 814,
+      "duration": 882,
       "screenshot": "033_36_login_mobile.png"
     }
   ]

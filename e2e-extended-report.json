@@ -1,44 +1,44 @@
 {
-  "runAt": "2026-08-09T07:09:23.562Z",
+  "runAt": "2026-08-11T15:17:52.484Z",
   "baseUrl": "http://localhost:3001",
   "apiUrl": "http://localhost:3000",
-  "testUser": "e2e.ext.1786259320090@example.com",
+  "testUser": "e2e.ext.1786461427880@example.com",
   "total": 60,
   "passed": 60,
   "failed": 0,
   "skipped": 0,
-  "totalDurationMs": 40848,
+  "totalDurationMs": 41841,
   "consoleErrors": [],
   "screenshotDir": "C:\\Users\\kisho\\WorkSpace\\learning\\ai\\ai-email-assistant\\e2e-screenshots-extended",
   "tests": [
     {
       "name": "API is reachable on port 3000",
       "status": "PASS",
-      "ms": 272,
+      "ms": 266,
       "screenshot": null
     },
     {
       "name": "Swagger docs are available at /api/docs",
       "status": "PASS",
-      "ms": 668,
+      "ms": 736,
       "screenshot": "001_A_swagger_docs.png"
     },
     {
       "name": "Register new user via API",
       "status": "PASS",
-      "ms": 172,
+      "ms": 176,
       "screenshot": null
     },
     {
       "name": "Login with registered credentials via API",
       "status": "PASS",
-      "ms": 159,
+      "ms": 163,
       "screenshot": null
     },
     {
       "name": "Login with wrong password returns 401",
       "status": "PASS",
-      "ms": 154,
+      "ms": 156,
       "screenshot": null
     },
     {
@@ -62,13 +62,13 @@
     {
       "name": "List email accounts returns empty array for new user",
       "status": "PASS",
-      "ms": 5,
+      "ms": 3,
       "screenshot": null
     },
     {
       "name": "Connect Gmail OAuth redirect starts correctly (API check)",
       "status": "PASS",
-      "ms": 3,
+      "ms": 4,
       "screenshot": null
     },
     {
@@ -80,49 +80,49 @@
     {
       "name": "IMAP connect with invalid credentials returns 400 or 500",
       "status": "PASS",
-      "ms": 39,
+      "ms": 442,
       "screenshot": null
     },
     {
       "name": "List threads returns empty paginated result for new user",
       "status": "PASS",
-      "ms": 9,
+      "ms": 11,
       "screenshot": null
     },
     {
       "name": "List threads with folderType=DRAFTS",
       "status": "PASS",
-      "ms": 8,
+      "ms": 10,
       "screenshot": null
     },
     {
       "name": "List threads with folderType=SENT",
       "status": "PASS",
-      "ms": 9,
+      "ms": 12,
       "screenshot": null
     },
     {
       "name": "List follow-ups returns empty for new user",
       "status": "PASS",
-      "ms": 22,
+      "ms": 16,
       "screenshot": null
     },
     {
       "name": "Get non-existent thread returns 404",
       "status": "PASS",
-      "ms": 3,
+      "ms": 8,
       "screenshot": null
     },
     {
       "name": "Send email without email account returns error",
       "status": "PASS",
-      "ms": 3,
+      "ms": 7,
       "screenshot": null
     },
     {
       "name": "List tasks returns empty for new user",
       "status": "PASS",
-      "ms": 6,
+      "ms": 5,
       "screenshot": null
     },
     {
@@ -140,13 +140,13 @@
     {
       "name": "Email accounts settings page loads",
       "status": "PASS",
-      "ms": 681,
+      "ms": 738,
       "screenshot": "002_F_email_accounts_page.png"
     },
     {
       "name": "'Connect Gmail' button is present",
       "status": "PASS",
-      "ms": 16,
+      "ms": 18,
       "screenshot": null
     },
     {
@@ -158,7 +158,7 @@
     {
       "name": "'Connect IMAP' button toggles IMAP form",
       "status": "PASS",
-      "ms": 581,
+      "ms": 599,
       "screenshot": "003_F_imap_form_visible.png"
     },
     {
@@ -170,205 +170,205 @@
     {
       "name": "IMAP form submit with empty fields shows validation errors",
       "status": "PASS",
-      "ms": 740,
+      "ms": 767,
       "screenshot": "004_F_imap_validation_errors.png"
     },
     {
       "name": "IMAP form submit with invalid mail server shows connection error",
       "status": "PASS",
-      "ms": 8183,
+      "ms": 8185,
       "screenshot": "005_F_imap_connection_error.png"
     },
     {
       "name": "Gmail connect button href points to API OAuth endpoint",
       "status": "PASS",
-      "ms": 665,
+      "ms": 680,
       "screenshot": null
     },
     {
       "name": "Gmail connect initiates OAuth redirect to Google accounts",
       "status": "PASS",
-      "ms": 299,
+      "ms": 306,
       "screenshot": "006_G_gmail_connect_check.png"
     },
     {
       "name": "Compose page shows 'Connect account' message without email account",
       "status": "PASS",
-      "ms": 1667,
+      "ms": 1693,
       "screenshot": "007_G_compose_no_account.png"
     },
     {
       "name": "Compose URL from sidebar/nav works",
       "status": "PASS",
-      "ms": 1304,
+      "ms": 1357,
       "screenshot": "008_G_compose_nav.png"
     },
     {
       "name": "Inbox has thread list area",
       "status": "PASS",
-      "ms": 1668,
+      "ms": 1727,
       "screenshot": "009_H_inbox_main.png"
     },
     {
       "name": "Inbox empty state is shown when no emails synced",
       "status": "PASS",
-      "ms": 19,
+      "ms": 13,
       "screenshot": null
     },
     {
       "name": "Inbox thread list pane renders (left panel)",
       "status": "PASS",
-      "ms": 19,
+      "ms": 15,
       "screenshot": null
     },
     {
       "name": "Inbox search input (if present) is usable",
       "status": "PASS",
-      "ms": 558,
+      "ms": 571,
       "screenshot": "010_H_inbox_search.png"
     },
     {
       "name": "Navigate to DRAFTS folder via sidebar",
       "status": "PASS",
-      "ms": 1482,
+      "ms": 1500,
       "screenshot": "011_H_inbox_drafts.png"
     },
     {
       "name": "Navigate to SENT folder via sidebar",
       "status": "PASS",
-      "ms": 1500,
+      "ms": 1502,
       "screenshot": "012_H_inbox_sent.png"
     },
     {
       "name": "Navigate to TRASH folder",
       "status": "PASS",
-      "ms": 1514,
+      "ms": 1498,
       "screenshot": "013_H_inbox_trash.png"
     },
     {
       "name": "Navigate to SPAM folder",
       "status": "PASS",
-      "ms": 1449,
+      "ms": 1504,
       "screenshot": "014_H_inbox_spam.png"
     },
     {
       "name": "Tasks page — Pending tab shows empty state",
       "status": "PASS",
-      "ms": 1686,
+      "ms": 1701,
       "screenshot": "015_I_tasks_pending.png"
     },
     {
       "name": "Tasks page — Done tab",
       "status": "PASS",
-      "ms": 690,
+      "ms": 701,
       "screenshot": "016_I_tasks_done.png"
     },
     {
       "name": "Tasks page — Dismissed tab",
       "status": "PASS",
-      "ms": 660,
+      "ms": 693,
       "screenshot": "017_I_tasks_dismissed.png"
     },
     {
       "name": "Tasks page — All tab",
       "status": "PASS",
-      "ms": 696,
+      "ms": 686,
       "screenshot": "018_I_tasks_all.png"
     },
     {
       "name": "Follow-ups view shows empty state",
       "status": "PASS",
-      "ms": 893,
+      "ms": 885,
       "screenshot": "019_I_follow_ups.png"
     },
     {
       "name": "Profile settings page renders",
       "status": "PASS",
-      "ms": 1493,
+      "ms": 1519,
       "screenshot": "020_J_profile_settings.png"
     },
     {
       "name": "Profile settings shows user email or form",
       "status": "PASS",
-      "ms": 20,
+      "ms": 14,
       "screenshot": null
     },
     {
       "name": "Security settings page renders",
       "status": "PASS",
-      "ms": 1543,
+      "ms": 1558,
       "screenshot": "021_J_security_settings.png"
     },
     {
       "name": "Calendar accounts settings page renders",
       "status": "PASS",
-      "ms": 1521,
+      "ms": 1486,
       "screenshot": "022_J_calendar_accounts.png"
     },
     {
       "name": "Documents page renders",
       "status": "PASS",
-      "ms": 1487,
+      "ms": 1508,
       "screenshot": "023_K_documents_page.png"
     },
     {
       "name": "Help page renders",
       "status": "PASS",
-      "ms": 1556,
+      "ms": 1563,
       "screenshot": "024_L_help_page.png"
     },
     {
       "name": "AI rewrite endpoint exists and returns proper error without body",
       "status": "PASS",
-      "ms": 262,
+      "ms": 258,
       "screenshot": null
     },
     {
       "name": "AI summarize endpoint exists and returns proper error without thread",
       "status": "PASS",
-      "ms": 4,
+      "ms": 1,
       "screenshot": null
     },
     {
       "name": "Protected API endpoints reject requests without token",
       "status": "PASS",
-      "ms": 12,
+      "ms": 6,
       "screenshot": null
     },
     {
       "name": "Session clearing redirects to login (UI)",
       "status": "PASS",
-      "ms": 748,
+      "ms": 736,
       "screenshot": "025_N_auth_guard_redirect.png"
     },
     {
       "name": "Topbar renders with user identity",
       "status": "PASS",
-      "ms": 1194,
+      "ms": 1214,
       "screenshot": "026_O_topbar.png"
     },
     {
       "name": "Sidebar has all primary nav links",
       "status": "PASS",
-      "ms": 15,
+      "ms": 16,
       "screenshot": null
     },
     {
       "name": "Login page renders at 375px",
       "status": "PASS",
-      "ms": 797,
+      "ms": 860,
       "screenshot": "027_P_login_mobile_375.png"
     },
     {
       "name": "Login page renders at 768px",
       "status": "PASS",
-      "ms": 823,
+      "ms": 863,
       "screenshot": "028_P_login_tablet_768.png"
     },
     {
       "name": "Login page renders at 1440px",
       "status": "PASS",
-      "ms": 838,
+      "ms": 852,
       "screenshot": "029_P_login_desktop_1440.png"
     }
   ]
