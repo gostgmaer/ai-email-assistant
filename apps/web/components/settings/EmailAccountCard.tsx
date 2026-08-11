@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { SlackIcon } from "@/components/icons";
 import { AGENT_TEMPLATES } from "@/lib/agent-templates";
 import type {
+  AccountMember,
   Agent,
   Contact,
   EmailAccount,
@@ -460,6 +461,7 @@ const ACTION_TYPES: { value: WorkflowActionType; label: string }[] = [
   { value: "NOTIFY", label: "Notify teammate" },
   { value: "POST_TO_SLACK", label: "Post to Slack channel" },
   { value: "REQUIRE_APPROVAL", label: "Hold as draft (no auto-reply)" },
+  { value: "REQUIRE_APPROVAL_CHAIN", label: "Require multi-step approval" },
 ];
 
 function emptyCondition(): WorkflowCondition {
@@ -565,6 +567,8 @@ function WorkflowRulesPanel({
       }
       case "REQUIRE_APPROVAL":
         return "Hold as draft";
+      case "REQUIRE_APPROVAL_CHAIN":
+        return `Require approval from ${action.approverUserIds.map(memberLabel).join(" → ")}`;
     }
   }
 
@@ -763,7 +767,9 @@ function WorkflowRulesPanel({
                           ? { type, userId: members?.[0]?.userId ?? "" }
                           : type === "POST_TO_SLACK"
                             ? { type, integrationId: "", channelId: "" }
-                            : { type };
+                            : type === "REQUIRE_APPROVAL_CHAIN"
+                              ? { type, approverUserIds: [] }
+                              : { type };
                       setActions(actions.map((a, j) => (j === i ? next : a)));
                     }}
                     className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
@@ -827,6 +833,15 @@ function WorkflowRulesPanel({
                     <SlackActionFields
                       action={action}
                       integrations={integrations}
+                      onChange={(next) =>
+                        setActions(actions.map((a, j) => (j === i ? next : a)))
+                      }
+                    />
+                  )}
+                  {action.type === "REQUIRE_APPROVAL_CHAIN" && (
+                    <ApprovalChainActionFields
+                      action={action}
+                      members={members}
                       onChange={(next) =>
                         setActions(actions.map((a, j) => (j === i ? next : a)))
                       }
@@ -937,6 +952,112 @@ function SlackActionFields({
         </select>
       )}
     </>
+  );
+}
+
+type ApprovalChainAction = Extract<
+  WorkflowAction,
+  { type: "REQUIRE_APPROVAL_CHAIN" }
+>;
+
+/** Ordered approver picker — order matters here (unlike Slack's channel
+ * picker), since REQUIRE_APPROVAL_CHAIN's approverUserIds sign off in
+ * sequence, not all at once. */
+function ApprovalChainActionFields({
+  action,
+  members,
+  onChange,
+}: {
+  action: ApprovalChainAction;
+  members: AccountMember[] | undefined;
+  onChange: (next: ApprovalChainAction) => void;
+}) {
+  const available = members?.filter(
+    (m) => !action.approverUserIds.includes(m.userId),
+  );
+
+  function memberLabel(userId: string) {
+    const member = members?.find((m) => m.userId === userId);
+    return member ? (member.user.displayName ?? member.user.email) : userId;
+  }
+
+  function move(index: number, direction: -1 | 1) {
+    const next = [...action.approverUserIds];
+    const target = index + direction;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange({ ...action, approverUserIds: next });
+  }
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      {action.approverUserIds.length > 0 && (
+        <ol className="flex flex-col gap-1">
+          {action.approverUserIds.map((userId, index) => (
+            <li
+              key={userId}
+              className="flex items-center gap-1.5 rounded-md bg-zinc-50 px-2 py-1 text-xs"
+            >
+              <span className="font-medium text-zinc-500">{index + 1}.</span>
+              <span className="flex-1">{memberLabel(userId)}</span>
+              <button
+                type="button"
+                disabled={index === 0}
+                onClick={() => move(index, -1)}
+                className="text-zinc-400 hover:text-zinc-700 disabled:opacity-30"
+                aria-label="Move up"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                disabled={index === action.approverUserIds.length - 1}
+                onClick={() => move(index, 1)}
+                className="text-zinc-400 hover:text-zinc-700 disabled:opacity-30"
+                aria-label="Move down"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...action,
+                    approverUserIds: action.approverUserIds.filter(
+                      (id) => id !== userId,
+                    ),
+                  })
+                }
+                className="text-zinc-400 hover:text-red-600"
+                aria-label="Remove approver"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      {available && available.length > 0 && (
+        <select
+          value=""
+          onChange={(e) => {
+            if (!e.target.value) return;
+            onChange({
+              ...action,
+              approverUserIds: [...action.approverUserIds, e.target.value],
+            });
+          }}
+          className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+        >
+          <option value="">+ Add approver</option>
+          {available.map((m) => (
+            <option key={m.userId} value={m.userId}>
+              {m.user.displayName ?? m.user.email}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
   );
 }
 

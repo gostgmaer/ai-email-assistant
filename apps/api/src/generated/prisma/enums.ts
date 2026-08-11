@@ -66,6 +66,25 @@ export const AccountRole = {
 export type AccountRole = (typeof AccountRole)[keyof typeof AccountRole]
 
 
+export const ApprovalChainStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type ApprovalChainStatus = (typeof ApprovalChainStatus)[keyof typeof ApprovalChainStatus]
+
+
+export const ApprovalStepStatus = {
+  WAITING: 'WAITING',
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type ApprovalStepStatus = (typeof ApprovalStepStatus)[keyof typeof ApprovalStepStatus]
+
+
 export const IntegrationProvider = {
   SLACK: 'SLACK'
 } as const

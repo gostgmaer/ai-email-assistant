@@ -8,6 +8,9 @@ import { AIJobs, QueueNames } from '../../../infrastructure/queue';
 // Leaf-file import rather than the '../../agent' barrel — see the
 // comment below on WorkflowRuleService for why.
 import { AgentService } from '../../agent/services/agent.service';
+// Leaf-file import rather than the '../../approval' barrel — same
+// reasoning as AgentService below.
+import { ApprovalChainService } from '../../approval/services/approval-chain.service';
 // Leaf-file import rather than the '../../calendar' barrel — see the
 // comment in meeting-scheduling.service.ts for why (avoids a Jest-only
 // circular require through calendar.module.ts <-> ai.module.ts).
@@ -77,6 +80,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly contactService: ContactService,
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => ApprovalChainService))
+    private readonly approvalChainService: ApprovalChainService,
   ) {
     super();
   }
@@ -281,11 +286,15 @@ export class AiProcessingProcessor extends WorkerHost {
     // matching rule falls through to the existing default: draft for
     // review.
     let isSafeToAutoSend = false;
+    let approvalChainApproverUserIds: string[] | undefined;
     if (matchedActions) {
-      const { autoReply } = await this.workflowRuleService.executeActions(
-        matchedActions,
-        { accountId: account.id, threadId: message.threadId, messageId },
-      );
+      const { autoReply, approvalChainApproverUserIds: chainApprovers } =
+        await this.workflowRuleService.executeActions(matchedActions, {
+          accountId: account.id,
+          threadId: message.threadId,
+          messageId,
+        });
+      approvalChainApproverUserIds = chainApprovers;
 
       // Hard safety rails, not rule-overridable, cheapest first — each
       // short-circuits before paying for the next:
@@ -346,7 +355,9 @@ export class AiProcessingProcessor extends WorkerHost {
             );
           }
           if (validation.grammarIssues.length > 0) {
-            reasons.push(`grammar issues: ${validation.grammarIssues.join(', ')}`);
+            reasons.push(
+              `grammar issues: ${validation.grammarIssues.join(', ')}`,
+            );
           }
           if (validation.confidence < REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD) {
             reasons.push(
@@ -412,7 +423,7 @@ export class AiProcessingProcessor extends WorkerHost {
           );
         });
     } else {
-      await this.composeService.saveDraftReply(
+      const draft = await this.composeService.saveDraftReply(
         account.userId,
         messageId,
         {
@@ -421,6 +432,21 @@ export class AiProcessingProcessor extends WorkerHost {
         },
         generationMetadata,
       );
+
+      // True multi-step Approval Chains (v3.0, see docs/MVP.md) — best-
+      // effort, same posture as the auto-send notification above: the
+      // draft itself is already safely saved either way, so a chain-
+      // creation failure must never turn into a stuck/retried job.
+      if (approvalChainApproverUserIds) {
+        await this.approvalChainService
+          .create(account.id, draft.id, approvalChainApproverUserIds)
+          .catch((error: unknown) => {
+            this.logger.warn(
+              `Failed to create approval chain for draft ${draft.id}: ${String(error)}`,
+            );
+          });
+      }
+
       this.logger.log(
         `Drafted a reply to message ${messageId} for review (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
       );

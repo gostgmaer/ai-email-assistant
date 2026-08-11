@@ -252,6 +252,28 @@ export class ComposeService {
       );
     }
 
+    // True multi-step Approval Chains (v3.0, see docs/MVP.md) — a draft
+    // gated by a still-PENDING chain can't be sent (manually or
+    // automatically) until every step approves. REJECTED does NOT block
+    // sending: rejection just declines to auto-send as-is and hands
+    // control back to a human, same as today's default hold-for-review
+    // outcome — it must not become a permanent lock with no way to ever
+    // send that draft again. Queried directly via Prisma rather than
+    // injecting ApprovalChainService: that service already calls back
+    // into sendDraft() once a chain is fully approved (see
+    // ApprovalChainService.sendApprovedDraft), and injecting it here too
+    // would create a real circular dependency for no benefit — this is
+    // the one field this method actually needs from that table.
+    const chain = await this.prisma.approvalChain.findUnique({
+      where: { draftMessageId },
+      select: { status: true },
+    });
+    if (chain?.status === 'PENDING') {
+      throw new ForbiddenException(
+        'This draft is still awaiting approval and cannot be sent yet.',
+      );
+    }
+
     const sent = await this.send(userId, {
       accountId: account.id,
       to: draft.to as unknown as NormalizedParticipant[],

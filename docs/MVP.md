@@ -363,8 +363,8 @@ A user should be able to:
   - [ ] Salesforce (phase 2)
   - [ ] Discord (phase 2)
 - [ ] Analytics (Response Time, Inbox Health, Productivity Metrics, AI Usage, Team Performance, SLA Tracking — moved from v2.0, none started)
-- [ ] True multi-step Approval Chains (today's Workflow Builder only has a single auto-send-vs-draft gate, not sequential multi-person approval)
-  - [ ] Multiple sequential approval stages per WorkflowRule (not just single auto-send-vs-draft)
-  - [ ] Per-step approver assignment (specific user/role, not just "someone approves")
-  - [ ] Step progression logic (advance on approval, halt/notify on rejection)
-  - [ ] Chain status visibility (who approved, who's pending, at which step)
+- [x] True multi-step Approval Chains — new `REQUIRE_APPROVAL_CHAIN` Workflow rule action (always wins over AUTO_REPLY on the same rule); `ApprovalChain`/`ApprovalStep` models gate a drafted reply behind ordered sign-off. Approving the final step sends the draft automatically; rejecting hands control back to a human (draft stays in Drafts, sendable manually — not a permanent lock). `ComposeService.sendDraft` blocks manual sending only while a chain is still PENDING. New `/approvals` page ("my pending approvals" queue) plus an inline chain-status banner on the compose/draft page.
+  - [x] Multiple sequential approval stages per WorkflowRule (not just single auto-send-vs-draft)
+  - [x] Per-step approver assignment (ordered `approverUserIds`, picked in the Workflow rule builder)
+  - [x] Step progression logic (advance on approval — WAITING → PENDING for the next step; halt on rejection)
+  - [x] Chain status visibility (who approved, who's pending, at which step — `/approvals` and the compose page banner)

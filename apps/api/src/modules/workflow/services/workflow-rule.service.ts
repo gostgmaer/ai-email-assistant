@@ -31,6 +31,7 @@ const ACTION_TYPES: WorkflowAction['type'][] = [
   'NOTIFY',
   'POST_TO_SLACK',
   'REQUIRE_APPROVAL',
+  'REQUIRE_APPROVAL_CHAIN',
 ];
 
 export interface WorkflowClassificationInput {
@@ -175,15 +176,20 @@ export class WorkflowRuleService {
    * Executes a matched rule's actions. Best-effort per action — one
    * failing action (e.g. NOTIFY to a userId that turns out invalid)
    * must not block the others or the reply pipeline itself. Returns
-   * whether an AUTO_REPLY action was present, since that's the one
-   * signal AiProcessingProcessor needs to decide send-vs-draft; the
-   * other actions are fire-and-forget from its point of view.
+   * whether an AUTO_REPLY action was present (the signal
+   * AiProcessingProcessor needs to decide send-vs-draft) and the
+   * approver list for REQUIRE_APPROVAL_CHAIN, if present — the chain
+   * itself is created later by the caller, once a draft message actually
+   * exists to gate (see AiProcessingProcessor). approvalChainApproverUserIds
+   * always forces autoReply to false: a chain must never be skipped just
+   * because the same rule also happens to include AUTO_REPLY.
    */
   async executeActions(
     actions: WorkflowAction[],
     context: WorkflowActionContext,
-  ): Promise<{ autoReply: boolean }> {
+  ): Promise<{ autoReply: boolean; approvalChainApproverUserIds?: string[] }> {
     let autoReply = false;
+    let approvalChainApproverUserIds: string[] | undefined;
 
     for (const action of actions) {
       try {
@@ -193,6 +199,10 @@ export class WorkflowRuleService {
             break;
 
           case 'REQUIRE_APPROVAL':
+            break;
+
+          case 'REQUIRE_APPROVAL_CHAIN':
+            approvalChainApproverUserIds = action.approverUserIds;
             break;
 
           case 'ASSIGN_TO':
@@ -228,7 +238,11 @@ export class WorkflowRuleService {
       }
     }
 
-    return { autoReply };
+    if (approvalChainApproverUserIds) {
+      autoReply = false;
+    }
+
+    return { autoReply, approvalChainApproverUserIds };
   }
 
   private async assignThread(
@@ -316,6 +330,20 @@ export class WorkflowRuleService {
         if (typeof slackAction.channelId !== 'string') {
           throw new BadRequestException(
             'action.channelId is required for POST_TO_SLACK',
+          );
+        }
+      }
+
+      if (a.type === 'REQUIRE_APPROVAL_CHAIN') {
+        const approverUserIds = (a as { approverUserIds?: unknown })
+          .approverUserIds;
+        if (
+          !Array.isArray(approverUserIds) ||
+          approverUserIds.length === 0 ||
+          !approverUserIds.every((id) => typeof id === 'string')
+        ) {
+          throw new BadRequestException(
+            'action.approverUserIds must be a non-empty array of user IDs for REQUIRE_APPROVAL_CHAIN',
           );
         }
       }

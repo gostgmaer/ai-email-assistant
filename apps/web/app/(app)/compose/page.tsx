@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/Button";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { getApprovalChainForDraft } from "@/lib/services/approval-chains.service";
 import { listEmailAccounts } from "@/lib/services/email-accounts.service";
 import { rewrite } from "@/lib/services/ai.service";
 import {
@@ -50,6 +51,19 @@ function ComposeContent() {
     queryFn: () => getMessage(draftId!),
     enabled: Boolean(draftId),
   });
+
+  // True multi-step Approval Chains (v3.0) — null for a draft that isn't
+  // gated by one, which is the common case.
+  const { data: approvalChain } = useQuery({
+    queryKey: ["approval-chain", draftId],
+    queryFn: () => getApprovalChainForDraft(draftId!),
+    enabled: Boolean(draftId),
+  });
+
+  // REJECTED does not block sending — see ComposeService.sendDraft's
+  // comment: rejection just returns manual control, same as today's
+  // default hold-for-review outcome, not a permanent lock.
+  const sendBlockedByChain = approvalChain?.status === "PENDING";
 
   const {
     register,
@@ -174,6 +188,28 @@ function ComposeContent() {
         {draftId ? "Edit draft" : "New message"}
       </h1>
 
+      {approvalChain && approvalChain.status !== "APPROVED" && (
+        <p
+          className={
+            "mb-4 rounded-md px-3 py-2 text-sm " +
+            (approvalChain.status === "REJECTED"
+              ? "bg-red-50 text-red-700"
+              : "bg-amber-50 text-amber-700")
+          }
+        >
+          {approvalChain.status === "REJECTED"
+            ? "This draft was rejected by an approval chain — edit it below, then it can be sent directly."
+            : `Awaiting approval (step ${
+                approvalChain.steps.findIndex((s) => s.status === "PENDING") + 1
+              } of ${approvalChain.steps.length}: ${
+                approvalChain.steps.find((s) => s.status === "PENDING")?.approver
+                  .displayName ??
+                approvalChain.steps.find((s) => s.status === "PENDING")?.approver
+                  .email
+              }) — it can't be sent until every step approves. See the Approvals page.`}
+        </p>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600">
@@ -296,7 +332,11 @@ function ComposeContent() {
             >
               Save draft
             </Button>
-            <Button type="submit" loading={isSubmitting || sendMutation.isPending}>
+            <Button
+              type="submit"
+              loading={isSubmitting || sendMutation.isPending}
+              disabled={sendBlockedByChain}
+            >
               Send
             </Button>
           </div>

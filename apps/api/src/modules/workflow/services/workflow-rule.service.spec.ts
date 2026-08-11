@@ -262,6 +262,21 @@ describe('WorkflowRuleService', () => {
       );
     });
 
+    it('returns approverUserIds and forces autoReply false for REQUIRE_APPROVAL_CHAIN, even alongside AUTO_REPLY', async () => {
+      const { service } = buildDeps();
+
+      const result = await service.executeActions(
+        [
+          { type: 'AUTO_REPLY' },
+          { type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: ['u1', 'u2'] },
+        ],
+        context,
+      );
+
+      expect(result.autoReply).toBe(false);
+      expect(result.approvalChainApproverUserIds).toEqual(['u1', 'u2']);
+    });
+
     it('does not let one failing action block the others', async () => {
       const { service, prisma, notificationService } = buildDeps();
       notificationService.create.mockRejectedValue(new Error('notify failed'));
@@ -339,6 +354,20 @@ describe('WorkflowRuleService', () => {
           name: 'Test',
           conditions: [],
           actions: [{ type: 'POST_TO_SLACK', integrationId: 'i1' } as never],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a REQUIRE_APPROVAL_CHAIN action with an empty approverUserIds', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [
+            { type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: [] } as never,
+          ],
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });

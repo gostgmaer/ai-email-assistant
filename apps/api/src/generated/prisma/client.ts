@@ -96,6 +96,32 @@ export type AccountMember = Prisma.AccountMemberModel
  */
 export type WorkflowRule = Prisma.WorkflowRuleModel
 /**
+ * Model ApprovalChain
+ * *
+ *  * v3.0 True multi-step Approval Chains (docs/MVP.md) — extends the
+ *  * Workflow Builder's existing single auto-send-vs-draft gate (a
+ *  * REQUIRE_APPROVAL_CHAIN WorkflowAction) with sequential multi-person
+ *  * sign-off before a drafted AI reply is allowed to send. One row per
+ *  * matched action, created right after the gated reply is saved as a
+ *  * draft — see AiProcessingProcessor. 1:1 with the draft EmailMessage via
+ *  * a unique FK: each drafted reply that matches a chain rule gets its own
+ *  * approval run, never reused across drafts.
+ *  *
+ *  * Steps run in `order`, one pending approver at a time (see
+ *  * ApprovalChainService.approve/reject) — approving a non-final step just
+ *  * advances to the next approver; approving the final step sends the
+ *  * draft immediately (same human-approval-first posture as AUTO_REPLY,
+ *  * just gated behind N humans instead of zero). Rejecting any step is
+ *  * terminal: the chain stops, the draft is left alone in Drafts for
+ *  * manual rework, same as today's default hold-for-review outcome.
+ */
+export type ApprovalChain = Prisma.ApprovalChainModel
+/**
+ * Model ApprovalStep
+ * 
+ */
+export type ApprovalStep = Prisma.ApprovalStepModel
+/**
  * Model Agent
  * *
  *  * AI Agents (v2.0 §4) — a named persona (system prompt), not new

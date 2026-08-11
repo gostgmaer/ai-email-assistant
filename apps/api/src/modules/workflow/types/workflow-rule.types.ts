@@ -41,6 +41,13 @@ export type WorkflowAction =
    * reply for human review). Exists so a rule can be written to say "for
    * messages matching X, don't auto-reply" without needing an empty
    * actions array to carry that meaning implicitly. */
-  | { type: 'REQUIRE_APPROVAL' };
+  | { type: 'REQUIRE_APPROVAL' }
+  /** True multi-step approval (v3.0, see docs/MVP.md) — like
+   * REQUIRE_APPROVAL, holds the reply as a draft instead of auto-sending,
+   * but additionally creates an ApprovalChain: approverUserIds sign off
+   * in order (see ApprovalChainService), and the draft only sends once
+   * every step has approved. Always wins over AUTO_REPLY when both
+   * appear on the same matched rule — see WorkflowRuleService.executeActions. */
+  | { type: 'REQUIRE_APPROVAL_CHAIN'; approverUserIds: string[] };
 
 export type WorkflowActionType = WorkflowAction['type'];

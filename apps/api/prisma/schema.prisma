@@ -83,6 +83,7 @@ model User {
   accountMemberships AccountMember[]
   assignedThreads    EmailThread[]   @relation("ThreadAssignee")
   threadNotes        ThreadNote[]
+  approvalSteps      ApprovalStep[]
 
   @@index([createdAt])
 }
@@ -207,13 +208,14 @@ model EmailAccount {
 
   credential EmailCredential?
 
-  folders       MailFolder[]
-  threads       EmailThread[]
-  members       AccountMember[]
-  workflowRules WorkflowRule[]
-  agents        Agent[]
-  contacts      Contact[]
-  integrations  Integration[]
+  folders        MailFolder[]
+  threads        EmailThread[]
+  members        AccountMember[]
+  workflowRules  WorkflowRule[]
+  agents         Agent[]
+  contacts       Contact[]
+  integrations   Integration[]
+  approvalChains ApprovalChain[]
 
   @@unique([provider, email])
   @@index([userId])
@@ -288,6 +290,86 @@ model WorkflowRule {
   updatedAt DateTime @updatedAt
 
   @@index([accountId, order])
+}
+
+enum ApprovalChainStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// WAITING (not yet this step's turn) is distinct from PENDING (this
+// step's turn right now, actionable) specifically so "which chains need
+// action from user X" is a trivial `WHERE approverUserId = X AND status
+// = PENDING` query — see ApprovalChainService.listPendingForUser — rather
+// than every caller re-deriving "am I the earliest still-open step" from
+// order + sibling status.
+enum ApprovalStepStatus {
+  WAITING
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/**
+ * v3.0 True multi-step Approval Chains (docs/MVP.md) — extends the
+ * Workflow Builder's existing single auto-send-vs-draft gate (a
+ * REQUIRE_APPROVAL_CHAIN WorkflowAction) with sequential multi-person
+ * sign-off before a drafted AI reply is allowed to send. One row per
+ * matched action, created right after the gated reply is saved as a
+ * draft — see AiProcessingProcessor. 1:1 with the draft EmailMessage via
+ * a unique FK: each drafted reply that matches a chain rule gets its own
+ * approval run, never reused across drafts.
+ *
+ * Steps run in `order`, one pending approver at a time (see
+ * ApprovalChainService.approve/reject) — approving a non-final step just
+ * advances to the next approver; approving the final step sends the
+ * draft immediately (same human-approval-first posture as AUTO_REPLY,
+ * just gated behind N humans instead of zero). Rejecting any step is
+ * terminal: the chain stops, the draft is left alone in Drafts for
+ * manual rework, same as today's default hold-for-review outcome.
+ */
+model ApprovalChain {
+  id String @id @default(uuid())
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  draftMessageId String       @unique
+  draftMessage   EmailMessage @relation(fields: [draftMessageId], references: [id], onDelete: Cascade)
+
+  status ApprovalChainStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  steps ApprovalStep[]
+
+  @@index([accountId])
+}
+
+model ApprovalStep {
+  id String @id @default(uuid())
+
+  chainId String
+  chain   ApprovalChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
+
+  // Lower runs first. Exactly one step per chain is ever PENDING at a
+  // time — order 0 starts PENDING, every later step starts WAITING and
+  // is promoted to PENDING only once its predecessor is APPROVED.
+  order Int
+
+  approverUserId String
+  approver       User   @relation(fields: [approverUserId], references: [id], onDelete: Cascade)
+
+  status    ApprovalStepStatus @default(WAITING)
+  comment   String?
+  decidedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([chainId, order])
+  @@index([approverUserId, status])
 }
 
 /**
@@ -624,6 +706,10 @@ model EmailMessage {
   piiTypes    String[] @default([])
 
   tasks Task[]
+
+  // Set only when this (draft) message was created by a rule with a
+  // REQUIRE_APPROVAL_CHAIN action — see ApprovalChain's schema comment.
+  approvalChain ApprovalChain?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

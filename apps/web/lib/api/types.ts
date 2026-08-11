@@ -83,7 +83,8 @@ export type WorkflowAction =
       channelId: string;
       message?: string;
     }
-  | { type: "REQUIRE_APPROVAL" };
+  | { type: "REQUIRE_APPROVAL" }
+  | { type: "REQUIRE_APPROVAL_CHAIN"; approverUserIds: string[] };
 
 export type WorkflowActionType = WorkflowAction["type"];
 
@@ -294,6 +295,37 @@ export interface Integration {
 export interface IntegrationChannel {
   id: string;
   name: string;
+}
+
+export type ApprovalChainStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type ApprovalStepStatus = "WAITING" | "PENDING" | "APPROVED" | "REJECTED";
+
+export interface ApprovalStep {
+  id: string;
+  order: number;
+  approverUserId: string;
+  status: ApprovalStepStatus;
+  comment: string | null;
+  decidedAt: string | null;
+  approver: { id: string; email: string; displayName: string | null };
+}
+
+export interface ApprovalChain {
+  id: string;
+  accountId: string;
+  draftMessageId: string;
+  status: ApprovalChainStatus;
+  createdAt: string;
+  updatedAt: string;
+  steps: ApprovalStep[];
+  draftMessage: {
+    id: string;
+    subject: string | null;
+    bodyText: string | null;
+    to: Participant[];
+    threadId: string;
+  };
+  account: { id: string; email: string };
 }
 
 export interface MeetingTimeSuggestion {

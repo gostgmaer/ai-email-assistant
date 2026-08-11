@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AgentModule } from '../agent';
+import { ApprovalModule } from '../approval';
 import { AuthModule } from '../auth';
 import { CalendarModule } from '../calendar';
 import { CrmModule } from '../crm';
@@ -44,6 +45,11 @@ import { ContactMemoryService } from './services/contact-memory.service';
     // the same cycle again, for AiProcessingProcessor's auto-send
     // notification (§7 — see docs/enterprise-ai-pipeline-plan.md).
     forwardRef(() => NotificationModule),
+    // Same reasoning again — ApprovalModule -> EmailAccountModule ->
+    // AuthModule -> CalendarModule -> AiModule closes the same cycle a
+    // fourth time, for AiProcessingProcessor's REQUIRE_APPROVAL_CHAIN
+    // handling (v3.0, see docs/MVP.md).
+    forwardRef(() => ApprovalModule),
   ],
 
   controllers: [AiController],
