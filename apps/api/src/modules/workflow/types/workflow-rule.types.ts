@@ -26,6 +26,17 @@ export type WorkflowAction =
   /** Create a Notification for a user — does not need to be an account
    * member (e.g. notifying yourself about your own account is fine). */
   | { type: 'NOTIFY'; userId: string; message?: string }
+  /** Post a message to a Slack channel via a connected Integration (v3.0,
+   * see docs/MVP.md). integrationId must reference a SLACK Integration on
+   * this same account — validated at execution time, not save time,
+   * matching ASSIGN_TO's userId (best-effort, logged and skipped on
+   * failure rather than blocking the rest of the rule). */
+  | {
+      type: 'POST_TO_SLACK';
+      integrationId: string;
+      channelId: string;
+      message?: string;
+    }
   /** Explicit no-op: falls through to the existing default (draft the
    * reply for human review). Exists so a rule can be written to say "for
    * messages matching X, don't auto-reply" without needing an empty

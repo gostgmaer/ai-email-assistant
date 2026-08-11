@@ -353,6 +353,18 @@ A user should be able to:
 ## v3.0
 - [ ] Multi-tenancy
 - [ ] Enterprise Features (RBAC, Audit Logs, SSO, SCIM, API Keys, Webhooks, Compliance, Security Controls — depends on multi-tenancy existing first)
-- [ ] Integrations (Slack, Teams, Jira, Notion, Linear, HubSpot, Salesforce, Discord — moved from v2.0, none started)
+- [ ] Integrations (moved from v2.0, phase 1 in progress — build incrementally, starting with the highest-value few and adding the rest over time)
+  - [x] Slack — OAuth connect (per-account, mirrors Google/Microsoft connect flow), channel picker, and a `POST_TO_SLACK` Workflow rule action (e.g. "notify #support when a thread is assigned"). Built end-to-end first as the template for Teams/HubSpot, per docs/v2.0-plan.md §5.
+  - [ ] Microsoft Teams (phase 1)
+  - [ ] HubSpot (phase 1)
+  - [ ] Jira (phase 2)
+  - [ ] Notion (phase 2)
+  - [ ] Linear (phase 2)
+  - [ ] Salesforce (phase 2)
+  - [ ] Discord (phase 2)
 - [ ] Analytics (Response Time, Inbox Health, Productivity Metrics, AI Usage, Team Performance, SLA Tracking — moved from v2.0, none started)
 - [ ] True multi-step Approval Chains (today's Workflow Builder only has a single auto-send-vs-draft gate, not sequential multi-person approval)
+  - [ ] Multiple sequential approval stages per WorkflowRule (not just single auto-send-vs-draft)
+  - [ ] Per-step approver assignment (specific user/role, not just "someone approves")
+  - [ ] Step progression logic (advance on approval, halt/notify on rejection)
+  - [ ] Chain status visibility (who approved, who's pending, at which step)

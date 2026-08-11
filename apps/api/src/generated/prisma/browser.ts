@@ -106,6 +106,22 @@ export type Contact = Prisma.ContactModel
  */
 export type EmailCredential = Prisma.EmailCredentialModel
 /**
+ * Model Integration
+ * *
+ *  * v3.0 Integrations (docs/MVP.md) — external services a WorkflowRule's
+ *  * actions can post to (e.g. POST_TO_SLACK). Scoped to an EmailAccount, not
+ *  * a User: same shape as Agent/WorkflowRule, since a connection is meant to
+ *  * be used by that account's rules, and different accounts may want
+ *  * different Slack workspaces. Slack is the first provider — built
+ *  * end-to-end as the template for Teams/HubSpot/etc. (see
+ *  * docs/v2.0-plan.md §5, which explicitly recommends this over building a
+ *  * generic "integrations framework" speculatively). Token storage mirrors
+ *  * EmailCredential (AES-256-GCM via EncryptionService); unlike OAuth mail
+ *  * tokens, Slack bot tokens don't expire/rotate, so there's no
+ *  * refreshToken/expiresAt to track.
+ */
+export type Integration = Prisma.IntegrationModel
+/**
  * Model CalendarAccount
  * 
  */

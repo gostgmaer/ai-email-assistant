@@ -40,6 +40,15 @@ export const envSchema = z.object({
   MICROSOFT_CALLBACK_URL: z.string().min(1),
   MICROSOFT_MAIL_CALLBACK_URL: z.string().min(1),
 
+  // Slack (v3.0 Integrations — first provider, see docs/v2.0-plan.md §5).
+  // Optional unlike Google/Microsoft: this is a new, opt-in feature, not a
+  // core auth flow every deployment already has credentials for. Unset
+  // means the connect route throws a clear error instead of the whole app
+  // failing to boot.
+  SLACK_CLIENT_ID: z.string().optional(),
+  SLACK_CLIENT_SECRET: z.string().optional(),
+  SLACK_CALLBACK_URL: z.string().optional(),
+
   // AI
   AI_SERVICE_URL: z.url(),
   AI_SERVICE_API_KEY: z.string().optional(),

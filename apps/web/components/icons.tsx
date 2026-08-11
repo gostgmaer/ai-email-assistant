@@ -32,6 +32,29 @@ export function MicrosoftIcon() {
   );
 }
 
+export function SlackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="#E01E5A"
+        d="M9.13 15.16a2.19 2.19 0 1 1-2.19-2.19h2.19v2.19Zm1.1 0a2.19 2.19 0 1 1 4.38 0v5.47a2.19 2.19 0 1 1-4.38 0v-5.47Z"
+      />
+      <path
+        fill="#36C5F0"
+        d="M8.84 9.13a2.19 2.19 0 1 1 2.19-2.19v2.19H8.84Zm0 1.1a2.19 2.19 0 1 1 0 4.38H3.37a2.19 2.19 0 1 1 0-4.38h5.47Z"
+      />
+      <path
+        fill="#2EB67D"
+        d="M14.87 8.84a2.19 2.19 0 1 1 2.19 2.19h-2.19V8.84Zm-1.1 0a2.19 2.19 0 1 1-4.38 0V3.37a2.19 2.19 0 1 1 4.38 0v5.47Z"
+      />
+      <path
+        fill="#ECB22E"
+        d="M15.16 14.87a2.19 2.19 0 1 1-2.19 2.19v-2.19h2.19Zm0-1.1a2.19 2.19 0 1 1 0-4.38h5.47a2.19 2.19 0 1 1 0 4.38h-5.47Z"
+      />
+    </svg>
+  );
+}
+
 interface IconProps {
   className?: string;
 }

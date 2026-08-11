@@ -66,6 +66,13 @@ export const AccountRole = {
 export type AccountRole = (typeof AccountRole)[keyof typeof AccountRole]
 
 
+export const IntegrationProvider = {
+  SLACK: 'SLACK'
+} as const
+
+export type IntegrationProvider = (typeof IntegrationProvider)[keyof typeof IntegrationProvider]
+
+
 export const CalendarProvider = {
   GOOGLE: 'GOOGLE',
   MICROSOFT: 'MICROSOFT'

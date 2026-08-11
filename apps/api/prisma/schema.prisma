@@ -213,6 +213,7 @@ model EmailAccount {
   workflowRules WorkflowRule[]
   agents        Agent[]
   contacts      Contact[]
+  integrations  Integration[]
 
   @@unique([provider, email])
   @@index([userId])
@@ -365,6 +366,45 @@ model EmailCredential {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum IntegrationProvider {
+  SLACK
+}
+
+/**
+ * v3.0 Integrations (docs/MVP.md) — external services a WorkflowRule's
+ * actions can post to (e.g. POST_TO_SLACK). Scoped to an EmailAccount, not
+ * a User: same shape as Agent/WorkflowRule, since a connection is meant to
+ * be used by that account's rules, and different accounts may want
+ * different Slack workspaces. Slack is the first provider — built
+ * end-to-end as the template for Teams/HubSpot/etc. (see
+ * docs/v2.0-plan.md §5, which explicitly recommends this over building a
+ * generic "integrations framework" speculatively). Token storage mirrors
+ * EmailCredential (AES-256-GCM via EncryptionService); unlike OAuth mail
+ * tokens, Slack bot tokens don't expire/rotate, so there's no
+ * refreshToken/expiresAt to track.
+ */
+model Integration {
+  id String @id @default(uuid())
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  provider IntegrationProvider
+
+  // Display-only workspace identity (Slack team id/name) — not used for auth.
+  workspaceId   String?
+  workspaceName String?
+
+  accessToken String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([accountId, provider])
+  @@index([accountId])
 }
 
 enum CalendarProvider {

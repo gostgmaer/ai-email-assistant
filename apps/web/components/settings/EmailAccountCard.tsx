@@ -3,11 +3,13 @@ import { clsx } from "clsx";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { SlackIcon } from "@/components/icons";
 import { AGENT_TEMPLATES } from "@/lib/agent-templates";
 import type {
   Agent,
   Contact,
   EmailAccount,
+  Integration,
   WorkflowAction,
   WorkflowActionType,
   WorkflowCondition,
@@ -31,6 +33,12 @@ import {
   listAccountMembers,
   removeAccountMember,
 } from "@/lib/services/email-accounts.service";
+import {
+  connectSlackUrl,
+  disconnectIntegration,
+  listIntegrations,
+  listSlackChannels,
+} from "@/lib/services/integrations.service";
 import {
   createWorkflowRule,
   deleteWorkflowRule,
@@ -75,6 +83,7 @@ export function EmailAccountCard({
   onUpdateAutoScheduleMeetings,
   onUpdateProhibitedPhrases,
   busy,
+  autoExpandIntegrations,
 }: {
   account: EmailAccount;
   onMakePrimary: () => void;
@@ -85,12 +94,16 @@ export function EmailAccountCard({
   onUpdateAutoScheduleMeetings: (enabled: boolean) => void;
   onUpdateProhibitedPhrases: (phrases: string[]) => void;
   busy: boolean;
+  autoExpandIntegrations?: boolean;
 }) {
   const [showWorkflows, setShowWorkflows] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showAgents, setShowAgents] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  const [showIntegrations, setShowIntegrations] = useState(
+    () => autoExpandIntegrations ?? false,
+  );
   const [showPolicy, setShowPolicy] = useState(false);
   const [policyInput, setPolicyInput] = useState(() =>
     account.prohibitedPhrases.join(", "),
@@ -187,6 +200,13 @@ export function EmailAccountCard({
               <Button
                 variant="secondary"
                 size="sm"
+                onClick={() => setShowIntegrations((v) => !v)}
+              >
+                Integrations
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowFilters((v) => !v)}
               >
                 Sync filters ({activeFilterCount})
@@ -227,6 +247,10 @@ export function EmailAccountCard({
       )}
 
       {showAgents && <AgentsPanel accountId={account.id} isOwner={isOwner} />}
+
+      {showIntegrations && (
+        <IntegrationsPanel accountId={account.id} isOwner={isOwner} />
+      )}
 
       {showFilters && (
         <div className="mt-4 border-t border-zinc-100 pt-3">
@@ -434,6 +458,7 @@ const ACTION_TYPES: { value: WorkflowActionType; label: string }[] = [
   { value: "AUTO_REPLY", label: "Auto-send the AI reply" },
   { value: "ASSIGN_TO", label: "Assign to teammate" },
   { value: "NOTIFY", label: "Notify teammate" },
+  { value: "POST_TO_SLACK", label: "Post to Slack channel" },
   { value: "REQUIRE_APPROVAL", label: "Hold as draft (no auto-reply)" },
 ];
 
@@ -473,6 +498,11 @@ function WorkflowRulesPanel({
   const { data: agents } = useQuery({
     queryKey: ["agents", accountId],
     queryFn: () => listAgents(accountId),
+  });
+
+  const { data: integrations } = useQuery({
+    queryKey: ["integrations", accountId],
+    queryFn: () => listIntegrations(accountId),
   });
 
   function invalidate() {
@@ -527,6 +557,12 @@ function WorkflowRulesPanel({
         return `Assign to ${memberLabel(action.userId)}`;
       case "NOTIFY":
         return `Notify ${memberLabel(action.userId)}`;
+      case "POST_TO_SLACK": {
+        const integration = integrations?.find(
+          (i) => i.id === action.integrationId,
+        );
+        return `Post to Slack${integration ? ` (${integration.workspaceName ?? "workspace"})` : ""}`;
+      }
       case "REQUIRE_APPROVAL":
         return "Hold as draft";
     }
@@ -725,7 +761,9 @@ function WorkflowRulesPanel({
                       const next: WorkflowAction =
                         type === "ASSIGN_TO" || type === "NOTIFY"
                           ? { type, userId: members?.[0]?.userId ?? "" }
-                          : { type };
+                          : type === "POST_TO_SLACK"
+                            ? { type, integrationId: "", channelId: "" }
+                            : { type };
                       setActions(actions.map((a, j) => (j === i ? next : a)));
                     }}
                     className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
@@ -785,6 +823,15 @@ function WorkflowRulesPanel({
                       ))}
                     </select>
                   )}
+                  {action.type === "POST_TO_SLACK" && (
+                    <SlackActionFields
+                      action={action}
+                      integrations={integrations}
+                      onChange={(next) =>
+                        setActions(actions.map((a, j) => (j === i ? next : a)))
+                      }
+                    />
+                  )}
                   {actions.length > 1 && (
                     <button
                       type="button"
@@ -830,6 +877,154 @@ function WorkflowRulesPanel({
             </Button>
           </div>
         </form>
+      )}
+    </div>
+  );
+}
+
+type PostToSlackAction = Extract<WorkflowAction, { type: "POST_TO_SLACK" }>;
+
+function SlackActionFields({
+  action,
+  integrations,
+  onChange,
+}: {
+  action: PostToSlackAction;
+  integrations: Integration[] | undefined;
+  onChange: (next: PostToSlackAction) => void;
+}) {
+  const slackIntegrations = integrations?.filter((i) => i.provider === "SLACK");
+
+  const { data: channels, isLoading } = useQuery({
+    queryKey: ["integration-channels", action.integrationId],
+    queryFn: () => listSlackChannels(action.integrationId),
+    enabled: !!action.integrationId,
+  });
+
+  return (
+    <>
+      <select
+        value={action.integrationId}
+        onChange={(e) =>
+          onChange({ ...action, integrationId: e.target.value, channelId: "" })
+        }
+        className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+      >
+        <option value="">
+          {slackIntegrations?.length ? "Select workspace" : "No workspace connected"}
+        </option>
+        {slackIntegrations?.map((integration) => (
+          <option key={integration.id} value={integration.id}>
+            {integration.workspaceName ?? "Slack"}
+          </option>
+        ))}
+      </select>
+      {action.integrationId && (
+        <select
+          value={action.channelId}
+          disabled={isLoading}
+          onChange={(e) => onChange({ ...action, channelId: e.target.value })}
+          className="rounded-md border border-zinc-300 px-2 py-1 text-xs disabled:opacity-50"
+        >
+          <option value="">
+            {isLoading ? "Loading channels…" : "Select channel"}
+          </option>
+          {channels?.map((channel) => (
+            <option key={channel.id} value={channel.id}>
+              #{channel.name}
+            </option>
+          ))}
+        </select>
+      )}
+    </>
+  );
+}
+
+const INTEGRATION_LABEL: Record<Integration["provider"], string> = {
+  SLACK: "Slack",
+};
+
+function IntegrationsPanel({
+  accountId,
+  isOwner,
+}: {
+  accountId: string;
+  isOwner: boolean;
+}) {
+  const queryClient = useQueryClient();
+
+  const { data: integrations, isLoading } = useQuery({
+    queryKey: ["integrations", accountId],
+    queryFn: () => listIntegrations(accountId),
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: disconnectIntegration,
+    onSuccess: () =>
+      void queryClient.invalidateQueries({
+        queryKey: ["integrations", accountId],
+      }),
+  });
+
+  const hasSlack = integrations?.some((i) => i.provider === "SLACK");
+
+  return (
+    <div className="mt-4 border-t border-zinc-100 pt-3">
+      <p className="mb-2 text-xs text-zinc-500">
+        Connect a workspace here, then reference it from a &quot;Post to
+        Slack&quot; workflow action above (e.g. notify a channel whenever a
+        thread is assigned to you).
+      </p>
+
+      {isLoading && (
+        <p className="text-xs text-zinc-400">Loading integrations…</p>
+      )}
+
+      <ul className="mb-3 space-y-2">
+        {integrations?.map((integration) => (
+          <li
+            key={integration.id}
+            className="flex items-center justify-between rounded-md border border-zinc-200 p-3"
+          >
+            <div className="flex items-center gap-2">
+              <SlackIcon />
+              <div>
+                <p className="text-sm font-medium text-zinc-900">
+                  {integration.workspaceName ??
+                    INTEGRATION_LABEL[integration.provider]}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  {INTEGRATION_LABEL[integration.provider]} workspace
+                </p>
+              </div>
+            </div>
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => disconnectMutation.mutate(integration.id)}
+                loading={
+                  disconnectMutation.isPending &&
+                  disconnectMutation.variables === integration.id
+                }
+              >
+                Disconnect
+              </Button>
+            )}
+          </li>
+        ))}
+        {integrations?.length === 0 && !isLoading && (
+          <li className="text-xs text-zinc-400">No integrations connected yet.</li>
+        )}
+      </ul>
+
+      {isOwner && !hasSlack && (
+        <a
+          href={connectSlackUrl(accountId)}
+          className="flex w-fit items-center gap-2 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+        >
+          <SlackIcon /> Connect Slack
+        </a>
       )}
     </div>
   );

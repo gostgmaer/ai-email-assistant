@@ -77,6 +77,12 @@ export type WorkflowAction =
   | { type: "AUTO_REPLY"; agentId?: string }
   | { type: "ASSIGN_TO"; userId: string }
   | { type: "NOTIFY"; userId: string; message?: string }
+  | {
+      type: "POST_TO_SLACK";
+      integrationId: string;
+      channelId: string;
+      message?: string;
+    }
   | { type: "REQUIRE_APPROVAL" };
 
 export type WorkflowActionType = WorkflowAction["type"];
@@ -271,6 +277,23 @@ export interface Task {
   calendarEventUrl: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type IntegrationProvider = "SLACK";
+
+export interface Integration {
+  id: string;
+  accountId: string;
+  provider: IntegrationProvider;
+  workspaceId: string | null;
+  workspaceName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntegrationChannel {
+  id: string;
+  name: string;
 }
 
 export interface MeetingTimeSuggestion {

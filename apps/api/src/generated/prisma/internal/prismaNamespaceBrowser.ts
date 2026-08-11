@@ -61,6 +61,7 @@ export const ModelName = {
   Agent: 'Agent',
   Contact: 'Contact',
   EmailCredential: 'EmailCredential',
+  Integration: 'Integration',
   CalendarAccount: 'CalendarAccount',
   CalendarCredential: 'CalendarCredential',
   MailFolder: 'MailFolder',
@@ -245,6 +246,21 @@ export const EmailCredentialScalarFieldEnum = {
 } as const
 
 export type EmailCredentialScalarFieldEnum = (typeof EmailCredentialScalarFieldEnum)[keyof typeof EmailCredentialScalarFieldEnum]
+
+
+export const IntegrationScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  provider: 'provider',
+  workspaceId: 'workspaceId',
+  workspaceName: 'workspaceName',
+  accessToken: 'accessToken',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type IntegrationScalarFieldEnum = (typeof IntegrationScalarFieldEnum)[keyof typeof IntegrationScalarFieldEnum]
 
 
 export const CalendarAccountScalarFieldEnum = {

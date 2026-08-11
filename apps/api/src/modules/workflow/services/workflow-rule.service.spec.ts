@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import type { EmailAccountService } from '../../email-account/services/email-account.service';
+import type { IntegrationService } from '../../integration/services/integration.service';
 import type { NotificationService } from '../../notification/services/notification.service';
 import {
   WorkflowAction,
@@ -37,13 +38,24 @@ describe('WorkflowRuleService', () => {
       create: jest.fn(),
     } as unknown as jest.Mocked<NotificationService>;
 
+    const integrationService = {
+      postMessage: jest.fn(),
+    } as unknown as jest.Mocked<IntegrationService>;
+
     const service = new WorkflowRuleService(
       prisma as never,
       emailAccountService,
       notificationService,
+      integrationService,
     );
 
-    return { service, prisma, emailAccountService, notificationService };
+    return {
+      service,
+      prisma,
+      emailAccountService,
+      notificationService,
+      integrationService,
+    };
   }
 
   function rule(
@@ -227,6 +239,29 @@ describe('WorkflowRuleService', () => {
       );
     });
 
+    it('posts to Slack for POST_TO_SLACK', async () => {
+      const { service, integrationService } = buildDeps();
+
+      await service.executeActions(
+        [
+          {
+            type: 'POST_TO_SLACK',
+            integrationId: 'integration-1',
+            channelId: 'C123',
+            message: 'new message!',
+          },
+        ],
+        context,
+      );
+
+      /* eslint-disable-next-line @typescript-eslint/unbound-method -- jest.fn() mock, never called unbound */
+      expect(integrationService.postMessage).toHaveBeenCalledWith(
+        'integration-1',
+        'C123',
+        'new message!',
+      );
+    });
+
     it('does not let one failing action block the others', async () => {
       const { service, prisma, notificationService } = buildDeps();
       notificationService.create.mockRejectedValue(new Error('notify failed'));
@@ -292,6 +327,18 @@ describe('WorkflowRuleService', () => {
           name: 'Test',
           conditions: [],
           actions: [{ type: 'ASSIGN_TO' } as never],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a POST_TO_SLACK action with no channelId', async () => {
+      const { service } = buildDeps();
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Test',
+          conditions: [],
+          actions: [{ type: 'POST_TO_SLACK', integrationId: 'i1' } as never],
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });

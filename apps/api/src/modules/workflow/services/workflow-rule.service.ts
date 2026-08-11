@@ -10,6 +10,7 @@ import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNa
 // Leaf-file imports — see documents.controller.ts's comment for why
 // (avoids a Jest-only circular require).
 import { EmailAccountService } from '../../email-account/services/email-account.service';
+import { IntegrationService } from '../../integration/services/integration.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import {
   WorkflowAction,
@@ -28,6 +29,7 @@ const ACTION_TYPES: WorkflowAction['type'][] = [
   'AUTO_REPLY',
   'ASSIGN_TO',
   'NOTIFY',
+  'POST_TO_SLACK',
   'REQUIRE_APPROVAL',
 ];
 
@@ -51,6 +53,7 @@ export class WorkflowRuleService {
     private readonly prisma: PrismaService,
     private readonly emailAccountService: EmailAccountService,
     private readonly notificationService: NotificationService,
+    private readonly integrationService: IntegrationService,
   ) {}
 
   /** Rules are account configuration — owner-only, same tier as filters/
@@ -208,6 +211,15 @@ export class WorkflowRuleService {
               { threadId: context.threadId, messageId: context.messageId },
             );
             break;
+
+          case 'POST_TO_SLACK':
+            await this.integrationService.postMessage(
+              action.integrationId,
+              action.channelId,
+              action.message ??
+                `A workflow rule matched a new message (thread ${context.threadId}).`,
+            );
+            break;
         }
       } catch (error) {
         this.logger.warn(
@@ -289,6 +301,23 @@ export class WorkflowRuleService {
         throw new BadRequestException(
           `action.userId is required for ${a.type}`,
         );
+      }
+
+      if (a.type === 'POST_TO_SLACK') {
+        const slackAction = a as {
+          integrationId?: unknown;
+          channelId?: unknown;
+        };
+        if (typeof slackAction.integrationId !== 'string') {
+          throw new BadRequestException(
+            'action.integrationId is required for POST_TO_SLACK',
+          );
+        }
+        if (typeof slackAction.channelId !== 'string') {
+          throw new BadRequestException(
+            'action.channelId is required for POST_TO_SLACK',
+          );
+        }
       }
     }
   }
