@@ -74,7 +74,7 @@ export interface WorkflowCondition {
 }
 
 export type WorkflowAction =
-  | { type: "AUTO_REPLY"; agentId?: string }
+  | { type: "AUTO_REPLY"; agentId?: string; calendarAgent?: boolean }
   | { type: "ASSIGN_TO"; userId: string }
   | { type: "NOTIFY"; userId: string; message?: string }
   | {
@@ -147,6 +147,7 @@ export interface Participant {
 export interface GenerationMetadata {
   ragUsed: boolean;
   contactMemoryUsed: boolean;
+  calendarAgentUsed: boolean;
   provider: string;
   model: string;
   usage: { inputTokens: number; outputTokens: number; totalTokens: number };

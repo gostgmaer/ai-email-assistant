@@ -11,9 +11,10 @@ import { AgentService } from '../../agent/services/agent.service';
 // Leaf-file import rather than the '../../approval' barrel — same
 // reasoning as AgentService below.
 import { ApprovalChainService } from '../../approval/services/approval-chain.service';
-// Leaf-file import rather than the '../../calendar' barrel — see the
+// Leaf-file imports rather than the '../../calendar' barrel — see the
 // comment in meeting-scheduling.service.ts for why (avoids a Jest-only
 // circular require through calendar.module.ts <-> ai.module.ts).
+import { CalendarContextService } from '../../calendar/services/calendar-context.service';
 import { MeetingSchedulingService } from '../../calendar/services/meeting-scheduling.service';
 // Leaf-file import rather than the '../../crm' barrel — same reasoning as
 // AgentService below.
@@ -72,6 +73,8 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly documentsService: DocumentsService,
     @Inject(forwardRef(() => MeetingSchedulingService))
     private readonly meetingSchedulingService: MeetingSchedulingService,
+    @Inject(forwardRef(() => CalendarContextService))
+    private readonly calendarContextService: CalendarContextService,
     @Inject(forwardRef(() => WorkflowRuleService))
     private readonly workflowRuleService: WorkflowRuleService,
     @Inject(forwardRef(() => AgentService))
@@ -202,6 +205,21 @@ export class AiProcessingProcessor extends WorkerHost {
         )) ?? undefined)
       : undefined;
 
+    // Calendar Agent (v3.0 multi-agent orchestration §Option B, see
+    // docs/multi-agent-orchestration-plan.md) — runs regardless of which
+    // action ends up executing (a drafted reply benefits from
+    // availability-aware phrasing just as much as an auto-sent one);
+    // `calendarAgent: false` on a matched AUTO_REPLY action is the only
+    // opt-out. Best-effort — CalendarContextService never throws.
+    const calendarAgentEnabled = autoReplyAction?.calendarAgent !== false;
+    const calendarContext =
+      calendarAgentEnabled &&
+      classification.category.toLowerCase() === 'meeting'
+        ? await this.calendarContextService.buildAvailabilityContext(
+            account.userId,
+          )
+        : null;
+
     const contactMemory = await this.aiClientService.contactMemory(
       subject,
       thread,
@@ -238,13 +256,18 @@ export class AiProcessingProcessor extends WorkerHost {
       .findByEmail(account.id, sender.address)
       .catch(() => null);
 
-    const { instruction, contactMemoryUsed, crmContactUsed } =
-      buildContextInstruction(
-        related,
-        contactMemory,
-        documentMatches,
-        crmContact,
-      );
+    const {
+      instruction,
+      contactMemoryUsed,
+      crmContactUsed,
+      calendarAgentUsed,
+    } = buildContextInstruction(
+      related,
+      contactMemory,
+      documentMatches,
+      crmContact,
+      calendarContext,
+    );
 
     const reply = await this.aiClientService.generateReply(
       subject,
@@ -257,6 +280,7 @@ export class AiProcessingProcessor extends WorkerHost {
       ragUsed: documentMatches.length > 0,
       contactMemoryUsed,
       crmContactUsed,
+      calendarAgentUsed,
       provider: reply.provider,
       model: reply.model,
       usage: reply.usage,
@@ -591,10 +615,12 @@ function buildContextInstruction(
   current: ContactMemoryResponse,
   documentMatches: DocumentChunkMatch[],
   crmContact: ContactModel | null,
+  calendarContext: string | null,
 ): {
   instruction: string | undefined;
   contactMemoryUsed: boolean;
   crmContactUsed: boolean;
+  calendarAgentUsed: boolean;
 } {
   const sections: string[] = [];
 
@@ -640,9 +666,16 @@ function buildContextInstruction(
     );
   }
 
+  // Calendar Agent (v3.0 multi-agent orchestration §Option B) — see
+  // CalendarContextService for why this never contains a specific time.
+  if (calendarContext) {
+    sections.push(calendarContext);
+  }
+
   return {
     instruction: sections.length > 0 ? sections.join('\n\n') : undefined,
     contactMemoryUsed: priorContacts.length > 0,
     crmContactUsed: !!crmContact,
+    calendarAgentUsed: !!calendarContext,
   };
 }

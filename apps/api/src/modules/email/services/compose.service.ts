@@ -25,6 +25,7 @@ export interface GenerationMetadata {
   ragUsed: boolean;
   contactMemoryUsed: boolean;
   crmContactUsed: boolean;
+  calendarAgentUsed: boolean;
   provider: string;
   model: string;
   usage: { inputTokens: number; outputTokens: number; totalTokens: number };

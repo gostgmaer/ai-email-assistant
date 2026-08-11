@@ -345,6 +345,15 @@ export default function ThreadPage() {
                       Grounded in your documents
                     </span>
                   )}
+                  {message.generationMetadata?.calendarAgentUsed && (
+                    <span
+                      title="The Calendar Agent checked real availability to inform this reply's tone — it never states a specific time itself."
+                      className="mt-1.5 ml-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                    >
+                      <ClockIcon className="h-3 w-3" />
+                      Calendar-aware
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="pl-12">

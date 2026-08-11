@@ -577,7 +577,12 @@ function WorkflowRulesPanel({
         const agent = action.agentId
           ? agents?.find((a) => a.id === action.agentId)
           : undefined;
-        return agent ? `Auto-send reply as "${agent.name}"` : "Auto-send reply";
+        const base = agent
+          ? `Auto-send reply as "${agent.name}"`
+          : "Auto-send reply";
+        return action.calendarAgent === false
+          ? `${base} (calendar-aware replies off)`
+          : base;
       }
       case "ASSIGN_TO":
         return `Assign to ${memberLabel(action.userId)}`;
@@ -836,6 +841,24 @@ function WorkflowRulesPanel({
                         ))}
                       </select>
                     )}
+                  {action.type === "AUTO_REPLY" && (
+                    <label className="flex items-center gap-1.5 text-xs text-zinc-600">
+                      <input
+                        type="checkbox"
+                        checked={action.calendarAgent !== false}
+                        onChange={(e) =>
+                          setActions(
+                            actions.map((a, j) =>
+                              j === i && a.type === "AUTO_REPLY"
+                                ? { ...a, calendarAgent: e.target.checked }
+                                : a,
+                            ),
+                          )
+                        }
+                      />
+                      Calendar-aware replies
+                    </label>
+                  )}
                   {(action.type === "ASSIGN_TO" || action.type === "NOTIFY") && (
                     <select
                       value={action.userId}
