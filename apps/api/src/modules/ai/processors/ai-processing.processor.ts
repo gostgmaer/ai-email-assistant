@@ -236,6 +236,7 @@ export class AiProcessingProcessor extends WorkerHost {
     const related = await this.contactMemoryService.searchSimilar(
       account.userId,
       contactMemory.embedding,
+      sender.address,
       3,
     );
 
@@ -262,8 +263,8 @@ export class AiProcessingProcessor extends WorkerHost {
       crmContactUsed,
       calendarAgentUsed,
     } = buildContextInstruction(
-      related,
       contactMemory,
+      related,
       documentMatches,
       crmContact,
       calendarContext,
@@ -611,8 +612,8 @@ function toEmailMessageDto(message: {
 }
 
 function buildContextInstruction(
-  related: ContactMemoryMatch[],
   current: ContactMemoryResponse,
+  related: ContactMemoryMatch[],
   documentMatches: DocumentChunkMatch[],
   crmContact: ContactModel | null,
   calendarContext: string | null,
@@ -624,17 +625,38 @@ function buildContextInstruction(
 } {
   const sections: string[] = [];
 
-  const priorContacts = related.filter(
-    (match) => match.facts.summary !== current.facts.summary,
-  );
+  // The current contact's own accumulated memory — separate from the
+  // cross-contact "related" section below. No explicit precedence over the
+  // documents section further down: both are shown as-is, and the existing
+  // "don't invent facts... not present in the thread or provided context"
+  // rule in reply.md is left to arbitrate if the two ever disagree.
+  const currentLines: string[] = [];
+  if (current.facts.role) currentLines.push(`Role: ${current.facts.role}`);
+  if (current.facts.company)
+    currentLines.push(`Company: ${current.facts.company}`);
+  if (current.facts.summary)
+    currentLines.push(`Summary: ${current.facts.summary}`);
+  if (current.facts.commitments.length > 0) {
+    currentLines.push(`Commitments: ${current.facts.commitments.join('; ')}`);
+  }
+  if (currentLines.length > 0) {
+    sections.push(
+      `What we know about this specific sender, from past conversations with them:\n${currentLines.join('\n')}`,
+    );
+  }
 
-  if (priorContacts.length > 0) {
-    const lines = priorContacts.map(
+  // related is already scoped to OTHER contacts within a tight similarity
+  // distance by ContactMemoryService.searchSimilar — still labeled clearly
+  // as background, not as facts about this thread's participants, since a
+  // close embedding match doesn't guarantee actual relevance to what's
+  // being discussed right now.
+  if (related.length > 0) {
+    const lines = related.map(
       (match) =>
         `- ${match.senderName ?? match.senderEmail}: ${match.facts.summary}`,
     );
     sections.push(
-      `Known context about people involved in this conversation:\n${lines.join('\n')}`,
+      `Background only — facts about OTHER people from unrelated past conversations, surfaced because they seemed topically similar. Do not state or imply any of this in the reply unless it is unmistakably about the same matter as the current thread:\n${lines.join('\n')}`,
     );
   }
 
@@ -674,7 +696,7 @@ function buildContextInstruction(
 
   return {
     instruction: sections.length > 0 ? sections.join('\n\n') : undefined,
-    contactMemoryUsed: priorContacts.length > 0,
+    contactMemoryUsed: related.length > 0,
     crmContactUsed: !!crmContact,
     calendarAgentUsed: !!calendarContext,
   };
