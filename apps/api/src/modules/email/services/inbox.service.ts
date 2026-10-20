@@ -12,7 +12,6 @@ import { QueueService } from '../../../infrastructure/queue';
 // circular require).
 import { EmailAccountService } from '../../email-account/services/email-account.service';
 import { ListThreadsDto } from '../dto';
-import { NormalizedParticipant } from '../interfaces';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
 
 @Injectable()
@@ -241,17 +240,15 @@ export class InboxService {
   /**
    * Heuristic follow-up suggestions (see docs/v1.2-plan.md): threads where
    * the user sent the most recent message and nothing has come back in
-   * `olderThanDays` — not an AI capability, this is deliberately a rules
-   * pass over data that's already there (the account's own address vs. the
-   * latest message's sender), reusing extracted meeting_requests/tasks as
-   * a secondary signal rather than a fresh LLM call per thread.
+   * `olderThanDays` — not an AI capability, a rules pass over data that's
+   * already there, reusing extracted meeting requests as a secondary
+   * signal rather than a fresh LLM call per thread.
    *
-   * "Sent the last message" can't be expressed as a DB-level filter — a
-   * thread's `folder` is fixed at creation (see EmailThread.folderId's
-   * comment) and doesn't move when the user replies from an Inbox
-   * conversation, so the only reliable signal is comparing the latest
-   * message's `from` address against the account's own email. That means
-   * this filters in application code after a bounded fetch, not via SQL.
+   * "The user sent the last message" is EmailThread.lastMessageFromSelf,
+   * kept in step with lastMessageAt by sync and compose. Filtering on it in
+   * the query (instead of fetching the 50 OLDEST threads and filtering in
+   * code, which missed every recent candidate once an account had more
+   * than 50 threads) returns the most recent candidates first.
    */
   async getFollowUpCandidates(userId: string, olderThanDays = 3) {
     const threshold = new Date(
@@ -261,43 +258,35 @@ export class InboxService {
     const threads = await this.prisma.emailThread.findMany({
       where: {
         account: { members: { some: { userId } }, deletedAt: null },
+        lastMessageFromSelf: true,
         lastMessageAt: { lt: threshold },
+        folder: { type: { not: 'DRAFTS' } },
         OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: new Date() } }],
       },
       include: {
         account: { select: { id: true, provider: true, email: true } },
-        messages: { orderBy: { receivedAt: 'desc' }, take: 1 },
         tasks: {
           where: { type: 'MEETING_REQUEST', status: 'PENDING' },
           select: { id: true, description: true },
         },
       },
-      orderBy: { lastMessageAt: 'asc' },
+      orderBy: { lastMessageAt: 'desc' },
       take: 50,
     });
 
-    return threads
-      .filter((thread) => {
-        const latest = thread.messages[0];
-        if (!latest) return false;
-        const sender = firstParticipant(latest.from);
-        return (
-          sender?.address.toLowerCase() === thread.account.email.toLowerCase()
-        );
-      })
-      .map((thread) => ({
-        threadId: thread.id,
-        subject: thread.subject,
-        lastMessageAt: thread.lastMessageAt,
-        daysSinceLastMessage: thread.lastMessageAt
-          ? Math.floor(
-              (Date.now() - thread.lastMessageAt.getTime()) /
-                (24 * 60 * 60 * 1000),
-            )
-          : null,
-        account: thread.account,
-        relatedMeetingRequests: thread.tasks,
-      }));
+    return threads.map((thread) => ({
+      threadId: thread.id,
+      subject: thread.subject,
+      lastMessageAt: thread.lastMessageAt,
+      daysSinceLastMessage: thread.lastMessageAt
+        ? Math.floor(
+            (Date.now() - thread.lastMessageAt.getTime()) /
+              (24 * 60 * 60 * 1000),
+          )
+        : null,
+      account: thread.account,
+      relatedMeetingRequests: thread.tasks,
+    }));
   }
 
   async getThread(userId: string, threadId: string) {
@@ -421,9 +410,4 @@ export class InboxService {
       message.thread.folder.providerFolderId ?? undefined,
     );
   }
-}
-
-function firstParticipant(from: unknown): NormalizedParticipant | undefined {
-  const list = from as NormalizedParticipant[] | undefined;
-  return Array.isArray(list) ? list[0] : undefined;
 }

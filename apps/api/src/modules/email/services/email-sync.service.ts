@@ -32,6 +32,7 @@ const SYNC_BACKOFF_MAX_MS = 6 * 60 * 60 * 1000;
 const SYNC_FAILURE_NOTIFY_THRESHOLD = 3;
 const ALIAS_REFRESH_MS = 24 * 60 * 60 * 1000;
 const MAX_LIST_PAGE_SIZE = 100;
+const AI_ENQUEUE_DELAY_MS = 30 * 1000;
 
 @Injectable()
 export class EmailSyncService {
@@ -577,6 +578,7 @@ export class EmailSyncService {
         subject: message.subject,
         snippet: message.snippet,
         lastMessageAt: message.receivedAt,
+        lastMessageFromSelf: !isInbound,
       },
     });
 
@@ -630,7 +632,13 @@ export class EmailSyncService {
       isInbound &&
       this.isEligibleForAi(folder, message, account, mode)
     ) {
-      await this.queueService.enqueueAiProcessing(saved.id);
+      // Delayed briefly so a burst of messages on one thread (a sync
+      // that picks up several at once) is all persisted before any of
+      // them is processed — the AI pipeline then answers only the newest
+      // (see AiProcessingProcessor.findSupersededReason).
+      await this.queueService.enqueueAiProcessing(saved.id, {
+        delayMs: AI_ENQUEUE_DELAY_MS,
+      });
     }
   }
 

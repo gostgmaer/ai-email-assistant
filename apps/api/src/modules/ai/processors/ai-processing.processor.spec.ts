@@ -20,6 +20,7 @@ describe('AiProcessingProcessor', () => {
   const senderAddress = 'Customer@Example.com';
 
   const AUTO_REPLY_RULE: WorkflowAction[] = [{ type: 'AUTO_REPLY' }];
+  const RECEIVED_AT = new Date('2026-10-20T10:00:00Z');
 
   function buildMessage(overrides: Record<string, unknown> = {}) {
     return {
@@ -28,6 +29,9 @@ describe('AiProcessingProcessor', () => {
       from: [{ address: senderAddress, name: 'Casey Customer' }],
       subject: 'Order question',
       bodyText: 'Where is my order?',
+      to: [{ address: 'support@company.com' }],
+      cc: [],
+      receivedAt: RECEIVED_AT,
       aiProcessedAt: null,
       isAutoReply: false,
       ...overrides,
@@ -45,8 +49,13 @@ describe('AiProcessingProcessor', () => {
         },
         messages: [
           {
+            id: messageId,
             from: [{ address: senderAddress, name: 'Casey Customer' }],
+            to: [{ address: 'support@company.com' }],
+            cc: [],
             bodyText: 'Where is my order?',
+            receivedAt: RECEIVED_AT,
+            isAutoReply: false,
           },
         ],
         ...((overrides.thread as object) ?? {}),
@@ -122,6 +131,7 @@ describe('AiProcessingProcessor', () => {
         findUnique: jest.fn().mockResolvedValue(message),
         update: jest.fn().mockResolvedValue({}),
         count: jest.fn().mockResolvedValue(0),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       emailThread: { update: jest.fn().mockResolvedValue({}) },
       automationEffect: ledger,
@@ -138,6 +148,8 @@ describe('AiProcessingProcessor', () => {
           language: 'en',
           containsPii: false,
           piiTypes: [],
+          needsReply: true,
+          replyReason: 'asks a question',
         },
       }),
       contactMemory: jest.fn().mockResolvedValue({
@@ -172,6 +184,7 @@ describe('AiProcessingProcessor', () => {
     const composeService = {
       reply: jest.fn().mockResolvedValue({ providerMessageId: 'sent-1' }),
       saveDraftReply: jest.fn().mockResolvedValue({ id: 'draft-1' }),
+      deleteDraft: jest.fn().mockResolvedValue(undefined),
     };
     const tasksService = {
       createFromExtraction: jest.fn().mockResolvedValue([]),
@@ -308,6 +321,8 @@ describe('AiProcessingProcessor', () => {
           language: 'en',
           containsPii: false,
           piiTypes: [],
+          needsReply: true,
+          replyReason: 'asks a question',
         },
       });
 
@@ -684,6 +699,218 @@ describe('AiProcessingProcessor', () => {
       await deps.run();
 
       expect(deps.composeService.reply).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('reply need and one reply per conversation', () => {
+    const HOUR = 60 * 60 * 1000;
+    const at = (hoursAfter: number) =>
+      new Date(RECEIVED_AT.getTime() + hoursAfter * HOUR);
+    const row = (
+      id: string,
+      from: string,
+      receivedAt: Date,
+      bodyText = 'Can you confirm the delivery date?',
+      extra: Record<string, unknown> = {},
+    ) => ({
+      id,
+      from: [{ address: from }],
+      to: [{ address: 'support@company.com' }],
+      cc: [],
+      bodyText,
+      receivedAt,
+      isAutoReply: false,
+      ...extra,
+    });
+    const current = () =>
+      row(messageId, senderAddress, RECEIVED_AT, 'Where is my order?');
+
+    function withThread(
+      rows: ReturnType<typeof row>[],
+      overrides: Record<string, unknown> = {},
+    ) {
+      return buildMessage({ ...overrides, thread: { messages: rows } });
+    }
+
+    function classifyAs(needsReply: boolean, replyReason: string) {
+      return {
+        classification: {
+          category: 'General',
+          priority: 'Low',
+          sentiment: 'Neutral',
+          spam: false,
+          language: 'en',
+          containsPii: false,
+          piiTypes: [],
+          needsReply,
+          replyReason,
+        },
+      };
+    }
+
+    it('generates no reply when the model says none is needed, but still runs routing actions', async () => {
+      const deps = buildDeps({ rule: AUTO_REPLY_RULE });
+      deps.aiClientService.classify.mockResolvedValue(
+        classifyAs(false, 'FYI only'),
+      );
+
+      await deps.run();
+
+      expect(deps.aiClientService.generateReply).not.toHaveBeenCalled();
+      expect(deps.composeService.saveDraftReply).not.toHaveBeenCalled();
+      expect(deps.workflowRuleService.executeActions).toHaveBeenCalledTimes(1);
+      expect(deps.prisma.emailMessage.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            needsReply: false,
+            replyReason: 'FYI only',
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('skips an acknowledgement without needing the model to decide', async () => {
+      const deps = buildDeps({
+        message: buildMessage({ bodyText: 'Thanks so much!\nCasey' }),
+      });
+
+      await deps.run();
+
+      expect(deps.aiClientService.generateReply).not.toHaveBeenCalled();
+      expect(deps.prisma.emailMessage.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            needsReply: false,
+            replyReason: 'acknowledgement only',
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('sends the model only the new text of each message, not quoted history', async () => {
+      const deps = buildDeps({
+        message: withThread([
+          row(
+            messageId,
+            senderAddress,
+            RECEIVED_AT,
+            'Where is my order?\n\nOn Mon, Support <support@company.com> wrote:\n> It ships soon',
+          ),
+        ]),
+      });
+
+      await deps.run();
+
+      const [, thread] = deps.aiClientService.classify.mock.calls[0] as [
+        string,
+        { content: string }[],
+      ];
+      expect(thread[0].content).toBe('Where is my order?');
+    });
+
+    it('does not reply when the user already answered after this message', async () => {
+      const deps = buildDeps({
+        message: withThread([
+          current(),
+          row('mine', 'support@company.com', at(1), 'It ships today.'),
+        ]),
+      });
+
+      await deps.run();
+
+      expect(deps.aiClientService.generateReply).not.toHaveBeenCalled();
+    });
+
+    it('leaves the reply to a newer message from the sender that may need one', async () => {
+      const deps = buildDeps({
+        message: withThread([
+          current(),
+          row('newer', senderAddress, at(1), 'Also, can I change the address?'),
+        ]),
+      });
+
+      await deps.run();
+
+      expect(deps.aiClientService.generateReply).not.toHaveBeenCalled();
+    });
+
+    it('is not superseded by a newer acknowledgement or automatic reply', async () => {
+      const deps = buildDeps({
+        message: withThread([
+          current(),
+          row('thanks', senderAddress, at(1), 'Thanks!'),
+          row('ooo', 'colleague@example.com', at(2), 'I am away', {
+            isAutoReply: true,
+          }),
+        ]),
+      });
+
+      await deps.run();
+
+      expect(deps.aiClientService.generateReply).toHaveBeenCalledTimes(1);
+    });
+
+    it('answers the conversation from the newest message even when it alone needs no reply', async () => {
+      // This message (the newest) is an FYI; the question before it was
+      // superseded by it, so this job must be the one that replies.
+      const fyi = 'FYI cc-ing my colleague Pat on this.';
+      const deps = buildDeps({
+        message: withThread(
+          [
+            row('earlier', senderAddress, at(-1), 'When will my order ship?'),
+            row(messageId, senderAddress, RECEIVED_AT, fyi),
+          ],
+          { bodyText: fyi },
+        ),
+      });
+      deps.aiClientService.classify.mockResolvedValue(
+        classifyAs(false, 'FYI only'),
+      );
+
+      await deps.run();
+
+      expect(deps.aiClientService.generateReply).toHaveBeenCalledTimes(1);
+    });
+
+    it('replaces an untouched AI draft for an earlier message in the thread', async () => {
+      const deps = buildDeps({
+        message: withThread([row('earlier', senderAddress, at(-2)), current()]),
+      });
+      deps.prisma.emailMessage.findMany.mockResolvedValue([
+        {
+          id: 'stale-draft',
+          bodyText: 'Old AI text',
+          generationMetadata: { draftText: 'Old AI text' },
+          approvalChain: null,
+        },
+      ]);
+
+      await deps.run();
+
+      expect(deps.composeService.deleteDraft).toHaveBeenCalledWith(
+        userId,
+        'stale-draft',
+      );
+      expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps a human-edited earlier draft and does not pile another reply on top', async () => {
+      const deps = buildDeps({
+        message: withThread([row('earlier', senderAddress, at(-2)), current()]),
+      });
+      deps.prisma.emailMessage.findMany.mockResolvedValue([
+        {
+          id: 'edited-draft',
+          bodyText: 'Edited by a human',
+          generationMetadata: { draftText: 'Old AI text' },
+          approvalChain: null,
+        },
+      ]);
+
+      await deps.run();
+
+      expect(deps.composeService.deleteDraft).not.toHaveBeenCalled();
+      expect(deps.aiClientService.generateReply).not.toHaveBeenCalled();
     });
   });
 });

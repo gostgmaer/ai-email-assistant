@@ -67,6 +67,11 @@ import {
   findVerbatimQuote,
 } from '../utils/grounding-guard.util';
 import { scanOutputForPii } from '../utils/output-pii-scan.util';
+import { findNoReplyReason } from '../utils/reply-need.util';
+import {
+  buildThreadContext,
+  stripQuotedHistory,
+} from '../utils/thread-context.util';
 import { scanOutputForPolicyViolations } from '../utils/output-policy-scan.util';
 
 interface AiProcessingJobData {
@@ -177,16 +182,39 @@ export class AiProcessingProcessor
     }
 
     const subject = message.thread.subject ?? message.subject ?? '(no subject)';
-    const thread = message.thread.messages.map(toEmailMessageDto);
+    // Quoted history stripped and capped to a token budget — every LLM
+    // call below sees this, not the raw thread (see thread-context.util).
+    const thread = buildThreadContext(
+      message.thread.messages.map(toEmailMessageDto),
+    );
+    const ownAddresses = [account.email, ...account.aliases];
 
     const classifyResult = await this.aiClientService.classify(subject, thread);
     const classification = classifyResult.classification;
+
+    // Whether this message calls for a reply at all: cheap deterministic
+    // checks first (acknowledgement-only, user only Cc'd), then the
+    // model's own judgement. Decides below whether a reply is generated.
+    const noReplyReason =
+      findNoReplyReason(
+        message,
+        stripQuotedHistory(message.bodyText ?? ''),
+        ownAddresses,
+      ) ??
+      // The model judges this message alone. If it supersedes an earlier,
+      // still-unanswered question in the thread (see findSupersededReason),
+      // this is the job that has to answer the conversation, so it replies
+      // even when its own content wouldn't need one.
+      (classification.needsReply ||
+      hasUnansweredEarlierInbound(message, ownAddresses)
+        ? null
+        : classification.replyReason || 'no reply needed');
 
     // Persisted regardless of the spam branch below — the classification
     // was already paid for, and Priority Inbox wants a record of it even
     // for messages that get skipped past this point (see
     // docs/v1.2-plan.md's "Priority Inbox" section, previously discarded).
-    await this.persistClassification(messageId, classification);
+    await this.persistClassification(messageId, classification, noReplyReason);
 
     if (classification.spam) {
       this.logger.log(`Message ${messageId} classified as spam, skipping.`);
@@ -308,6 +336,33 @@ export class AiProcessingProcessor
     // out. Sending again could duplicate it, so the reply is held as a
     // draft and the user is told to check, instead of guessing.
     const sendOutcomeUnknown = priorSend?.status === 'PENDING';
+
+    // Whether to generate a reply at all. Routing (rule actions) already
+    // ran above; this only decides the reply. Skipped when the message
+    // needs none, or when replying to it would duplicate or contradict the
+    // conversation's current state. Not checked for an unknown-outcome
+    // send — that path must still leave the user a draft to compare.
+    const skipReplyReason = sendOutcomeUnknown
+      ? null
+      : (noReplyReason ??
+        (await this.findSupersededReason(
+          message,
+          ownAddresses,
+          account.userId,
+        )));
+
+    if (skipReplyReason) {
+      this.logger.log(
+        `No reply generated for message ${messageId}: ${skipReplyReason}.`,
+      );
+      await Promise.all([
+        extractionPromise,
+        summarizePromise,
+        touchContactPromise,
+      ]);
+      await this.markProcessed(messageId);
+      return;
+    }
 
     // Calendar Agent (v3.0 multi-agent orchestration §Option B, see
     // docs/multi-agent-orchestration-plan.md) — runs regardless of which
@@ -964,9 +1019,83 @@ export class AiProcessingProcessor
     }
   }
 
+  /**
+   * One reply per conversation state (docs/email-automation-gaps.md G-16).
+   * A reply to this message would be redundant when:
+   * - a NEWER inbound message exists in the thread — its own job answers
+   *   the conversation as it now stands (bursts collapse into one reply);
+   * - the user already replied after this message arrived.
+   * And an earlier AI draft still waiting in the thread is superseded: if
+   * nobody touched it, it's discarded so this reply replaces it; if a human
+   * edited it or an approval chain is running on it, that work wins and no
+   * new reply is generated. Returns why to skip, or null to go ahead.
+   */
+  private async findSupersededReason(
+    message: {
+      id: string;
+      receivedAt: Date;
+      thread: { messages: ThreadRow[] };
+    },
+    ownAddresses: string[],
+    ownerUserId: string,
+  ): Promise<string | null> {
+    const later = message.thread.messages.filter(
+      (other) =>
+        other.id !== message.id && other.receivedAt > message.receivedAt,
+    );
+    if (later.some((other) => isFromOwn(other, ownAddresses))) {
+      return 'you already replied after it';
+    }
+    if (later.some((other) => mayNeedReply(other, ownAddresses))) {
+      return 'a newer message in the thread will be answered instead';
+    }
+
+    const otherIds = message.thread.messages
+      .map((other) => other.id)
+      .filter((id) => id !== message.id);
+    if (otherIds.length === 0) {
+      return null;
+    }
+
+    const earlierDrafts = await this.prisma.emailMessage.findMany({
+      where: {
+        inReplyToMessageId: { in: otherIds },
+        thread: { folder: { type: 'DRAFTS' } },
+      },
+      select: {
+        id: true,
+        bodyText: true,
+        generationMetadata: true,
+        approvalChain: { select: { status: true } },
+      },
+    });
+
+    for (const draft of earlierDrafts) {
+      const original = (
+        draft.generationMetadata as { draftText?: string } | null
+      )?.draftText;
+      const untouched =
+        original !== undefined &&
+        original.trim() === (draft.bodyText ?? '').trim() &&
+        draft.approvalChain?.status !== 'PENDING';
+
+      if (!untouched) {
+        return 'an earlier draft in this thread is already being worked on';
+      }
+
+      await this.composeService.deleteDraft(ownerUserId, draft.id);
+      this.logger.log(
+        `Discarded superseded AI draft ${draft.id} (thread moved on to message ${message.id}).`,
+      );
+    }
+
+    return null;
+  }
+
   private async persistClassification(
     messageId: string,
     classification: ClassificationResult,
+    noReplyReason: string | null,
   ): Promise<void> {
     await this.prisma.emailMessage.update({
       where: { id: messageId },
@@ -978,6 +1107,8 @@ export class AiProcessingProcessor
         language: classification.language,
         containsPii: classification.containsPii,
         piiTypes: classification.piiTypes,
+        needsReply: noReplyReason === null,
+        replyReason: noReplyReason ?? (classification.replyReason || null),
       },
     });
   }
@@ -1064,6 +1195,62 @@ export class AiProcessingProcessor
       data: { aiProcessedAt: new Date(), aiFailedAt: null, aiError: null },
     });
   }
+}
+
+/** The thread-message fields the reply-supersession checks read. */
+interface ThreadRow {
+  id: string;
+  from: unknown;
+  to: unknown;
+  cc: unknown;
+  bodyText: string | null;
+  receivedAt: Date;
+  isAutoReply: boolean;
+}
+
+function isFromOwn(row: { from: unknown }, ownAddresses: string[]): boolean {
+  const address = firstParticipant(row.from)?.address?.toLowerCase();
+  return !!address && ownAddresses.some((own) => own.toLowerCase() === address);
+}
+
+/** An inbound message that could call for a reply: not the user's own, not
+ * an automatic reply, and not deterministically reply-free (acknowledgement,
+ * Cc-only). Only these supersede an earlier message's reply. */
+function mayNeedReply(row: ThreadRow, ownAddresses: string[]): boolean {
+  return (
+    !isFromOwn(row, ownAddresses) &&
+    !row.isAutoReply &&
+    findNoReplyReason(
+      row,
+      stripQuotedHistory(row.bodyText ?? ''),
+      ownAddresses,
+    ) === null
+  );
+}
+
+/** Whether an earlier inbound message — after the user's last message in
+ * the thread — may need a reply. If so, this (newer) message superseded it
+ * and must answer the conversation itself. */
+function hasUnansweredEarlierInbound(
+  message: { id: string; receivedAt: Date; thread: { messages: ThreadRow[] } },
+  ownAddresses: string[],
+): boolean {
+  const earlier = message.thread.messages.filter(
+    (other) => other.id !== message.id && other.receivedAt < message.receivedAt,
+  );
+  const lastOwn = earlier
+    .filter((other) => isFromOwn(other, ownAddresses))
+    .reduce<Date | null>(
+      (latest, other) =>
+        !latest || other.receivedAt > latest ? other.receivedAt : latest,
+      null,
+    );
+
+  return earlier.some(
+    (other) =>
+      (!lastOwn || other.receivedAt > lastOwn) &&
+      mayNeedReply(other, ownAddresses),
+  );
 }
 
 /** Prisma's unique-constraint violation (P2002), checked structurally so

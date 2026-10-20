@@ -164,6 +164,7 @@ describe('EmailSyncService', () => {
 
     expect(queueService.enqueueAiProcessing).toHaveBeenCalledWith(
       'message-row-1',
+      { delayMs: 30_000 },
     );
   });
 

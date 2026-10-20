@@ -353,6 +353,15 @@ export default function ThreadPage() {
                       Grounded in your documents
                     </span>
                   )}
+                  {message.needsReply === false && (
+                    <span
+                      title="The AI assistant decided this message doesn't need a reply, so it didn't draft one. You can still reply yourself."
+                      className="mt-1.5 mr-1.5 inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500"
+                    >
+                      No reply needed
+                      {message.replyReason ? ` · ${message.replyReason}` : ""}
+                    </span>
+                  )}
                   {message.generationMetadata?.calendarAgentUsed && (
                     <span
                       title="The Calendar Agent checked real availability to inform this reply's tone — it never states a specific time itself."

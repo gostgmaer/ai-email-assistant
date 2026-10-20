@@ -648,6 +648,12 @@ model EmailThread {
 
   lastMessageAt DateTime?
 
+  // Whether the newest message (the one lastMessageAt describes) was sent
+  // by the account itself — kept in step with lastMessageAt by sync and
+  // compose, so "threads awaiting the other side's reply" (follow-ups) is a
+  // plain indexed query instead of fetching threads and filtering in code.
+  lastMessageFromSelf Boolean @default(false)
+
   // Set to hide this thread from the default inbox view until this time —
   // purely a query-time filter (see InboxService.listThreads), not a job:
   // there's nothing to actively "resurface", the thread just stops being
@@ -680,6 +686,7 @@ model EmailThread {
   @@index([folderId])
   @@index([snoozedUntil])
   @@index([assignedToUserId])
+  @@index([lastMessageFromSelf, lastMessageAt])
 }
 
 /**
@@ -794,6 +801,12 @@ model EmailMessage {
   // today (nothing gates on it yet). piiTypes is always [] when false.
   containsPii Boolean  @default(false)
   piiTypes    String[] @default([])
+
+  // Whether this message calls for a reply (classify's needs_reply, after
+  // AiProcessingProcessor's deterministic pre-filter) and why. No reply is
+  // generated when false. Null for messages processed before this existed.
+  needsReply  Boolean?
+  replyReason String?
 
   tasks Task[]
 

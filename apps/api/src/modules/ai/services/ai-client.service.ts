@@ -54,6 +54,8 @@ export interface ClassificationResult {
   language: string;
   containsPii: boolean;
   piiTypes: string[];
+  needsReply: boolean;
+  replyReason: string;
 }
 
 export interface ClassifyResponse {
@@ -157,6 +159,9 @@ interface RawClassificationResult {
   language: string;
   contains_pii: boolean;
   pii_types: string[];
+  // Optional: an AI service predating needs_reply doesn't send it.
+  needs_reply?: boolean;
+  reply_reason?: string;
 }
 
 interface RawClassifyResponse {
@@ -387,6 +392,10 @@ export class AiClientService {
         language: res.classification.language,
         containsPii: res.classification.contains_pii,
         piiTypes: res.classification.pii_types,
+        // Absent means "unknown" — treated as needing a reply, so a missing
+        // field can never silently suppress replies.
+        needsReply: res.classification.needs_reply ?? true,
+        replyReason: res.classification.reply_reason ?? '',
       },
       provider: res.provider,
       model: res.model,

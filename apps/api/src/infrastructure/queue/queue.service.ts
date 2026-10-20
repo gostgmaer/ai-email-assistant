@@ -101,7 +101,7 @@ export class QueueService {
    */
   async enqueueAiProcessing(
     messageId: string,
-    options: { retry?: boolean } = {},
+    options: { retry?: boolean; delayMs?: number } = {},
   ): Promise<void> {
     // BullMQ only allows a colon in a custom jobId when it splits into
     // exactly 3 parts (legacy repeatable-job format) — use a dash instead
@@ -116,7 +116,11 @@ export class QueueService {
       }
     }
 
-    await this.aiQueue.add(AIJobs.ProcessMessage, { messageId }, { jobId });
+    await this.aiQueue.add(
+      AIJobs.ProcessMessage,
+      { messageId },
+      options.delayMs ? { jobId, delay: options.delayMs } : { jobId },
+    );
   }
 
   async enqueueFolderSync(accountId: string): Promise<void> {

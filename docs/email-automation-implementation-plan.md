@@ -29,7 +29,8 @@ These are solo-developer estimates.
 | 1 | ✅ Done (2026-10-20). Migration `20261020090100_automation_phase1_safe_sends`. API: 233/233 tests and the typecheck pass. Not yet run against a live mailbox. |
 | 2 | ✅ Done (2026-10-20), except push sync (2b). Migration `20261020090200_automation_phase2_sync_health`. API: 264/264 tests and the typecheck pass. Not yet run against live Gmail, Outlook or IMAP. |
 | 3 | ✅ Done (2026-10-20). Migration `20261020090300_automation_phase3_security`, which backfills approval-chain snapshots. API: 292/292 tests and the typecheck pass. AI service: 43/43 pytest (up from 18). Not run against a live model or mailbox. |
-| 4–6 | Not started |
+| 4 | ✅ Done (2026-10-20). Migration `20261020090400_automation_phase4_quality` backfills `lastMessageFromSelf`. API: 325/325 tests and the typecheck pass. AI service: 46/46 pytest. Not run against a live model or mailbox. |
+| 5–6 | Not started |
 
 **Where Phase 1 differs from the plan below:**
 - **1.3 uses an `AutomationEffect` ledger only, with no `aiStage` column.**
@@ -79,6 +80,17 @@ These are solo-developer estimates.
   - A sweep runs every 15 minutes on a new `approvals` queue. It reminds the approver at the halfway point and expires chains at the deadline, which defaults to 72 h (per rule: `expiresInHours`).
   - Escalation to the owner isn't done. The owner gets an "expired" notice instead.
   - Chain expiry has no UI field yet, so it's set through the rule's JSON.
+
+**Where Phase 4 differs from the plan below:**
+- **4.1 rules don't force a reply.** A message that needs no reply gets none, even when a rule has a reply action. The rule decides *how* a needed reply goes out (send, draft, or approval), not *whether* there is one. A model that omits `needs_reply` is treated as "needs reply", so a missing field can never suppress replies. The decision and reason are stored (`needsReply`, `replyReason`) and shown on the thread page as "No reply needed".
+- **4.2 how supersession works:**
+  - A newer inbound message supersedes an older one only if the newer one could itself need a reply. An acknowledgement, an automatic reply, or mail where the user is only copied doesn't count.
+  - A newest message that superseded an unanswered question replies even when it alone wouldn't need one. The "question, then FYI" case therefore still gets answered.
+  - An earlier AI draft in the thread is replaced only if nobody edited it and it has no pending approval chain. Otherwise the human's work wins and no new reply is generated.
+  - AI jobs from sync start after a 30-second delay, so a burst settles first. This uses a job delay instead of the planned BullMQ dedupe key.
+- **4.3** was already done in Phase 1.
+- **4.4** uses the denormalized `EmailThread.lastMessageFromSelf` (the plan's `lastDirection` option), kept in step with `lastMessageAt`. The query is newest first and excludes drafts.
+- **4.5 where trimming happens.** Quote stripping and the budget run in apps/api (`thread-context.util.ts`) with heuristics, not `email-reply-parser`. The limits are 10 messages, about 24k characters, and 8k per message. The first and latest messages are always kept.
 
 **Conventions for every phase:**
 - One Prisma migration per phase. Name it `NNN_automation_phaseN_<topic>`.

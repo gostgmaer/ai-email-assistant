@@ -203,6 +203,11 @@ export interface EmailMessage {
   /** Set when the AI pipeline gave up on this message after its retries. */
   aiFailedAt?: string | null;
   aiError?: string | null;
+  /** The AI pipeline's decision on whether this message needs a reply (and
+   * why). False means no draft was generated on purpose. Null for messages
+   * processed before this existed. */
+  needsReply?: boolean | null;
+  replyReason?: string | null;
 }
 
 /** An AI-generated reply held for review, as surfaced on the message it

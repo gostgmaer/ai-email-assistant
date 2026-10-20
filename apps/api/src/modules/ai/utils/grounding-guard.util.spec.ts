@@ -1,13 +1,10 @@
-import {
-  classifySenderTrust,
-  findVerbatimQuote,
-} from './grounding-guard.util';
+import { classifySenderTrust, findVerbatimQuote } from './grounding-guard.util';
 
 describe('classifySenderTrust', () => {
   it('treats the same organisation domain as internal', () => {
-    expect(
-      classifySenderTrust('pat@acme.io', ['support@acme.io'], false),
-    ).toBe('INTERNAL');
+    expect(classifySenderTrust('pat@acme.io', ['support@acme.io'], false)).toBe(
+      'INTERNAL',
+    );
   });
 
   it('never treats a shared consumer domain as internal', () => {
@@ -17,9 +14,9 @@ describe('classifySenderTrust', () => {
   });
 
   it('marks prior correspondents as known', () => {
-    expect(
-      classifySenderTrust('casey@example.com', ['me@acme.io'], true),
-    ).toBe('KNOWN');
+    expect(classifySenderTrust('casey@example.com', ['me@acme.io'], true)).toBe(
+      'KNOWN',
+    );
   });
 });
 

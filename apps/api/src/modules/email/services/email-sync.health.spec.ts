@@ -497,6 +497,7 @@ describe('EmailSyncService — change tracking and sync health', () => {
           subject: 'Subject m1',
           snippet: undefined,
           lastMessageAt: receivedAt,
+          lastMessageFromSelf: false,
         },
       });
     });

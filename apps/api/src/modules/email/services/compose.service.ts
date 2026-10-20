@@ -480,11 +480,13 @@ export class ComposeService {
         subject: content.subject,
         snippet: content.bodyText?.slice(0, 200),
         lastMessageAt: new Date(),
+        lastMessageFromSelf: true,
       },
       update: {
         subject: content.subject,
         snippet: content.bodyText?.slice(0, 200),
         lastMessageAt: new Date(),
+        lastMessageFromSelf: true,
       },
     });
 
