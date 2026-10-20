@@ -22,8 +22,21 @@ export type WorkflowAction =
    * calendarAgent (v3.0 multi-agent orchestration §Option B, default true
    * when unset) lets a rule opt out of the Calendar Agent's
    * availability-aware context on meeting/scheduling-classified messages
-   * — see CalendarContextService and AiProcessingProcessor. */
-  | { type: 'AUTO_REPLY'; agentId?: string; calendarAgent?: boolean }
+   * — see CalendarContextService and AiProcessingProcessor.
+   *
+   * replyAll copies everyone else on the original message (default: reply
+   * to the sender / Reply-To only). allowUnknownSenderGrounding lets a
+   * reply grounded in your documents auto-send to senders you've never
+   * corresponded with (default: held for review — see
+   * AiProcessingProcessor.findGroundingBlocker); for inboxes that answer
+   * strangers from public material, like support. */
+  | {
+      type: 'AUTO_REPLY';
+      agentId?: string;
+      calendarAgent?: boolean;
+      replyAll?: boolean;
+      allowUnknownSenderGrounding?: boolean;
+    }
   /** Assign the thread to a Shared Inbox member (see AccountMember) —
    * the assignee must already have access to the account. */
   | { type: 'ASSIGN_TO'; userId: string }

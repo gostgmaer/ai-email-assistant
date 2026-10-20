@@ -35,6 +35,12 @@ export interface NormalizedMessage {
    * any. A message with this set is always synced regardless of
    * isBulkMail — it's part of a real conversation. */
   inReplyTo?: string;
+  /** Reply-To header — where replies should go when set. */
+  replyTo?: NormalizedParticipant[];
+  /** RFC 5322 Message-ID (angle brackets included). */
+  messageIdHeader?: string;
+  /** RFC 5322 References, oldest first. */
+  references?: string[];
 }
 
 export interface ListMessagesOptions {
@@ -62,6 +68,10 @@ export interface ComposeInput {
   inReplyToProviderMessageId?: string;
   /** Set when replying: the provider thread id to keep the reply in. */
   providerThreadId?: string;
+  /** Set when replying: the parent's RFC Message-ID / References chain,
+   * written as In-Reply-To / References so other clients thread it. */
+  inReplyToHeader?: string;
+  referencesHeader?: string[];
   /** Extra RFC 5322 headers, e.g. Auto-Submitted on autonomous replies.
    * Microsoft Graph only accepts custom headers named X-*, so other names
    * are dropped there (see MicrosoftGraphClient.sendMessage). */
@@ -73,7 +83,34 @@ export interface SendResult {
   providerThreadId: string;
 }
 
+/** What changed in a folder since a change cursor (see listChanges). */
+export interface FolderChangeSet {
+  /** Messages new to the folder or whose read state changed — bare ids;
+   * EmailSyncService fetches the full message only for ids it doesn't
+   * already have. isRead is set when the provider reported it. */
+  upserted: { providerMessageId: string; isRead?: boolean }[];
+  /** Messages permanently deleted at the provider. */
+  removed: string[];
+  /** Cursor to store for the next call. */
+  nextCursor: string;
+}
+
 export interface MailProviderClient {
+  /**
+   * Change tracking (Gmail history, Graph delta). Optional — a provider
+   * without it (IMAP) is synced by listMessages + sinceCursor instead.
+   * getChangeCursor returns a cursor for "now"; it's taken BEFORE a
+   * baseline listing so nothing arriving during the listing is missed.
+   * listChanges throws SyncCursorExpiredError when the cursor is too old.
+   */
+  getChangeCursor?(folderProviderId: string): Promise<string>;
+  listChanges?(
+    folderProviderId: string,
+    cursor: string,
+  ): Promise<FolderChangeSet>;
+  /** The mailbox's other send-as addresses, lowercased. Optional. */
+  listAliases?(): Promise<string[]>;
+
   listFolders(): Promise<NormalizedFolder[]>;
   listMessages(
     folderProviderId: string,

@@ -17,6 +17,10 @@ import {
 } from '../dto';
 import { NormalizedParticipant } from '../interfaces';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
+import {
+  buildReplyRecipients,
+  buildThreadingHeaders,
+} from '../utils/reply-recipients.util';
 import { textToSafeHtml } from '../utils/text-to-html.util';
 import { InboxService } from './inbox.service';
 
@@ -108,10 +112,15 @@ export class ComposeService {
 
     const client = await this.mailProviderFactory.createClient(fullAccount);
 
-    const to = original.from as unknown as NormalizedParticipant[];
+    const { to, cc } = buildReplyRecipients(
+      original,
+      [fullAccount.email, ...fullAccount.aliases],
+      dto.replyAll,
+    );
 
     const result = await client.sendMessage({
       to,
+      cc: cc.length > 0 ? cc : undefined,
       subject: original.subject
         ? `Re: ${original.subject.replace(/^Re:\s*/i, '')}`
         : 'Re:',
@@ -119,6 +128,7 @@ export class ComposeService {
       bodyText: dto.bodyText,
       inReplyToProviderMessageId: original.providerMessageId,
       providerThreadId: original.thread.providerThreadId,
+      ...buildThreadingHeaders(original),
       headers: options.headers,
     });
 
@@ -131,7 +141,7 @@ export class ComposeService {
       },
       result,
       to,
-      undefined,
+      cc,
       undefined,
       generationMetadata,
     );
@@ -148,6 +158,7 @@ export class ComposeService {
     originalMessageId: string,
     content: { subject: string; bodyText: string },
     generationMetadata?: GenerationMetadata,
+    options: { replyAll?: boolean } = {},
   ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
@@ -155,7 +166,17 @@ export class ComposeService {
     );
     const account = original.thread.account;
 
-    const to = original.from as unknown as NormalizedParticipant[];
+    const { email, aliases } = await this.prisma.emailAccount.findUniqueOrThrow(
+      {
+        where: { id: account.id },
+        select: { email: true, aliases: true },
+      },
+    );
+    const { to, cc } = buildReplyRecipients(
+      original,
+      [email, ...aliases],
+      options.replyAll,
+    );
 
     const folder = await this.findOrCreateLocalFolder(
       account.id,
@@ -180,7 +201,7 @@ export class ComposeService {
         providerMessageId: `local-draft-${randomUUID()}`,
         from: [],
         to: to as unknown as InputJsonValue,
-        cc: [],
+        cc: cc as unknown as InputJsonValue,
         bcc: [],
         subject: content.subject,
         bodyHtml: textToSafeHtml(content.bodyText),
@@ -348,6 +369,7 @@ export class ComposeService {
       bodyText: content.bodyText,
       inReplyToProviderMessageId: original.providerMessageId,
       providerThreadId: original.thread.providerThreadId,
+      ...buildThreadingHeaders(original),
     });
 
     // AI provenance carries over to the sent copy (it's what answers

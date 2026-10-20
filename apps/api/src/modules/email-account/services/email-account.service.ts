@@ -14,7 +14,10 @@ import { EncryptionService } from '../../../infrastructure/encryption';
 import { QueueService } from '../../../infrastructure/queue';
 import { EmailAccountModel } from '../../../generated/prisma/models';
 import type { InputJsonObject } from '../../../generated/prisma/internal/prismaNamespace';
-import { refreshOAuthToken } from '../../oauth';
+import {
+  OAuthReconnectRequiredException,
+  refreshOAuthToken,
+} from '../../oauth';
 import { ConnectImapDto } from '../dto';
 import { ImapConfig, MailConnectResult } from '../interfaces';
 
@@ -25,6 +28,15 @@ const DEFAULT_AGENT_NAME = 'Personal Assistant';
 const DEFAULT_AGENT_SYSTEM_PROMPT =
   "You are a personal assistant replying on behalf of this individual's own inbox — not a business representative. Keep the tone warm and natural, matching how casually or formally the other person wrote. Handle everyday personal correspondence: confirming plans, replying to friends or family, routine appointments and admin. Never invent personal details, plans, or commitments that aren't already in the thread — if it's unclear what this person would want to say, keep the reply short and note what's uncertain rather than guessing on their behalf.";
 const DEFAULT_WORKFLOW_RULE_NAME = 'Auto-reply — all messages (starter rule)';
+
+/** A (re)connect supplies fresh credentials, so whatever made earlier
+ * syncs fail — including AUTH_REQUIRED — no longer applies. */
+const SYNC_HEALTH_RESET = {
+  syncStatus: 'IDLE',
+  lastSyncError: null,
+  consecutiveSyncFailures: 0,
+  nextSyncAt: null,
+} as const;
 
 @Injectable()
 export class EmailAccountService {
@@ -162,6 +174,7 @@ export class EmailAccountService {
         displayName: profile.displayName,
         deletedAt: null,
         syncEnabled: true,
+        ...SYNC_HEALTH_RESET,
       },
     });
 
@@ -251,6 +264,7 @@ export class EmailAccountService {
         imapConfig: imapConfig as unknown as InputJsonObject,
         deletedAt: null,
         syncEnabled: true,
+        ...SYNC_HEALTH_RESET,
       },
     });
 
@@ -464,7 +478,7 @@ export class EmailAccountService {
     }
 
     if (!account.credential.refreshToken) {
-      throw new BadRequestException(
+      throw new OAuthReconnectRequiredException(
         'Access token expired and no refresh token is stored; reconnect this account',
       );
     }
@@ -530,21 +544,38 @@ export class EmailAccountService {
     });
   }
 
-  async markSyncCompleted(accountId: string): Promise<void> {
+  /** `warning` records a sync that succeeded overall but skipped some
+   * folders/messages; it's shown where a sync error would be. */
+  async markSyncCompleted(accountId: string, warning?: string): Promise<void> {
     await this.prisma.emailAccount.update({
       where: { id: accountId },
       data: {
         syncStatus: 'IDLE',
         lastSyncedAt: new Date(),
-        lastSyncError: null,
+        lastSyncError: warning?.slice(0, 2000) ?? null,
+        consecutiveSyncFailures: 0,
+        nextSyncAt: null,
       },
     });
   }
 
-  async markSyncFailed(accountId: string, error: string): Promise<void> {
+  async markSyncFailed(
+    accountId: string,
+    error: string,
+    health: {
+      status: 'ERROR' | 'AUTH_REQUIRED';
+      consecutiveFailures: number;
+      nextSyncAt: Date | null;
+    },
+  ): Promise<void> {
     await this.prisma.emailAccount.update({
       where: { id: accountId },
-      data: { syncStatus: 'ERROR', lastSyncError: error.slice(0, 2000) },
+      data: {
+        syncStatus: health.status,
+        lastSyncError: error.slice(0, 2000),
+        consecutiveSyncFailures: health.consecutiveFailures,
+        nextSyncAt: health.nextSyncAt,
+      },
     });
   }
 

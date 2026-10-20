@@ -1,5 +1,5 @@
 export type EmailProvider = "GOOGLE" | "MICROSOFT" | "IMAP";
-export type SyncStatus = "IDLE" | "SYNCING" | "ERROR";
+export type SyncStatus = "IDLE" | "SYNCING" | "ERROR" | "AUTH_REQUIRED";
 export type MailFolderType =
   | "INBOX"
   | "SENT"
@@ -186,6 +186,9 @@ export interface EmailMessage {
   isSpam: boolean;
   /** Set on a draft that answers a synced message (every AI-held reply). */
   inReplyToMessageId?: string | null;
+  /** Set when the AI pipeline gave up on this message after its retries. */
+  aiFailedAt?: string | null;
+  aiError?: string | null;
 }
 
 /** An AI-generated reply held for review, as surfaced on the message it

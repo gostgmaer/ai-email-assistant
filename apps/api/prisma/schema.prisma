@@ -29,6 +29,10 @@ enum SyncStatus {
   IDLE
   SYNCING
   ERROR
+  // The provider rejected our credentials (revoked/expired refresh token,
+  // changed IMAP password). Retrying can't fix it — background sync stops
+  // for this account until the user reconnects it.
+  AUTH_REQUIRED
 }
 
 enum VerificationTokenType {
@@ -215,6 +219,20 @@ model EmailAccount {
   lastSyncedAt  DateTime?
   lastSyncError String?
 
+  // Sync health (see EmailSyncService.recordSyncFailure): consecutive
+  // failed syncs, and the earliest time the background scan may try this
+  // account again (exponential backoff). Both reset on a successful sync
+  // or a reconnect.
+  consecutiveSyncFailures Int       @default(0)
+  nextSyncAt              DateTime?
+
+  // The account's other send-as addresses (Gmail sendAs, Microsoft
+  // proxyAddresses), lowercased. Mail from any of these is the user's own
+  // — never "inbound", never something to auto-reply to. Refreshed at most
+  // daily (aliasesRefreshedAt) since it costs an extra API call.
+  aliases            String[]  @default([])
+  aliasesRefreshedAt DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -309,6 +327,11 @@ enum ApprovalChainStatus {
   PENDING
   APPROVED
   REJECTED
+  // Nobody finished deciding before expiresAt — the draft is kept and can
+  // be sent manually, same as REJECTED.
+  EXPIRED
+  // The gated draft was deleted (or sent manually) while still PENDING.
+  CANCELLED
 }
 
 // WAITING (not yet this step's turn) is distinct from PENDING (this
@@ -348,10 +371,26 @@ model ApprovalChain {
   accountId String
   account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  draftMessageId String       @unique
-  draftMessage   EmailMessage @relation(fields: [draftMessageId], references: [id], onDelete: Cascade)
+  // SetNull, not Cascade: sending the draft deletes it, and the chain is
+  // the audit record of who approved what — it must outlive the draft.
+  // The draft* snapshot fields below keep that record meaningful after.
+  draftMessageId String?       @unique
+  draftMessage   EmailMessage? @relation(fields: [draftMessageId], references: [id], onDelete: SetNull)
 
   status ApprovalChainStatus @default(PENDING)
+
+  // Snapshot of the gated draft taken when the chain is created.
+  draftSubject    String?
+  draftRecipients Json?
+
+  // Provider-side id of the message the approved draft was sent as.
+  sentMessageId String?
+
+  // Pending chains expire (EXPIRED) at expiresAt; the current approver is
+  // reminded once, halfway there (reminderSentAt). See
+  // ApprovalChainService.sweep.
+  expiresAt      DateTime?
+  reminderSentAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -359,6 +398,7 @@ model ApprovalChain {
   steps ApprovalStep[]
 
   @@index([accountId])
+  @@index([status, expiresAt])
 }
 
 model ApprovalStep {
@@ -712,6 +752,21 @@ model EmailMessage {
   // human changed the AI's text before sending. Null for everything else.
   aiEdited Boolean?
 
+  // Set when the AI pipeline gave up on this message after its last retry
+  // (see AiProcessingProcessor's failed handler) — what the UI shows as
+  // "AI processing failed — retry". Cleared when it's re-queued.
+  aiFailedAt DateTime?
+  aiError    String?
+
+  // Reply addressing/threading headers (RFC 5322). replyTo is where a reply
+  // should go when set (forms, help desks, lists); messageIdHeader and
+  // references are what a reply's In-Reply-To/References must carry for
+  // other clients to thread it — Gmail's own message id is NOT a
+  // Message-ID. Null/empty for rows synced before these existed.
+  replyTo         Json?
+  messageIdHeader String?
+  references      String[] @default([])
+
   automationEffects AutomationEffect[]
 
   /// Set only on AI-generated replies (drafted or auto-sent) — records what
@@ -752,6 +807,9 @@ model EmailMessage {
   @@unique([threadId, providerMessageId])
   @@index([threadId])
   @@index([inReplyToMessageId])
+  // Incremental sync gets changes as bare provider ids (Gmail history,
+  // Graph delta) and must find the local row without knowing its thread.
+  @@index([providerMessageId])
   @@index([priority])
 }
 

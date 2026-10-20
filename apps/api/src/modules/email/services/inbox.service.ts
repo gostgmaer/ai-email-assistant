@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
 import { Prisma } from '../../../generated/prisma/client';
+import { QueueService } from '../../../infrastructure/queue';
 // Leaf-file import rather than the '../../email-account' barrel — see
 // the comment in documents.controller.ts for why (avoids a Jest-only
 // circular require).
@@ -16,6 +21,7 @@ export class InboxService {
     private readonly prisma: PrismaService,
     private readonly mailProviderFactory: MailProviderFactory,
     private readonly emailAccountService: EmailAccountService,
+    private readonly queueService: QueueService,
   ) {}
 
   async listThreads(userId: string, query: ListThreadsDto) {
@@ -371,6 +377,28 @@ export class InboxService {
     );
 
     return message;
+  }
+
+  /**
+   * The "Retry AI" action for a message whose AI processing failed (or
+   * never finished). Safe to call repeatedly: the pipeline's effect ledger
+   * guarantees a retry never repeats a send, rule action or draft that an
+   * earlier attempt already completed.
+   */
+  async retryAiProcessing(userId: string, messageId: string): Promise<void> {
+    const message = await this.getMessageOwned(userId, messageId);
+
+    if (message.aiProcessedAt) {
+      throw new ConflictException(
+        'This message has already been processed by the AI assistant',
+      );
+    }
+
+    await this.prisma.emailMessage.update({
+      where: { id: messageId },
+      data: { aiFailedAt: null, aiError: null },
+    });
+    await this.queueService.enqueueAiProcessing(messageId, { retry: true });
   }
 
   async markRead(userId: string, messageId: string): Promise<void> {

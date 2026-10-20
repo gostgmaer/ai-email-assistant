@@ -3,6 +3,10 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { EmailAccount } from "@/lib/api/types";
+import {
+  connectGoogleUrl,
+  connectMicrosoftUrl,
+} from "@/lib/services/email-accounts.service";
 import { providerLabel } from "@/lib/utils/format";
 
 import { AgentsPanel } from "./AgentsPanel";
@@ -15,6 +19,14 @@ const STATUS_STYLE: Record<EmailAccount["syncStatus"], string> = {
   IDLE: "bg-emerald-50 text-emerald-700",
   SYNCING: "bg-amber-50 text-amber-700",
   ERROR: "bg-red-50 text-red-700",
+  AUTH_REQUIRED: "bg-red-50 text-red-700",
+};
+
+const STATUS_LABEL: Record<EmailAccount["syncStatus"], string> = {
+  IDLE: "synced",
+  SYNCING: "syncing",
+  ERROR: "error",
+  AUTH_REQUIRED: "reconnect needed",
 };
 
 type SyncFilterKey =
@@ -106,7 +118,7 @@ export function EmailAccountCard({
                 STATUS_STYLE[account.syncStatus],
               )}
             >
-              {account.syncStatus === "IDLE" ? "synced" : account.syncStatus.toLowerCase()}
+              {STATUS_LABEL[account.syncStatus]}
             </span>
           </div>
           <p className="text-xs text-zinc-500">
@@ -114,8 +126,31 @@ export function EmailAccountCard({
             {account.lastSyncedAt &&
               ` · last synced ${new Date(account.lastSyncedAt).toLocaleString()}`}
           </p>
-          {account.lastSyncError && (
-            <p className="mt-1 text-xs text-red-600">{account.lastSyncError}</p>
+          {account.syncStatus === "AUTH_REQUIRED" ? (
+            <p className="mt-1 text-xs text-red-600">
+              This mailbox stopped syncing because its sign-in is no longer
+              valid.{" "}
+              {account.provider === "IMAP" ? (
+                "Disconnect it and connect it again with the current password."
+              ) : (
+                <a
+                  href={
+                    account.provider === "GOOGLE"
+                      ? connectGoogleUrl()
+                      : connectMicrosoftUrl()
+                  }
+                  className="font-medium underline hover:text-red-500"
+                >
+                  Reconnect
+                </a>
+              )}
+            </p>
+          ) : (
+            account.lastSyncError && (
+              <p className="mt-1 text-xs text-red-600">
+                {account.lastSyncError}
+              </p>
+            )
           )}
         </div>
 

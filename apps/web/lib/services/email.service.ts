@@ -97,6 +97,11 @@ export async function getMessage(id: string): Promise<MessageWithAccount> {
   return apiFetch<MessageWithAccount>(`/email/messages/${id}`);
 }
 
+/** Re-queues AI processing for a message whose processing failed. */
+export async function retryAiProcessing(id: string): Promise<void> {
+  await apiFetch(`/email/messages/${id}/retry-ai`, { method: "POST" });
+}
+
 export async function markMessageRead(id: string): Promise<void> {
   await apiFetch(`/email/messages/${id}/read`, { method: "POST" });
 }

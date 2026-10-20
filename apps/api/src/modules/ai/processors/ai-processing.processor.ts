@@ -1,5 +1,10 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Inject, Logger, forwardRef } from '@nestjs/common';
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import {
+  Inject,
+  Logger,
+  OnApplicationBootstrap,
+  forwardRef,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 
@@ -57,6 +62,10 @@ import {
   ContactMemoryMatch,
   ContactMemoryService,
 } from '../services/contact-memory.service';
+import {
+  classifySenderTrust,
+  findVerbatimQuote,
+} from '../utils/grounding-guard.util';
 import { scanOutputForPii } from '../utils/output-pii-scan.util';
 import { scanOutputForPolicyViolations } from '../utils/output-policy-scan.util';
 
@@ -79,6 +88,8 @@ const AUTO_SEND_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_AUTO_SENDS_PER_THREAD = 1;
 const MAX_AUTO_SENDS_PER_RECIPIENT = 3;
 
+const AI_FAILED_NOTIFICATION_TITLE = 'AI processing failed';
+
 interface EffectContext {
   messageId: string;
   accountId: string;
@@ -86,7 +97,10 @@ interface EffectContext {
 }
 
 @Processor(QueueNames.AI)
-export class AiProcessingProcessor extends WorkerHost {
+export class AiProcessingProcessor
+  extends WorkerHost
+  implements OnApplicationBootstrap
+{
   private readonly logger = new Logger(AiProcessingProcessor.name);
 
   constructor(
@@ -443,9 +457,31 @@ export class AiProcessingProcessor extends WorkerHost {
         classification.priority.toLowerCase() !== 'urgent';
       const passesPiiRail = !outputPiiScan.detected;
       const passesPolicyRail = !outputPolicyScan.violated;
+      const groundingBlocker = autoReply
+        ? await this.findGroundingBlocker(
+            account,
+            sender.address,
+            crmContact !== null,
+            reply.reply,
+            documentMatches,
+            autoReplyAction?.allowUnknownSenderGrounding === true,
+          )
+        : null;
+      const passesGroundingRail = groundingBlocker === null;
+      if (groundingBlocker) {
+        this.logger.warn(
+          `Generated reply for message ${messageId} held for review — ${groundingBlocker}.`,
+        );
+      }
 
       let passesValidationRail = false;
-      if (autoReply && passesUrgentRail && passesPiiRail && passesPolicyRail) {
+      if (
+        autoReply &&
+        passesUrgentRail &&
+        passesPiiRail &&
+        passesPolicyRail &&
+        passesGroundingRail
+      ) {
         const { validation } = await this.aiClientService.validateReply(
           subject,
           thread,
@@ -501,6 +537,7 @@ export class AiProcessingProcessor extends WorkerHost {
         passesUrgentRail &&
         passesPiiRail &&
         passesPolicyRail &&
+        passesGroundingRail &&
         passesValidationRail;
     }
 
@@ -536,6 +573,27 @@ export class AiProcessingProcessor extends WorkerHost {
       return;
     }
 
+    // The cap check in findAutoSendBlocker ran before this job claimed its
+    // send, so two jobs for the same thread/recipient running concurrently
+    // could both have passed it. Re-checked now that the claim exists,
+    // counting everyone ELSE's claims: whichever jobs raced both see each
+    // other and both fall back to a draft — fails closed, never double-sends.
+    if (
+      isSafeToAutoSend &&
+      (await this.exceedsAutoSendCaps(
+        account.id,
+        message.threadId,
+        sender.address,
+        messageId,
+      ))
+    ) {
+      this.logger.warn(
+        `Reply for message ${messageId} held for review — another auto-reply to this thread/recipient was claimed concurrently.`,
+      );
+      await this.releaseEffect(messageId, 'SEND');
+      isSafeToAutoSend = false;
+    }
+
     if (isSafeToAutoSend) {
       let sent: { providerMessageId: string };
       try {
@@ -545,6 +603,7 @@ export class AiProcessingProcessor extends WorkerHost {
             messageId,
             bodyHtml: textToSafeHtml(reply.reply),
             bodyText: reply.reply,
+            replyAll: autoReplyAction?.replyAll === true,
           },
           generationMetadata,
           { headers: AUTO_REPLY_HEADERS },
@@ -592,6 +651,7 @@ export class AiProcessingProcessor extends WorkerHost {
           bodyText: reply.reply,
         },
         generationMetadata,
+        { replyAll: autoReplyAction?.replyAll === true },
       );
 
       // True multi-step Approval Chains (v3.0, see docs/MVP.md) — best-
@@ -736,6 +796,156 @@ export class AiProcessingProcessor extends WorkerHost {
     return null;
   }
 
+  /**
+   * Prompt-injection containment (G-07) for autonomous sends — the inbound
+   * email can steer the model into quoting the user's private documents
+   * back. A reply goes out unreviewed only if:
+   * - it isn't grounded in documents at all, or the sender is INTERNAL /
+   *   KNOWN (or the rule explicitly opted in via allowUnknownSenderGrounding,
+   *   e.g. a support inbox answering strangers from public docs); and
+   * - it doesn't quote a long verbatim run of a retrieved document to
+   *   anyone outside the organisation.
+   * Returns why it's blocked, or null. Drafts are unaffected — a human
+   * reviews those.
+   */
+  private async findGroundingBlocker(
+    account: EmailAccountModel,
+    senderAddress: string,
+    isCrmContact: boolean,
+    replyText: string,
+    documentMatches: DocumentChunkMatch[],
+    allowUnknownSenderGrounding: boolean,
+  ): Promise<string | null> {
+    if (documentMatches.length === 0) {
+      return null;
+    }
+
+    const ownAddresses = [account.email, ...account.aliases];
+    const isKnownCorrespondent =
+      isCrmContact ||
+      (await this.prisma.emailMessage.count({
+        where: {
+          thread: { accountId: account.id },
+          to: { array_contains: [{ address: senderAddress }] },
+        },
+      })) > 0;
+    const trust = classifySenderTrust(
+      senderAddress,
+      ownAddresses,
+      isKnownCorrespondent,
+    );
+
+    if (trust === 'UNKNOWN' && !allowUnknownSenderGrounding) {
+      return `it draws on your documents and ${senderAddress} is an unknown sender`;
+    }
+
+    if (trust !== 'INTERNAL') {
+      const quoted = findVerbatimQuote(replyText, documentMatches);
+      if (quoted) {
+        return `it quotes "${quoted}" verbatim to an external sender`;
+      }
+    }
+
+    return null;
+  }
+
+  /** True when OTHER messages' send claims already fill the thread or
+   * recipient cap — see the post-claim re-check in processMessage. */
+  private async exceedsAutoSendCaps(
+    accountId: string,
+    threadId: string,
+    recipientAddress: string,
+    ownMessageId: string,
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - AUTO_SEND_WINDOW_MS);
+    const others = {
+      kind: 'SEND' as const,
+      createdAt: { gte: since },
+      messageId: { not: ownMessageId },
+    };
+
+    const [threadSends, recipientSends] = await Promise.all([
+      this.prisma.automationEffect.count({ where: { ...others, threadId } }),
+      this.prisma.automationEffect.count({
+        where: {
+          ...others,
+          accountId,
+          recipient: recipientAddress.toLowerCase(),
+        },
+      }),
+    ]);
+
+    return (
+      threadSends >= MAX_AUTO_SENDS_PER_THREAD ||
+      recipientSends >= MAX_AUTO_SENDS_PER_RECIPIENT
+    );
+  }
+
+  /**
+   * After a job's LAST attempt fails, record it on the message so the
+   * failure is visible ("AI processing failed — retry") instead of the
+   * job just vanishing into BullMQ's failed set. The user gets at most one
+   * notification per hour about failures, not one per message.
+   */
+  @OnWorkerEvent('failed')
+  async onFailed(job: Job<AiProcessingJobData>, error: Error): Promise<void> {
+    const attempts = job.opts.attempts ?? 1;
+    if (job.attemptsMade < attempts) {
+      return;
+    }
+
+    const { messageId } = job.data;
+    this.logger.error(
+      `AI processing for message ${messageId} failed after ${job.attemptsMade} attempt(s): ${error.message}`,
+    );
+
+    try {
+      const message = await this.prisma.emailMessage.update({
+        where: { id: messageId },
+        data: { aiFailedAt: new Date(), aiError: error.message.slice(0, 1000) },
+        select: {
+          threadId: true,
+          thread: { select: { account: { select: { userId: true } } } },
+        },
+      });
+
+      const userId = message.thread.account.userId;
+      const recentlyNotified = await this.prisma.notification.count({
+        where: {
+          userId,
+          title: AI_FAILED_NOTIFICATION_TITLE,
+          createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+        },
+      });
+
+      if (recentlyNotified === 0) {
+        await this.notificationService.create(
+          userId,
+          AI_FAILED_NOTIFICATION_TITLE,
+          'The AI assistant couldn\'t process one or more new emails. Open the message and use "Retry AI" once the issue is resolved.',
+          { threadId: message.threadId, messageId },
+        );
+      }
+    } catch (recordError) {
+      this.logger.warn(
+        `Couldn't record AI failure for message ${messageId}: ${describeError(recordError)}`,
+      );
+    }
+  }
+
+  /** Worker concurrency is configured here rather than in @Processor()
+   * because decorator arguments are evaluated before ConfigModule loads
+   * .env. Each job is idempotent (the effect ledger), so running several
+   * at once is safe; one slow LLM call no longer stalls the whole queue. */
+  onApplicationBootstrap(): void {
+    const concurrency = Number(
+      this.configService.get<string>('AI_WORKER_CONCURRENCY') ?? 4,
+    );
+    if (Number.isInteger(concurrency) && concurrency > 0) {
+      this.worker.concurrency = concurrency;
+    }
+  }
+
   private async persistClassification(
     messageId: string,
     classification: ClassificationResult,
@@ -833,7 +1043,7 @@ export class AiProcessingProcessor extends WorkerHost {
   private async markProcessed(messageId: string): Promise<void> {
     await this.prisma.emailMessage.update({
       where: { id: messageId },
-      data: { aiProcessedAt: new Date() },
+      data: { aiProcessedAt: new Date(), aiFailedAt: null, aiError: null },
     });
   }
 }

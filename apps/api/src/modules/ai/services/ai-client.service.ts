@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  GatewayTimeoutException,
   Injectable,
   Logger,
   UnprocessableEntityException,
@@ -7,6 +8,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { EmailMessageDto } from '../dto';
+
+const DEFAULT_AI_REQUEST_TIMEOUT_MS = 60_000;
+// Calls that legitimately take longer than one LLM round-trip: reply
+// generation chains several model calls, and document processing parses,
+// chunks and embeds a whole file.
+const TIMEOUT_MULTIPLIER: Record<string, number> = {
+  '/email/reply': 2,
+  '/documents/process': 10,
+};
 
 export interface TokenUsage {
   inputTokens: number;
@@ -530,6 +540,18 @@ export class AiClientService {
     const baseUrl = this.configService.getOrThrow<string>('AI_SERVICE_URL');
     const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
 
+    // Without a timeout one hung LLM call held its worker slot forever,
+    // stalling every AI job queued behind it. A timeout is retryable
+    // (the AI job's own retries), so it fails the attempt, not the message.
+    const configuredTimeout = Number(
+      this.configService.get<string>('AI_REQUEST_TIMEOUT_MS') ??
+        DEFAULT_AI_REQUEST_TIMEOUT_MS,
+    );
+    const timeoutMs =
+      (Number.isFinite(configuredTimeout) && configuredTimeout > 0
+        ? configuredTimeout
+        : DEFAULT_AI_REQUEST_TIMEOUT_MS) * (TIMEOUT_MULTIPLIER[path] ?? 1);
+
     let response: Response;
 
     try {
@@ -540,8 +562,20 @@ export class AiClientService {
           ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
+      // AbortSignal.timeout() rejects with a DOMException named
+      // TimeoutError; matched by name, since DOMException isn't
+      // `instanceof Error` in every runtime (e.g. Jest's).
+      if ((error as { name?: unknown } | null)?.name === 'TimeoutError') {
+        this.logger.error(
+          `AI service request to ${path} timed out after ${timeoutMs}ms`,
+        );
+        throw new GatewayTimeoutException(
+          `AI service timed out after ${Math.round(timeoutMs / 1000)}s`,
+        );
+      }
       this.logger.error(
         `AI service request to ${path} failed: ${String(error)}`,
       );

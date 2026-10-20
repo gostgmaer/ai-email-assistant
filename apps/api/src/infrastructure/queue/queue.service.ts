@@ -57,30 +57,62 @@ export class QueueService {
   async enqueueInitialSync(accountId: string): Promise<void> {
     // See enqueueAiProcessing: BullMQ rejects a custom jobId containing a
     // colon unless it splits into exactly 3 parts, so use a dash here.
+    // Removed as soon as it finishes either way: a finished job kept under
+    // this fixed id would make a later reconnect's enqueue a silent no-op
+    // (BullMQ ignores an add whose jobId already exists). Failures are
+    // recorded on the account itself (syncStatus/lastSyncError).
     await this.emailSyncQueue.add(
       EmailSyncJobs.InitialSync,
       { accountId },
-      { jobId: `${EmailSyncJobs.InitialSync}-${accountId}` },
+      {
+        jobId: `${EmailSyncJobs.InitialSync}-${accountId}`,
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
     );
   }
 
   async enqueueIncrementalSync(accountId: string): Promise<void> {
+    // One fixed id per account: while a sync for the account is queued or
+    // running, another add is a no-op, so overlapping syncs can't race on
+    // the same rows. A single attempt — EmailSyncService does its own
+    // backoff via nextSyncAt, and the background scan is the retry.
     await this.emailSyncQueue.add(
       EmailSyncJobs.IncrementalSync,
       { accountId },
-      { jobId: `${EmailSyncJobs.IncrementalSync}:${accountId}:${Date.now()}` },
+      {
+        jobId: `${EmailSyncJobs.IncrementalSync}-${accountId}`,
+        attempts: 1,
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
     );
   }
 
-  async enqueueAiProcessing(messageId: string): Promise<void> {
+  /**
+   * `retry` re-queues a message whose earlier job already finished (the
+   * "Retry AI" action): BullMQ silently ignores an add whose jobId still
+   * exists in the completed/failed sets, so the old job is removed first.
+   * A job that's still waiting or running is left alone either way.
+   */
+  async enqueueAiProcessing(
+    messageId: string,
+    options: { retry?: boolean } = {},
+  ): Promise<void> {
     // BullMQ only allows a colon in a custom jobId when it splits into
     // exactly 3 parts (legacy repeatable-job format) — use a dash instead
     // to avoid tripping that check.
-    await this.aiQueue.add(
-      AIJobs.ProcessMessage,
-      { messageId },
-      { jobId: `${AIJobs.ProcessMessage}-${messageId}` },
-    );
+    const jobId = `${AIJobs.ProcessMessage}-${messageId}`;
+
+    if (options.retry) {
+      const existing = await this.aiQueue.getJob(jobId);
+      const state = await existing?.getState();
+      if (existing && (state === 'failed' || state === 'completed')) {
+        await existing.remove();
+      }
+    }
+
+    await this.aiQueue.add(AIJobs.ProcessMessage, { messageId }, { jobId });
   }
 
   async enqueueFolderSync(accountId: string): Promise<void> {

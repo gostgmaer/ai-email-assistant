@@ -73,6 +73,15 @@ export const envSchema = z.object({
   // Inbound mail older than this never enters the AI pipeline, so a
   // backfill/resync can't trigger replies to stale conversations.
   AI_MAX_MESSAGE_AGE_HOURS: z.coerce.number().positive().default(48),
+  // Per-request timeout for calls to the AI service (reply generation and
+  // document processing get a multiple of it — see AiClientService).
+  AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(60000),
+  // How many AI jobs one worker process runs at once.
+  AI_WORKER_CONCURRENCY: z.coerce.number().int().positive().default(4),
+  // Newest messages listed per folder when a folder is (re)baselined —
+  // first sync, or an expired change cursor. Everything after that comes
+  // from change tracking, not this window.
+  INITIAL_SYNC_LIMIT: z.coerce.number().int().positive().default(50),
 
   // File Upload Service (@easydev_org/file-upload-sdk) — document uploads go
   // here instead of being held in memory; the AI service downloads directly

@@ -155,6 +155,17 @@ export class EmailController {
     return this.inboxService.getMessageOwned(user.sub, id);
   }
 
+  @Post('messages/:id/retry-ai')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Re-queue AI processing for a message whose processing failed',
+  })
+  @ApiResponse({ status: 202, description: 'Queued' })
+  @ApiResponse({ status: 409, description: 'Already processed' })
+  async retryAi(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    await this.inboxService.retryAiProcessing(user.sub, id);
+  }
+
   @Post('messages/:id/read')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Mark a message as read' })

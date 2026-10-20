@@ -21,6 +21,7 @@ import {
   deleteThreadNote,
   getThread,
   markMessageRead,
+  retryAiProcessing,
   snoozeThread,
   unsnoozeThread,
 } from "@/lib/services/email.service";
@@ -92,6 +93,12 @@ export default function ThreadPage() {
   });
 
   const markReadMutation = useMutation({ mutationFn: markMessageRead });
+
+  const retryAiMutation = useMutation({
+    mutationFn: retryAiProcessing,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["thread", threadId] }),
+  });
 
   const snoozeMutation = useMutation({
     mutationFn: (until: string) => snoozeThread(threadId, until),
@@ -360,6 +367,25 @@ export default function ThreadPage() {
               <div className="pl-12">
                 <MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} />
               </div>
+              {message.aiFailedAt && (
+                <div className="mt-3 ml-12 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                  <p className="min-w-0 text-xs text-red-700">
+                    The AI assistant couldn&apos;t process this email
+                    {message.aiError ? `: ${message.aiError}` : "."}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => retryAiMutation.mutate(message.id)}
+                    loading={
+                      retryAiMutation.isPending &&
+                      retryAiMutation.variables === message.id
+                    }
+                  >
+                    Retry AI
+                  </Button>
+                </div>
+              )}
               {message.draftReplies?.map((draft) => (
                 <PendingDraftCard
                   key={draft.id}

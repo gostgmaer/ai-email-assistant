@@ -27,7 +27,8 @@ These are solo-developer estimates.
 |-------|--------|
 | 0 | ✅ Done (2026-10-20). Processor spec (17 cases), `AUTO_SEND_ENABLED` and `EmailAccount.autoSendEnabled`. Migration `20261020090000_automation_phase0_auto_send_switch`. |
 | 1 | ✅ Done (2026-10-20). Migration `20261020090100_automation_phase1_safe_sends`. API: 233/233 tests and the typecheck pass. Not yet run against a live mailbox. |
-| 2–6 | Not started |
+| 2 | ✅ Done (2026-10-20), except push sync (2b). Migration `20261020090200_automation_phase2_sync_health`. API: 264/264 tests and the typecheck pass. Not yet run against live Gmail, Outlook or IMAP. |
+| 3–6 | Not started |
 
 **Where Phase 1 differs from the plan below:**
 - **1.3 uses an `AutomationEffect` ledger only, with no `aiStage` column.**
@@ -42,6 +43,22 @@ These are solo-developer estimates.
   - Gmail and IMAP send both `Auto-Submitted: auto-replied` and `X-Auto-Response-Suppress: All`.
 - **1.4 caps:** at most 1 auto-send per thread and 3 per recipient in 24 h. These are constants for now; they become per-account settings in 5.4.
 - **1.1 sent-message tracking:** a sent AI draft records `aiEdited` (whether the reviewer changed the AI text) instead of `sentFromDraftId`. The draft row is deleted on send, so an ID pointing to it would dangle.
+
+**Where Phase 2 differs from the plan below:**
+- **2.1 Gmail cursor scope.** The Gmail cursor is stored per folder in `MailFolder.syncCursor`, using `history.list` with `labelId`. It isn't stored per account, so the existing per-folder sync loop stays unchanged.
+- **2.1 Graph delta.** Graph's change tracking starts as a delta round filtered to `receivedDateTime ge <now>`. Read-state changes on mail older than that starting point aren't tracked.
+- **2.1 deletes and moves.**
+  - Gmail permanent deletes are mirrored locally.
+  - Gmail archive (a label removed) isn't mirrored, because threads stay anchored to one folder.
+  - Graph removals aren't mirrored. A moved Graph message gets a *new* ID, so deleting and re-adding it would re-run the AI on old mail.
+- **2.1 baseline size.** `INITIAL_SYNC_LIMIT` defaults to 50 (today's window), not 500. Mail after the baseline now comes from the cursor, so the window only covers history.
+- **2.1b push (Gmail watch / Graph subscriptions)** isn't done. Polling stays at 5 minutes.
+- **2.2 statuses.** This reuses the existing `SyncStatus` values: `IDLE`/`ERROR` with backoff, plus the new `AUTH_REQUIRED`. There are no `OK`/`DEGRADED`/`PAUSED` values. Disabling sync is still `syncEnabled`.
+- **2.3** uses `aiFailedAt` and `aiError` instead of an `aiStage` column. The endpoint is `POST /email/messages/:id/retry-ai`.
+- **2.4 limiter.** The per-account fairness limiter isn't done, because BullMQ groups are a Pro feature.
+- **2.4 race fix.** Concurrency is now 4, which allowed two jobs to race on the auto-send caps. A post-claim re-check makes both racing jobs fall back to drafts.
+- **2.6 aliases.** Aliases are refreshed daily (Gmail `sendAs`, Graph `proxyAddresses`) and exclude the user's own mail from AI processing. Excluding aliases from *reply recipients* is part of 3.1.
+- **One-off repair.** `scripts/recompute-thread-metadata.ts` fixes existing thread dates (G-14). Run it once after deploy.
 
 **Conventions for every phase:**
 - One Prisma migration per phase. Name it `NNN_automation_phaseN_<topic>`.

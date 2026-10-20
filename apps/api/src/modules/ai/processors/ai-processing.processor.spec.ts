@@ -41,6 +41,7 @@ describe('AiProcessingProcessor', () => {
           autoScheduleMeetings: false,
           autoSendEnabled: true,
           prohibitedPhrases: [],
+          aliases: [],
         },
         messages: [
           {
@@ -95,7 +96,9 @@ describe('AiProcessingProcessor', () => {
               (where.threadId === undefined ||
                 row.threadId === where.threadId) &&
               (where.recipient === undefined ||
-                row.recipient === where.recipient),
+                row.recipient === where.recipient) &&
+              (where.messageId === undefined ||
+                row.messageId !== (where.messageId as { not: string }).not),
           ).length,
         ),
       ),
@@ -118,9 +121,11 @@ describe('AiProcessingProcessor', () => {
       emailMessage: {
         findUnique: jest.fn().mockResolvedValue(message),
         update: jest.fn().mockResolvedValue({}),
+        count: jest.fn().mockResolvedValue(0),
       },
       emailThread: { update: jest.fn().mockResolvedValue({}) },
       automationEffect: ledger,
+      notification: { count: jest.fn().mockResolvedValue(0) },
     };
 
     const aiClientService = {
@@ -227,6 +232,9 @@ describe('AiProcessingProcessor', () => {
 
     return {
       run,
+      processor,
+      documentsService,
+      contactService,
       ledger,
       prisma,
       aiClientService,
@@ -251,7 +259,11 @@ describe('AiProcessingProcessor', () => {
       });
       expect(deps.prisma.emailMessage.update).toHaveBeenLastCalledWith({
         where: { id: messageId },
-        data: { aiProcessedAt: expect.any(Date) as Date },
+        data: {
+          aiProcessedAt: expect.any(Date) as Date,
+          aiFailedAt: null,
+          aiError: null,
+        },
       });
     });
 
@@ -266,6 +278,7 @@ describe('AiProcessingProcessor', () => {
           messageId,
           bodyHtml: '<p>Hi Casey,</p><p>It ships &lt;b&gt;today&lt;/b&gt;.</p>',
           bodyText: 'Hi Casey,\n\nIt ships <b>today</b>.',
+          replyAll: false,
         },
         expect.objectContaining({ provider: 'test' }),
         { headers: AUTO_REPLY_HEADERS },
@@ -501,6 +514,150 @@ describe('AiProcessingProcessor', () => {
       await deps.run();
 
       expect(deps.aiClientService.classify).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('concurrency', () => {
+    it('falls back to a draft when another job claimed a send to the same thread concurrently', async () => {
+      const deps = buildDeps({ rule: AUTO_REPLY_RULE });
+      // Simulate a second job for another message in this thread claiming
+      // its send between our cap pre-check and our own claim.
+      const realCreate = deps.ledger.create.getMockImplementation()!;
+      deps.ledger.create.mockImplementation((args) => {
+        if (args.data.kind === 'SEND') {
+          deps.ledger.rows.set('concurrent-message:SEND', {
+            messageId: 'concurrent-message',
+            threadId,
+            accountId,
+            kind: 'SEND',
+            status: 'PENDING',
+            recipient: senderAddress.toLowerCase(),
+          });
+        }
+        return realCreate(args);
+      });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
+      // Our claim was released, the other job's is untouched.
+      expect(deps.ledger.rows.has(`${messageId}:SEND`)).toBe(false);
+      expect(deps.ledger.rows.has('concurrent-message:SEND')).toBe(true);
+    });
+  });
+
+  describe('failure visibility', () => {
+    function failedJob(attemptsMade: number) {
+      return {
+        data: { messageId },
+        attemptsMade,
+        opts: { attempts: 3 },
+      } as unknown as Job<{ messageId: string }>;
+    }
+
+    it('records the failure on the message and notifies after the last attempt', async () => {
+      const deps = buildDeps();
+      deps.prisma.emailMessage.update.mockResolvedValue({
+        threadId,
+        thread: { account: { userId } },
+      });
+
+      await deps.processor.onFailed(failedJob(3), new Error('LLM down'));
+
+      expect(deps.prisma.emailMessage.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: messageId },
+          data: { aiFailedAt: expect.any(Date) as Date, aiError: 'LLM down' },
+        }),
+      );
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        userId,
+        'AI processing failed',
+        expect.any(String),
+        { threadId, messageId },
+      );
+    });
+
+    it('does nothing while retries remain', async () => {
+      const deps = buildDeps();
+
+      await deps.processor.onFailed(failedJob(1), new Error('LLM down'));
+
+      expect(deps.prisma.emailMessage.update).not.toHaveBeenCalled();
+    });
+
+    it('sends at most one failure notification per hour', async () => {
+      const deps = buildDeps();
+      deps.prisma.emailMessage.update.mockResolvedValue({
+        threadId,
+        thread: { account: { userId } },
+      });
+      deps.prisma.notification.count.mockResolvedValue(1);
+
+      await deps.processor.onFailed(failedJob(3), new Error('LLM down'));
+
+      expect(deps.notificationService.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('document grounding gate (prompt-injection containment)', () => {
+    const chunk = {
+      id: 'chunk-1',
+      documentId: 'doc-1',
+      filename: 'pricing.pdf',
+      distance: 0.1,
+      content:
+        'Enterprise tier pricing: 42 dollars per seat per month with a minimum of 200 seats, volume discount of 18 percent above 1,000 seats, and a confidential partner rebate.',
+    };
+
+    it('holds a document-grounded reply to an unknown sender for review', async () => {
+      const deps = buildDeps({ rule: AUTO_REPLY_RULE });
+      deps.documentsService.search.mockResolvedValue([chunk]);
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      expect(deps.aiClientService.validateReply).not.toHaveBeenCalled();
+      expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
+    });
+
+    it('lets a rule opt in to grounded auto-replies for unknown senders', async () => {
+      const deps = buildDeps({
+        rule: [{ type: 'AUTO_REPLY', allowUnknownSenderGrounding: true }],
+      });
+      deps.documentsService.search.mockResolvedValue([chunk]);
+
+      await deps.run();
+
+      expect(deps.composeService.reply).toHaveBeenCalledTimes(1);
+    });
+
+    it('never auto-sends a verbatim quote of a document to an external sender, even a known one', async () => {
+      const deps = buildDeps({ rule: AUTO_REPLY_RULE });
+      deps.documentsService.search.mockResolvedValue([chunk]);
+      deps.contactService.findByEmail.mockResolvedValue({ id: 'contact-1' });
+      deps.aiClientService.generateReply.mockResolvedValue({
+        reply: `Here you go: ${chunk.content}`,
+        provider: 'test',
+        model: 'test-model',
+        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
+    });
+
+    it('auto-sends a grounded paraphrase to a known sender', async () => {
+      const deps = buildDeps({ rule: AUTO_REPLY_RULE });
+      deps.documentsService.search.mockResolvedValue([chunk]);
+      deps.contactService.findByEmail.mockResolvedValue({ id: 'contact-1' });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).toHaveBeenCalledTimes(1);
     });
   });
 });

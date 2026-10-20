@@ -30,7 +30,12 @@ describe('EmailSyncService', () => {
           filterShipping: true,
           filterCalendar: true,
           aiEnabledFrom: new Date(Date.now() - 7 * 24 * HOUR_MS),
+          aliases: [],
+          aliasesRefreshedAt: null,
+          consecutiveSyncFailures: 0,
+          syncStatus: 'IDLE',
         }),
+        update: jest.fn(),
       },
       mailFolder: {
         upsert: jest.fn().mockResolvedValue({
@@ -44,6 +49,8 @@ describe('EmailSyncService', () => {
       },
       emailThread: {
         upsert: jest.fn().mockResolvedValue({ id: 'thread-row-1' }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        delete: jest.fn(),
       },
       emailMessage: {
         findUnique: jest.fn().mockResolvedValue(null),

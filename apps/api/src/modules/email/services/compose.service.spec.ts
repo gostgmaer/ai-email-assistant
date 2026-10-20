@@ -18,6 +18,7 @@ describe('ComposeService', () => {
         findUniqueOrThrow: jest.fn().mockResolvedValue({
           id: accountId,
           email: 'me@example.com',
+          aliases: [],
         }),
       },
       mailFolder: {
@@ -196,7 +197,11 @@ describe('ComposeService', () => {
         getOwnedAccountOrThrow: jest.fn(),
         getAccessibleAccountOrThrow: jest
           .fn()
-          .mockResolvedValue({ id: accountId, email: 'me@example.com' }),
+          .mockResolvedValue({
+            id: accountId,
+            email: 'me@example.com',
+            aliases: ['sales@example.com'],
+          }),
       } as unknown as EmailAccountService;
 
       const mailProviderFactory = {
@@ -215,6 +220,10 @@ describe('ComposeService', () => {
           providerMessageId: 'provider-original-1',
           subject: 'hello',
           from: [{ address: 'them@example.com' }],
+          to: [{ address: 'sales@example.com' }],
+          cc: [{ address: 'colleague@example.com' }],
+          messageIdHeader: '<original@mail.example.com>',
+          references: ['<root@mail.example.com>'],
           thread: {
             providerThreadId,
             account: { id: accountId, provider: 'GOOGLE', userId: 'user-1' },
@@ -337,6 +346,30 @@ describe('ComposeService', () => {
           },
         }) as unknown,
       });
+    });
+
+    it('reply() threads with the RFC Message-ID and reply-all copies everyone but the user', async () => {
+      const prisma = buildPrismaMock();
+      const { service, sendMessage } = buildDeps(prisma);
+
+      await service.reply('user-1', {
+        messageId: originalMessageId,
+        bodyHtml: '<p>hi</p>',
+        replyAll: true,
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: [{ address: 'them@example.com' }],
+          cc: [{ address: 'colleague@example.com' }],
+          inReplyToProviderMessageId: 'provider-original-1',
+          inReplyToHeader: '<original@mail.example.com>',
+          referencesHeader: [
+            '<root@mail.example.com>',
+            '<original@mail.example.com>',
+          ],
+        }),
+      );
     });
   });
 });
