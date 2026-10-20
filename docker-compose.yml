@@ -83,6 +83,15 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+    healthcheck:
+      # No curl in the python:3.14-slim base image — a stdlib-only
+      # urllib check avoids adding one just for this.
+      test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/health/', timeout=3).status == 200 else sys.exit(1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   api:
     build:
       context: .
@@ -114,7 +123,7 @@ services:
       redis:
         condition: service_healthy
       ai:
-        condition: service_started
+        condition: service_healthy
 
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
@@ -153,9 +162,23 @@ services:
       redis:
         condition: service_healthy
       ai:
-        condition: service_started
+        condition: service_healthy
       api:
         condition: service_healthy
+
+    healthcheck:
+      # The worker has no HTTP endpoint of its own (it's a BullMQ
+      # consumer), so this checks the one thing that actually indicates
+      # it can do useful work: a live connection to Redis, the queue
+      # backend. It won't catch every failure mode (e.g. a hung job
+      # handler), but it does catch "container up, but disconnected from
+      # its queue" — the case a plain "is the process running" check
+      # can't see. ioredis is already a runtime dependency of apps/api.
+      test: ["CMD", "node", "-e", "const Redis=require('ioredis');const r=new Redis({host:process.env.REDIS_HOST,port:Number(process.env.REDIS_PORT),maxRetriesPerRequest:1,connectTimeout:3000,retryStrategy:()=>null});r.on('error',()=>{});r.ping().then(()=>{r.disconnect();process.exit(0);}).catch(()=>{r.disconnect();process.exit(1);});"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # web:
   #   build:

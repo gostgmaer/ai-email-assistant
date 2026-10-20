@@ -17,10 +17,11 @@ function CallbackContent() {
     handled.current = true;
 
     const accessToken = searchParams.get("accessToken");
-    const refreshToken = searchParams.get("refreshToken");
 
-    if (accessToken && refreshToken) {
-      login({ accessToken, refreshToken });
+    // The refresh token is set as an httpOnly cookie directly on the
+    // redirect response — it never appears in the URL (or browser history).
+    if (accessToken) {
+      login({ accessToken });
       router.replace("/inbox");
     } else {
       router.replace("/login?error=oauth_failed");

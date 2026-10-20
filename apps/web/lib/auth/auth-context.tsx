@@ -17,7 +17,6 @@ import { getMe } from "../services/users.service";
 import {
   clearTokens,
   getAccessToken,
-  getRefreshToken,
   setTokens,
   subscribeTokens,
   type TokenPair,
@@ -88,16 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    const refreshToken = getRefreshToken();
     clearTokens();
     queryClient.clear();
 
-    if (refreshToken) {
-      try {
-        await logoutRequest(refreshToken);
-      } catch {
-        // best effort — tokens are already cleared locally
-      }
+    try {
+      // The refresh token itself is an httpOnly cookie the browser sends
+      // automatically; the API reads and revokes it server-side.
+      await logoutRequest();
+    } catch {
+      // best effort — tokens are already cleared locally
     }
   }, [queryClient]);
 

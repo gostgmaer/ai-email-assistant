@@ -11,6 +11,7 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
   forwardRef,
 } from '@nestjs/common';
@@ -21,7 +22,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Request, Response } from 'express';
+import ms from 'ms';
 
 import { toPublicUser } from '../../../common/utils/public-user';
 import { CalendarAccountService } from '../../calendar';
@@ -42,7 +45,10 @@ import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthService } from '../services/auth.service';
 import { DeviceMetadata, TokenService } from '../services/token.service';
 
+const REFRESH_COOKIE_NAME = 'refreshToken';
+
 @ApiTags('auth')
+@UseGuards(ThrottlerGuard)
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -58,32 +64,46 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Register with email and password' })
-  @ApiResponse({ status: 201, description: 'The created user and token pair' })
+  @ApiResponse({ status: 201, description: 'The created user and access token' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() dto: RegisterDto, @Req() req: Request) {
+  async register(
+    @Body() dto: RegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { user, tokens } = await this.authService.register(
       dto,
       this.extractDevice(req),
     );
 
-    return { user: toPublicUser(user), ...tokens };
+    this.setRefreshCookie(res, tokens.refreshToken);
+
+    return { user: toPublicUser(user), accessToken: tokens.accessToken };
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Log in with email and password' })
-  @ApiResponse({ status: 200, description: 'The user and token pair' })
+  @ApiResponse({ status: 200, description: 'The user and access token' })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { user, tokens } = await this.authService.loginWithPassword(
       dto.email,
       dto.password,
       this.extractDevice(req),
     );
 
-    return { user: toPublicUser(user), ...tokens };
+    this.setRefreshCookie(res, tokens.refreshToken);
+
+    return { user: toPublicUser(user), accessToken: tokens.accessToken };
   }
 
   @Post('verify-email')
@@ -108,6 +128,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({ summary: 'Request a password reset email' })
   @ApiResponse({
     status: 204,
@@ -175,7 +196,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Google OAuth callback' })
   @ApiResponse({
     status: 302,
-    description: 'Redirects to FRONTEND_URL with access/refresh tokens',
+    description: 'Redirects to FRONTEND_URL with an access token',
   })
   async googleCallback(
     @Req() req: Request,
@@ -198,7 +219,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Microsoft OAuth callback' })
   @ApiResponse({
     status: 302,
-    description: 'Redirects to FRONTEND_URL with access/refresh tokens',
+    description: 'Redirects to FRONTEND_URL with an access token',
   })
   async microsoftCallback(
     @Req() req: Request,
@@ -212,18 +233,36 @@ export class AuthController {
   @ApiOperation({
     summary: 'Rotate a refresh token for a new access/refresh pair',
   })
-  @ApiResponse({ status: 200, description: 'New access/refresh token pair' })
+  @ApiResponse({ status: 200, description: 'New access token' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    return this.authService.refresh(dto.refreshToken, this.extractDevice(req));
+  async refresh(
+    @Body() dto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = this.extractRefreshToken(req, dto);
+    const tokens = await this.authService.refresh(
+      refreshToken,
+      this.extractDevice(req),
+    );
+
+    this.setRefreshCookie(res, tokens.refreshToken);
+
+    return { accessToken: tokens.accessToken };
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Revoke a refresh token' })
   @ApiResponse({ status: 204, description: 'Refresh token revoked' })
-  async logout(@Body() dto: RefreshTokenDto): Promise<void> {
-    await this.authService.logout(dto.refreshToken);
+  async logout(
+    @Body() dto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    const refreshToken = this.extractRefreshToken(req, dto);
+    await this.authService.logout(refreshToken);
+    this.clearRefreshCookie(res);
   }
 
   private async handleOAuthCallback(
@@ -247,10 +286,15 @@ export class AuthController {
     // settings pages. Must never fail the login itself.
     await this.autoConnectMailAndCalendar(user.id, profile, providerTokens);
 
+    this.setRefreshCookie(res, tokens.refreshToken);
+
+    // Only the short-lived access token travels in the URL now — the
+    // refresh token is set as an httpOnly cookie above instead of being
+    // appended here, where it would sit in browser history and server
+    // access logs for its full 30-day lifetime.
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const redirectUrl = new URL('/auth/callback', frontendUrl);
     redirectUrl.searchParams.set('accessToken', tokens.accessToken);
-    redirectUrl.searchParams.set('refreshToken', tokens.refreshToken);
 
     res.redirect(redirectUrl.toString());
   }
@@ -303,10 +347,55 @@ export class AuthController {
     };
   }
 
-  /** Sessions are listed via the access token; the client optionally passes
-   * its own refresh token as a query param so we can flag it as "current". */
+  /** Sessions are listed via the access token; "current" is inferred from
+   * the refresh-token cookie when present, falling back to a query param
+   * for any caller that can't rely on the cookie. */
   private extractBearerRefreshHint(req: Request): string | undefined {
+    const fromCookie = (req.cookies as Record<string, string> | undefined)?.[
+      REFRESH_COOKIE_NAME
+    ];
+    if (fromCookie) return fromCookie;
+
     const value = req.query.refreshToken;
     return typeof value === 'string' ? value : undefined;
+  }
+
+  /** The refresh token now travels as an httpOnly cookie; the request-body
+   * field is kept as a fallback for any non-browser client that can't use
+   * cookies. */
+  private extractRefreshToken(
+    req: Request,
+    dto?: { refreshToken?: string },
+  ): string {
+    const fromCookie = (req.cookies as Record<string, string> | undefined)?.[
+      REFRESH_COOKIE_NAME
+    ];
+    const token = fromCookie ?? dto?.refreshToken;
+
+    if (!token) {
+      throw new UnauthorizedException('No refresh token provided');
+    }
+
+    return token;
+  }
+
+  private setRefreshCookie(res: Response, token: string): void {
+    const isProd =
+      this.configService.get<string>('NODE_ENV') === 'production';
+    const refreshExpiresIn = this.configService.getOrThrow<string>(
+      'JWT_REFRESH_EXPIRES_IN',
+    ) as ms.StringValue;
+
+    res.cookie(REFRESH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/auth',
+      maxAge: ms(refreshExpiresIn),
+    });
+  }
+
+  private clearRefreshCookie(res: Response): void {
+    res.clearCookie(REFRESH_COOKIE_NAME, { path: '/auth' });
   }
 }

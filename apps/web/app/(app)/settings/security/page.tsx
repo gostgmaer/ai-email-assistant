@@ -8,7 +8,6 @@ import { z } from "zod";
 import { ApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/Button";
 import { FullPageSpinner } from "@/components/ui/Spinner";
-import { getRefreshToken } from "@/lib/auth/token-storage";
 import { getSessions, revokeAllSessions, revokeSession } from "@/lib/services/auth.service";
 import { changePassword } from "@/lib/services/users.service";
 import { formatDateTime } from "@/lib/utils/format";
@@ -40,7 +39,7 @@ export default function SecurityPage() {
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["sessions"],
-    queryFn: () => getSessions(getRefreshToken() ?? undefined),
+    queryFn: () => getSessions(),
   });
 
   function invalidateSessions() {

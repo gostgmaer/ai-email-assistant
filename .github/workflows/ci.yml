@@ -7,7 +7,7 @@ on:
 
 jobs:
   node:
-    name: Typecheck & test (api, web)
+    name: Lint, typecheck, build & test (api, web)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,14 +27,20 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter api exec prisma generate
 
+      - name: Lint
+        run: pnpm run lint
+
       - name: Typecheck
         run: pnpm run typecheck
+
+      - name: Build
+        run: pnpm run build
 
       - name: Test
         run: pnpm run test
 
   python:
-    name: Test (ai)
+    name: Lint, typecheck & test (ai)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,6 +58,12 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --dev
+
+      - name: Ruff
+        run: uv run ruff check .
+
+      - name: Mypy
+        run: uv run mypy app tests main.py
 
       - name: Test
         run: uv run pytest -q

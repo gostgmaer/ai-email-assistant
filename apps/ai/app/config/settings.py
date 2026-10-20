@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
-    app_debug: bool = True
+    app_debug: bool = False
 
     # ============================================================
     # AI Provider
@@ -35,17 +35,32 @@ class Settings(BaseSettings):
 
     # ============================================================
     # API Keys
+    #
+    # Each key is paired with a "<provider>_model" field. llm_model is
+    # only guaranteed to be a valid model name for llm_provider (the
+    # primary provider) — a fallback provider used during retry (see
+    # app/core/workflow/executor.py) needs its own model name, since
+    # e.g. "gemini-3.1-flash-lite" is not a model OpenAI or Anthropic
+    # would recognize. Leave a provider's "<provider>_model" unset (the
+    # default) to exclude it from fallback rather than risk sending a
+    # guessed/invalid model name — see
+    # app/core/llm/manager.py:LLMManager.fallback_order.
     # ============================================================
 
     google_api_key: str = ""
+    google_model: str = ""
 
     openai_api_key: str = ""
+    openai_model: str = ""
 
     anthropic_api_key: str = ""
+    anthropic_model: str = ""
 
     groq_api_key: str = ""
+    groq_model: str = ""
 
     openrouter_api_key: str = ""
+    openrouter_model: str = ""
 
     # ============================================================
     # Ollama
@@ -77,6 +92,13 @@ class Settings(BaseSettings):
     # ============================================================
 
     log_level: str = "INFO"
+
+    # ============================================================
+    # Observability — optional; when unset, main.py skips sentry_sdk.init()
+    # and the service runs without error tracking (see docs/deployment.md).
+    # ============================================================
+
+    sentry_dsn: str = ""
 
     # ============================================================
     # File Upload Service — documents are uploaded there by apps/api;

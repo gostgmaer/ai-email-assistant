@@ -83,6 +83,10 @@ export const envSchema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   MAIL_FROM: z.string().default('AI Email Assistant <no-reply@localhost>'),
 
+  // Observability — optional; when unset, Sentry.init() is skipped in
+  // main.ts and the app runs without error tracking (see docs/deployment.md).
+  SENTRY_DSN: z.string().optional(),
+
   // Logger
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
