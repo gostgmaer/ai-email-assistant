@@ -21,7 +21,18 @@ import {
 
 const profileSchema = z.object({
   displayName: z.string().max(120).optional(),
+  jobTitle: z.string().max(120).optional(),
+  companyName: z.string().max(120).optional(),
+  timezone: z.string().max(64).optional(),
 });
+
+function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
@@ -42,13 +53,20 @@ function ProfileContent() {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailRequestSent, setEmailRequestSent] = useState(false);
 
+  const profileDefaults = () => ({
+    displayName: user?.displayName ?? "",
+    jobTitle: user?.jobTitle ?? "",
+    companyName: user?.companyName ?? "",
+    timezone: user?.timezone ?? "UTC",
+  });
+
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { displayName: user?.displayName ?? "" },
+    defaultValues: profileDefaults(),
   });
 
   useEffect(() => {
-    profileForm.reset({ displayName: user?.displayName ?? "" });
+    profileForm.reset(profileDefaults());
     // Only re-sync defaults when the loaded user identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
@@ -137,6 +155,63 @@ function ProfileContent() {
               className="w-full max-w-sm rounded-md border border-zinc-300 px-3 py-2 text-sm"
             />
           </div>
+          <p className="text-xs text-zinc-500">
+            AI replies are written as you, using your name, job title and
+            company.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">
+                Job title
+              </label>
+              <input
+                {...profileForm.register("jobTitle")}
+                className="w-full max-w-xs rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-zinc-600">
+                Company
+              </label>
+              <input
+                {...profileForm.register("companyName")}
+                className="w-full max-w-xs rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-zinc-600">
+              Timezone
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                {...profileForm.register("timezone")}
+                placeholder="e.g. Europe/Berlin"
+                className="w-full max-w-xs rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  profileForm.setValue("timezone", browserTimeZone(), {
+                    shouldDirty: true,
+                  })
+                }
+                className="text-xs text-indigo-600 hover:underline"
+              >
+                Use this device&apos;s ({browserTimeZone()})
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-zinc-500">
+              Quiet hours and business hours on your mailboxes use this.
+            </p>
+          </div>
+          {updateProfileMutation.isError && (
+            <p className="text-xs text-red-600">
+              {updateProfileMutation.error instanceof ApiError
+                ? updateProfileMutation.error.message
+                : "Could not save your profile"}
+            </p>
+          )}
           <Button type="submit" loading={updateProfileMutation.isPending}>
             Save
           </Button>

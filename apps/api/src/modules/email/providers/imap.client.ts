@@ -161,6 +161,76 @@ export class ImapClient implements MailProviderClient {
     });
   }
 
+  /** IMAP's equivalent of a label is a keyword flag; keywords are atoms,
+   * so anything else in the name becomes an underscore. */
+  async addLabel(
+    providerMessageId: string,
+    label: string,
+    folderProviderId?: string,
+  ): Promise<void> {
+    const keyword = label.replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 64);
+
+    await this.withMessage(providerMessageId, folderProviderId, (client, uid) =>
+      client.messageFlagsAdd(uid, [keyword], { uid: true }),
+    );
+  }
+
+  async moveMessage(
+    providerMessageId: string,
+    destinationFolderProviderId: string,
+    sourceFolderProviderId?: string,
+  ): Promise<undefined> {
+    // IMAP messages are keyed by Message-ID here, which survives a move.
+    await this.withMessage(
+      providerMessageId,
+      sourceFolderProviderId,
+      (client, uid) =>
+        client.messageMove(uid, destinationFolderProviderId, { uid: true }),
+    );
+    return undefined;
+  }
+
+  async archiveMessage(
+    providerMessageId: string,
+    folderProviderId?: string,
+  ): Promise<undefined> {
+    await this.withMessage(
+      providerMessageId,
+      folderProviderId,
+      async (client, uid) => {
+        const archive = (await client.list()).find(
+          (mailbox) => mailbox.specialUse === '\\Archive',
+        );
+        if (!archive) {
+          throw new BadRequestException(
+            'This IMAP server has no Archive folder',
+          );
+        }
+        await client.messageMove(uid, archive.path, { uid: true });
+      },
+    );
+    return undefined;
+  }
+
+  /** Opens the message's folder read-write and runs `fn` on its UID. */
+  private async withMessage(
+    providerMessageId: string,
+    folderProviderId: string | undefined,
+    fn: (client: ImapFlow, uid: number) => Promise<unknown>,
+  ): Promise<void> {
+    if (!folderProviderId) {
+      throw new BadRequestException(
+        'folderProviderId is required to update an IMAP message',
+      );
+    }
+
+    await this.withClient(async (client) => {
+      await client.mailboxOpen(folderProviderId);
+      const uid = await this.resolveUid(client, providerMessageId);
+      await fn(client, uid);
+    });
+  }
+
   async sendMessage(input: ComposeInput): Promise<SendResult> {
     const transporter = nodemailer.createTransport({
       host: this.config.smtp.host,

@@ -32,6 +32,14 @@ export const ApprovalJobs = {
   Sweep: 'approval-sweep',
 } as const;
 
+export const AutomationJobs = {
+  /** Delayed job: sends an approved auto-reply that waited as a draft
+   * (undo window, quiet hours, DELAY_SEND) — see AutomationService. */
+  SendScheduledReply: 'send-scheduled-reply',
+  /** Repeatable job: deletes RuleExecution rows past retention. */
+  CleanupRuleExecutions: 'cleanup-rule-executions',
+} as const;
+
 export const DocumentJobs = {
   /** Repeatable job: marks documents stuck at PROCESSING (a crashed or
    * never-finished upload) as FAILED once they're older than the stale

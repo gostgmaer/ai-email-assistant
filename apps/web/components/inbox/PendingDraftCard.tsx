@@ -6,7 +6,11 @@ import Link from "next/link";
 import { SparklesIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import type { PendingDraftReply } from "@/lib/api/types";
-import { deleteDraft, sendDraft } from "@/lib/services/email.service";
+import {
+  cancelScheduledSend,
+  deleteDraft,
+  sendDraft,
+} from "@/lib/services/email.service";
 import { formatDateTime } from "@/lib/utils/format";
 
 /**
@@ -38,15 +42,23 @@ export function PendingDraftCard({
     onSuccess: refresh,
   });
 
+  const cancelSendMutation = useMutation({
+    mutationFn: () => cancelScheduledSend(draft.id),
+    onSuccess: refresh,
+  });
+
   const awaitingApproval = draft.approvalChain?.status === "PENDING";
-  const error = sendMutation.error ?? discardMutation.error;
+  const error =
+    sendMutation.error ?? discardMutation.error ?? cancelSendMutation.error;
 
   return (
     <div className="mt-3 ml-12 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-indigo-600 uppercase">
           <SparklesIcon className="h-3.5 w-3.5" />
-          AI draft reply — awaiting your review
+          {draft.scheduledSendAt
+            ? "AI reply — sending automatically"
+            : "AI draft reply — awaiting your review"}
         </p>
         <span className="text-xs text-indigo-400">
           {formatDateTime(draft.createdAt)}
@@ -65,6 +77,23 @@ export function PendingDraftCard({
             .filter((name, i, all) => all.indexOf(name) === i)
             .join(", ")}
         </p>
+      )}
+
+      {draft.scheduledSendAt && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-white px-2 py-1.5 text-xs text-indigo-700 ring-1 ring-indigo-200 ring-inset">
+          <span>
+            Sends at {formatDateTime(draft.scheduledSendAt)} unless you cancel.
+            Editing it also cancels the automatic send.
+          </span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => cancelSendMutation.mutate()}
+            loading={cancelSendMutation.isPending}
+          >
+            Cancel send
+          </Button>
+        </div>
       )}
 
       {awaitingApproval && (

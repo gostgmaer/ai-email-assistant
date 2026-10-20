@@ -311,6 +311,7 @@ export class InboxService {
                 bodyText: true,
                 createdAt: true,
                 generationMetadata: true,
+                scheduledSendAt: true,
                 approvalChain: { select: { status: true } },
               },
             },
@@ -388,6 +389,21 @@ export class InboxService {
       data: { aiFailedAt: null, aiError: null },
     });
     await this.queueService.enqueueAiProcessing(messageId, { retry: true });
+  }
+
+  /** The account's synced folders — what a MOVE_TO_FOLDER rule can
+   * target. Local-only folders (app-side Drafts/Sent) are left out. */
+  async listFolders(userId: string, accountId: string) {
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      accountId,
+    );
+
+    return this.prisma.mailFolder.findMany({
+      where: { accountId, providerFolderId: { not: null } },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, type: true },
+    });
   }
 
   async markRead(userId: string, messageId: string): Promise<void> {

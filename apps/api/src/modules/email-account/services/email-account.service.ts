@@ -325,7 +325,9 @@ export class EmailAccountService {
         name: DEFAULT_WORKFLOW_RULE_NAME,
         enabled: false,
         order: 1000,
-        conditions: [],
+        // Matches every message — rules must say so explicitly (matchAll),
+        // see validateConditions.
+        conditions: { all: [], matchAll: true },
         actions: [{ type: 'AUTO_REPLY', agentId: agent.id }],
       },
     });
@@ -346,9 +348,36 @@ export class EmailAccountService {
       filterShipping?: boolean;
       filterCalendar?: boolean;
       prohibitedPhrases?: string[];
+      autoSendEnabled?: boolean;
+      autoSendHourlyCap?: number;
+      autoSendDailyCap?: number;
+      autoSendConfidenceThreshold?: number;
+      quietHoursStart?: string | null;
+      quietHoursEnd?: string | null;
+      undoSendSeconds?: number;
+      businessHoursStart?: string;
+      businessHoursEnd?: string;
+      businessDays?: number[];
+      signatureText?: string | null;
+      signatureHtml?: string | null;
     },
   ): Promise<EmailAccountModel> {
-    await this.getOwnedAccountOrThrow(userId, accountId);
+    const current = await this.getOwnedAccountOrThrow(userId, accountId);
+
+    // Quiet hours are a window: half of one would silently do nothing.
+    const quietStart =
+      data.quietHoursStart !== undefined
+        ? data.quietHoursStart
+        : current.quietHoursStart;
+    const quietEnd =
+      data.quietHoursEnd !== undefined
+        ? data.quietHoursEnd
+        : current.quietHoursEnd;
+    if ((quietStart === null) !== (quietEnd === null)) {
+      throw new BadRequestException(
+        'Set both quietHoursStart and quietHoursEnd, or neither',
+      );
+    }
 
     if (data.isPrimary) {
       await this.prisma.emailAccount.updateMany({

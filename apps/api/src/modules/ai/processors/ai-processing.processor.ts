@@ -10,11 +10,16 @@ import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
 import { AutomationEffectKind } from '../../../generated/prisma/enums';
+import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNamespace';
 import {
   ContactModel,
   EmailAccountModel,
 } from '../../../generated/prisma/models';
-import { AIJobs, QueueNames } from '../../../infrastructure/queue';
+import {
+  AIJobs,
+  QueueNames,
+  QueueService,
+} from '../../../infrastructure/queue';
 // Leaf-file import rather than the '../../agent' barrel — see the
 // comment below on WorkflowRuleService for why.
 import { AgentService } from '../../agent/services/agent.service';
@@ -40,7 +45,6 @@ import {
   ComposeService,
   GenerationMetadata,
 } from '../../email/services/compose.service';
-import { textToSafeHtml } from '../../email/utils/text-to-html.util';
 // Leaf-file import rather than the '../../notification' barrel — same
 // reasoning as AgentService above.
 import { NotificationService } from '../../notification/services/notification.service';
@@ -52,6 +56,7 @@ import {
   WorkflowRuleService,
   resolveReplyDirectives,
 } from '../../workflow/services/workflow-rule.service';
+import { buildRuleMessageContext } from '../../workflow/utils/rule-context.util';
 import { EmailMessageDto } from '../dto';
 import {
   AiClientService,
@@ -68,6 +73,8 @@ import {
 } from '../utils/grounding-guard.util';
 import { scanOutputForPii } from '../utils/output-pii-scan.util';
 import { findNoReplyReason } from '../utils/reply-need.util';
+import { scheduleAutoSend } from '../utils/send-schedule.util';
+import { hasSignature, withSignature } from '../utils/signature.util';
 import {
   buildThreadContext,
   stripQuotedHistory,
@@ -77,12 +84,6 @@ import { scanOutputForPolicyViolations } from '../utils/output-policy-scan.util'
 interface AiProcessingJobData {
   messageId: string;
 }
-
-// validate_reply's self-reported 0-100 confidence — chosen default, not
-// account-configurable yet. 70 favors holding borderline replies for
-// review over auto-sending them; revisit once there's real usage data on
-// how confidence scores correlate with actually-good replies.
-const REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD = 70;
 
 // Auto-responder loop protection (see docs/email-automation-gaps.md G-04):
 // even with every inbound auto-reply signal checked, cap how often we
@@ -94,6 +95,8 @@ const MAX_AUTO_SENDS_PER_THREAD = 1;
 const MAX_AUTO_SENDS_PER_RECIPIENT = 3;
 
 const AI_FAILED_NOTIFICATION_TITLE = 'AI processing failed';
+const SEND_LIMIT_NOTIFICATION_TITLE = 'Auto-send limit reached';
+const HOUR_MS = 60 * 60 * 1000;
 
 interface EffectContext {
   messageId: string;
@@ -131,6 +134,7 @@ export class AiProcessingProcessor
     @Inject(forwardRef(() => ApprovalChainService))
     private readonly approvalChainService: ApprovalChainService,
     private readonly configService: ConfigService,
+    private readonly queueService: QueueService,
   ) {
     super();
   }
@@ -150,7 +154,18 @@ export class AiProcessingProcessor
       include: {
         thread: {
           include: {
-            account: true,
+            account: {
+              include: {
+                user: {
+                  select: {
+                    timezone: true,
+                    displayName: true,
+                    jobTitle: true,
+                    companyName: true,
+                  },
+                },
+              },
+            },
             messages: { orderBy: { receivedAt: 'asc' } },
           },
         },
@@ -276,16 +291,40 @@ export class AiProcessingProcessor
     // Workflow Builder (v2.0 §3): evaluated here (before reply generation,
     // not after) specifically so an AI Agent persona (v2.0 §4) attached to
     // a matched rule's AUTO_REPLY action can influence the reply's actual
-    // wording, not just the later send-vs-draft decision.
-    const matchedActions = await this.workflowRuleService.evaluate(account.id, {
-      category: classification.category,
-      priority: classification.priority,
-      sender: sender.address,
-    });
-
-    const autoReplyAction = matchedActions?.find(
-      (action) => action.type === 'AUTO_REPLY',
+    // wording, not just the later send-vs-draft decision. Every matching
+    // rule runs (until one says STOP_PROCESSING); the first one with a
+    // reply action decides the reply (resolveReplyDirectives).
+    const matchedRules = await this.workflowRuleService.evaluate(
+      account.id,
+      async (needsKnownContact) =>
+        buildRuleMessageContext({
+          // The row was read before classification was persisted.
+          message: {
+            ...message,
+            category: classification.category,
+            priority: classification.priority,
+            sentiment: classification.sentiment,
+            language: classification.language,
+            containsPii: classification.containsPii,
+          },
+          threadReceivedAt: message.thread.messages
+            .filter((other) => other.id !== message.id)
+            .map((other) => other.receivedAt),
+          threadSubject: message.thread.subject,
+          account,
+          timezone: account.user.timezone,
+          isKnownContact: needsKnownContact
+            ? await this.workflowRuleService.isKnownContact(
+                account.id,
+                sender.address,
+              )
+            : false,
+        }),
     );
+
+    const replyDirectives: ReplyDirectives | null =
+      matchedRules.length > 0 ? resolveReplyDirectives(matchedRules) : null;
+    const autoReplyAction = replyDirectives?.autoReplyAction;
     const agentSystemPrompt = autoReplyAction?.agentId
       ? ((await this.agentService.getEnabledSystemPrompt(
           account.id,
@@ -293,22 +332,27 @@ export class AiProcessingProcessor
         )) ?? undefined)
       : undefined;
 
-    // The matched rule's side-effect actions (assign, notify, Slack/Teams,
-    // HubSpot) run here, before reply generation, so routing still
-    // happens even if contact memory or reply generation fails below.
-    // Claimed in the effect ledger: on a retried job they already ran, so
-    // only the send-vs-draft decision is recovered, side-effect free.
-    let replyDirectives: ReplyDirectives | null = null;
-    if (matchedActions) {
-      replyDirectives = (await this.claimEffect(effectContext, 'RULE_ACTIONS'))
-        ? await this.workflowRuleService.executeActions(matchedActions, {
-            accountId: account.id,
-            threadId: message.threadId,
-            messageId,
-            senderEmail: sender.address,
-            senderName: sender.name,
-          })
-        : resolveReplyDirectives(matchedActions);
+    // The matched rules' side-effect actions (assign, notify, Slack/Teams,
+    // HubSpot, forward, label, ...) run here, before reply generation, so
+    // routing still happens even if contact memory or reply generation
+    // fails below. Claimed in the effect ledger: on a retried job they
+    // already ran; the reply decision above is side-effect free.
+    if (
+      matchedRules.length > 0 &&
+      (await this.claimEffect(effectContext, 'RULE_ACTIONS'))
+    ) {
+      await this.workflowRuleService.executeActions(matchedRules, {
+        accountId: account.id,
+        ownerUserId: account.userId,
+        threadId: message.threadId,
+        messageId,
+        senderEmail: sender.address,
+        senderName: sender.name,
+        subject,
+        category: classification.category,
+        priority: classification.priority,
+        isAutoReply: message.isAutoReply,
+      });
     }
 
     // Idempotency for the reply itself: a previous attempt of this job may
@@ -434,6 +478,12 @@ export class AiProcessingProcessor
       thread,
       instruction,
       agentSystemPrompt,
+      {
+        name: account.user.displayName ?? account.displayName,
+        jobTitle: account.user.jobTitle,
+        company: account.user.companyName,
+        hasSignature: hasSignature(account),
+      },
     );
 
     const generationMetadata: GenerationMetadata = {
@@ -467,8 +517,10 @@ export class AiProcessingProcessor
     // above (and the rule's other actions already ran). No matching rule
     // falls through to the existing default: draft for review.
     let isSafeToAutoSend = false;
+    let replyConfidence: number | undefined;
     const approvalChainApproverUserIds =
       replyDirectives?.approvalChainApproverUserIds;
+    const confidenceThreshold = account.autoSendConfidenceThreshold;
 
     // Account/loop-level blockers, checked before any of the per-reply
     // rails below (and before paying for validateReply).
@@ -553,11 +605,12 @@ export class AiProcessingProcessor
           );
         }
 
+        replyConfidence = validation.confidence;
         passesValidationRail =
           validation.addressesThread &&
           validation.unsupportedClaims.length === 0 &&
           validation.grammarIssues.length === 0 &&
-          validation.confidence >= REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD;
+          validation.confidence >= confidenceThreshold;
 
         if (!passesValidationRail) {
           const reasons: string[] = [];
@@ -576,9 +629,9 @@ export class AiProcessingProcessor
               `grammar issues: ${validation.grammarIssues.join(', ')}`,
             );
           }
-          if (validation.confidence < REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD) {
+          if (validation.confidence < confidenceThreshold) {
             reasons.push(
-              `confidence ${validation.confidence} below the ${REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD} threshold`,
+              `confidence ${validation.confidence} below the ${confidenceThreshold} threshold`,
             );
           }
           this.logger.warn(
@@ -608,12 +661,24 @@ export class AiProcessingProcessor
       );
     }
 
+    // The signature is added after every check above ran on the model's
+    // own text, so a phone number in it can't trip the PII rail.
+    const signed = withSignature(reply.reply, account);
+
     // Claimed before sending: if another attempt already claimed this send
-    // (a concurrent duplicate job), this one must not send at all.
+    // (a concurrent duplicate job), this one must not send at all. The
+    // details are what the automation audit log shows for this send.
     if (
       isSafeToAutoSend &&
       !(await this.claimEffect(effectContext, 'SEND', {
         recipient: sender.address.toLowerCase(),
+        details: {
+          rule: replyDirectives?.decidingRule ?? null,
+          confidence: replyConfidence ?? null,
+          documents: documentMatches.map(
+            (match: DocumentChunkMatch) => match.filename,
+          ),
+        },
       }))
     ) {
       this.logger.warn(
@@ -636,7 +701,7 @@ export class AiProcessingProcessor
     if (
       isSafeToAutoSend &&
       (await this.exceedsAutoSendCaps(
-        account.id,
+        account,
         message.threadId,
         sender.address,
         messageId,
@@ -649,15 +714,77 @@ export class AiProcessingProcessor
       isSafeToAutoSend = false;
     }
 
-    if (isSafeToAutoSend) {
+    // Undo window, DELAY_SEND and quiet hours: the approved reply waits
+    // as a scheduled draft instead of sending now (it can be cancelled).
+    const sendAt = isSafeToAutoSend
+      ? scheduleAutoSend(new Date(), {
+          undoSendSeconds: account.undoSendSeconds,
+          delaySendMinutes: replyDirectives?.delaySendMinutes,
+          quietHours: {
+            start: account.quietHoursStart,
+            end: account.quietHoursEnd,
+          },
+          timezone: account.user.timezone,
+        })
+      : null;
+
+    if (isSafeToAutoSend && sendAt) {
+      const draft = await this.composeService.saveDraftReply(
+        account.userId,
+        messageId,
+        {
+          subject: subject.startsWith('Re:') ? subject : `Re: ${subject}`,
+          bodyText: signed.text,
+          bodyHtml: signed.html,
+        },
+        generationMetadata,
+        {
+          replyAll: autoReplyAction?.replyAll === true,
+          scheduledSendAt: sendAt,
+        },
+      );
+      await this.prisma.automationEffect.update({
+        where: { messageId_kind: { messageId, kind: 'SEND' } },
+        data: {
+          status: 'SCHEDULED',
+          details: {
+            rule: replyDirectives?.decidingRule ?? null,
+            confidence: replyConfidence ?? null,
+            documents: documentMatches.map(
+              (match: DocumentChunkMatch) => match.filename,
+            ),
+            draftMessageId: draft.id,
+            scheduledFor: sendAt.toISOString(),
+          },
+        },
+      });
+      await this.queueService.enqueueScheduledSend(draft.id, sendAt);
+      await this.claimEffect(effectContext, 'DRAFT', { status: 'DONE' });
+
+      this.logger.log(
+        `Scheduled an auto-reply to message ${messageId} for ${sendAt.toISOString()} (draft ${draft.id}).`,
+      );
+      await this.notificationService
+        .create(
+          account.userId,
+          'Auto-reply scheduled',
+          `A reply to "${subject}" will send at ${sendAt.toISOString()} unless you cancel it from Drafts.`,
+          { threadId: message.threadId, messageId, draftId: draft.id },
+        )
+        .catch((error: unknown) => {
+          this.logger.warn(
+            `Failed to create scheduled-send notification for message ${messageId}: ${describeError(error)}`,
+          );
+        });
+    } else if (isSafeToAutoSend) {
       let sent: { providerMessageId: string };
       try {
         sent = await this.composeService.reply(
           account.userId,
           {
             messageId,
-            bodyHtml: textToSafeHtml(reply.reply),
-            bodyText: reply.reply,
+            bodyHtml: signed.html,
+            bodyText: signed.text,
             replyAll: autoReplyAction?.replyAll === true,
           },
           generationMetadata,
@@ -703,7 +830,8 @@ export class AiProcessingProcessor
         messageId,
         {
           subject: subject.startsWith('Re:') ? subject : `Re: ${subject}`,
-          bodyText: reply.reply,
+          bodyText: signed.text,
+          bodyHtml: signed.html,
         },
         generationMetadata,
         { replyAll: autoReplyAction?.replyAll === true },
@@ -714,15 +842,9 @@ export class AiProcessingProcessor
       // draft itself is already safely saved either way, so a chain-
       // creation failure must never turn into a stuck/retried job.
       if (approvalChainApproverUserIds) {
-        const chainAction = matchedActions?.find(
-          (action) => action.type === 'REQUIRE_APPROVAL_CHAIN',
-        );
         await this.approvalChainService
           .create(account.id, draft.id, approvalChainApproverUserIds, {
-            expiresInHours:
-              chainAction?.type === 'REQUIRE_APPROVAL_CHAIN'
-                ? chainAction.expiresInHours
-                : undefined,
+            expiresInHours: replyDirectives?.approvalChainExpiresInHours,
           })
           .catch(async (error: unknown) => {
             this.logger.warn(
@@ -783,11 +905,20 @@ export class AiProcessingProcessor
   private async claimEffect(
     context: EffectContext,
     kind: AutomationEffectKind,
-    extra: { recipient?: string; status?: 'PENDING' | 'DONE' } = {},
+    extra: {
+      recipient?: string;
+      status?: 'PENDING' | 'DONE';
+      details?: Record<string, unknown>;
+    } = {},
   ): Promise<boolean> {
     try {
       await this.prisma.automationEffect.create({
-        data: { ...context, kind, ...extra },
+        data: {
+          ...context,
+          kind,
+          ...extra,
+          details: extra.details as InputJsonValue | undefined,
+        },
       });
       return true;
     } catch (error) {
@@ -821,8 +952,9 @@ export class AiProcessingProcessor
   /**
    * Reasons a rule-approved auto-send must be held as a draft regardless of
    * how good the reply is: the kill switches, an inbound auto-reply (the
-   * loop case), and the per-thread / per-recipient auto-send caps. Returns
-   * null when nothing blocks it.
+   * loop case), the per-thread / per-recipient loop caps, and the account's
+   * own hourly/daily send caps. Returns null when nothing blocks it.
+   * Cancelled scheduled sends don't count toward any cap.
    */
   private async findAutoSendBlocker(
     account: EmailAccountModel,
@@ -843,20 +975,35 @@ export class AiProcessingProcessor
     }
 
     const since = new Date(Date.now() - AUTO_SEND_WINDOW_MS);
+    const sends = {
+      kind: 'SEND' as const,
+      status: { not: 'CANCELLED' as const },
+    };
 
-    const [threadSends, recipientSends] = await Promise.all([
-      this.prisma.automationEffect.count({
-        where: { threadId, kind: 'SEND', createdAt: { gte: since } },
-      }),
-      this.prisma.automationEffect.count({
-        where: {
-          accountId: account.id,
-          kind: 'SEND',
-          recipient: recipientAddress.toLowerCase(),
-          createdAt: { gte: since },
-        },
-      }),
-    ]);
+    const [threadSends, recipientSends, hourSends, daySends] =
+      await Promise.all([
+        this.prisma.automationEffect.count({
+          where: { ...sends, threadId, createdAt: { gte: since } },
+        }),
+        this.prisma.automationEffect.count({
+          where: {
+            ...sends,
+            accountId: account.id,
+            recipient: recipientAddress.toLowerCase(),
+            createdAt: { gte: since },
+          },
+        }),
+        this.prisma.automationEffect.count({
+          where: {
+            ...sends,
+            accountId: account.id,
+            createdAt: { gte: new Date(Date.now() - HOUR_MS) },
+          },
+        }),
+        this.prisma.automationEffect.count({
+          where: { ...sends, accountId: account.id, createdAt: { gte: since } },
+        }),
+      ]);
 
     if (threadSends >= MAX_AUTO_SENDS_PER_THREAD) {
       return `this thread already got ${threadSends} auto-reply(s) in the last 24h`;
@@ -866,7 +1013,45 @@ export class AiProcessingProcessor
       return `${recipientAddress} already got ${recipientSends} auto-replies in the last 24h`;
     }
 
-    return null;
+    const capReached =
+      hourSends >= account.autoSendHourlyCap
+        ? `the account's limit of ${account.autoSendHourlyCap} auto-replies per hour was reached`
+        : daySends >= account.autoSendDailyCap
+          ? `the account's limit of ${account.autoSendDailyCap} auto-replies per day was reached`
+          : null;
+    if (capReached) {
+      await this.notifySendLimitReached(account, capReached);
+    }
+
+    return capReached;
+  }
+
+  /** Tells the owner once per 24h that replies are being held because of
+   * a send cap — not once per held reply. */
+  private async notifySendLimitReached(
+    account: EmailAccountModel,
+    reason: string,
+  ): Promise<void> {
+    try {
+      const recentlyNotified = await this.prisma.notification.count({
+        where: {
+          userId: account.userId,
+          title: SEND_LIMIT_NOTIFICATION_TITLE,
+          createdAt: { gte: new Date(Date.now() - AUTO_SEND_WINDOW_MS) },
+        },
+      });
+      if (recentlyNotified === 0) {
+        await this.notificationService.create(
+          account.userId,
+          SEND_LIMIT_NOTIFICATION_TITLE,
+          `Auto-replies from ${account.email} are being held as drafts: ${reason}. You can raise the limit in the account's automation settings.`,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Couldn't notify about the send limit for ${account.email}: ${describeError(error)}`,
+      );
+    }
   }
 
   /**
@@ -922,10 +1107,11 @@ export class AiProcessingProcessor
     return null;
   }
 
-  /** True when OTHER messages' send claims already fill the thread or
-   * recipient cap — see the post-claim re-check in processMessage. */
+  /** True when OTHER messages' send claims already fill the thread,
+   * recipient or account caps — see the post-claim re-check in
+   * processMessage. */
   private async exceedsAutoSendCaps(
-    accountId: string,
+    account: EmailAccountModel,
     threadId: string,
     recipientAddress: string,
     ownMessageId: string,
@@ -933,24 +1119,38 @@ export class AiProcessingProcessor
     const since = new Date(Date.now() - AUTO_SEND_WINDOW_MS);
     const others = {
       kind: 'SEND' as const,
+      status: { not: 'CANCELLED' as const },
       createdAt: { gte: since },
       messageId: { not: ownMessageId },
     };
 
-    const [threadSends, recipientSends] = await Promise.all([
-      this.prisma.automationEffect.count({ where: { ...others, threadId } }),
-      this.prisma.automationEffect.count({
-        where: {
-          ...others,
-          accountId,
-          recipient: recipientAddress.toLowerCase(),
-        },
-      }),
-    ]);
+    const [threadSends, recipientSends, hourSends, daySends] =
+      await Promise.all([
+        this.prisma.automationEffect.count({ where: { ...others, threadId } }),
+        this.prisma.automationEffect.count({
+          where: {
+            ...others,
+            accountId: account.id,
+            recipient: recipientAddress.toLowerCase(),
+          },
+        }),
+        this.prisma.automationEffect.count({
+          where: {
+            ...others,
+            accountId: account.id,
+            createdAt: { gte: new Date(Date.now() - HOUR_MS) },
+          },
+        }),
+        this.prisma.automationEffect.count({
+          where: { ...others, accountId: account.id },
+        }),
+      ]);
 
     return (
       threadSends >= MAX_AUTO_SENDS_PER_THREAD ||
-      recipientSends >= MAX_AUTO_SENDS_PER_RECIPIENT
+      recipientSends >= MAX_AUTO_SENDS_PER_RECIPIENT ||
+      hourSends >= account.autoSendHourlyCap ||
+      daySends >= account.autoSendDailyCap
     );
   }
 

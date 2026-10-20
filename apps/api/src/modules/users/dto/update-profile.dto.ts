@@ -12,4 +12,29 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsUrl()
   avatar?: string;
+
+  @ApiPropertyOptional({
+    description: 'Job title, used when the AI writes replies as you',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  jobTitle?: string;
+
+  @ApiPropertyOptional({
+    description: 'Company name, used when the AI writes replies as you',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  companyName?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'IANA timezone, e.g. "Europe/Berlin" — quiet hours and business hours use it',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  timezone?: string;
 }

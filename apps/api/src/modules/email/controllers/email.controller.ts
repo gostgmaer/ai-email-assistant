@@ -58,6 +58,16 @@ export class EmailController {
     return this.inboxService.listThreads(user.sub, query);
   }
 
+  @Get('accounts/:accountId/folders')
+  @ApiOperation({ summary: "An account's synced folders" })
+  @ApiResponse({ status: 200, description: 'Folders (id, name, type)' })
+  async listFolders(
+    @CurrentUser() user: JwtPayload,
+    @Param('accountId') accountId: string,
+  ) {
+    return this.inboxService.listFolders(user.sub, accountId);
+  }
+
   @Get('follow-ups')
   @ApiOperation({
     summary:
@@ -214,6 +224,23 @@ export class EmailController {
   @ApiResponse({ status: 201, description: 'The sent message' })
   async sendDraft(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.composeService.sendDraft(user.sub, id);
+  }
+
+  @Post('drafts/:id/cancel-scheduled-send')
+  @ApiOperation({
+    summary:
+      'Cancel a scheduled auto-reply; it stays in Drafts for review instead',
+  })
+  @ApiResponse({ status: 201, description: 'The draft, no longer scheduled' })
+  @ApiResponse({
+    status: 409,
+    description: 'Not scheduled, or already being sent',
+  })
+  async cancelScheduledSend(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.composeService.cancelScheduledSend(user.sub, id);
   }
 
   @Delete('drafts/:id')

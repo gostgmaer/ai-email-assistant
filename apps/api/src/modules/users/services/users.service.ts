@@ -10,6 +10,7 @@ import { PrismaService } from '../../../database';
 import { MailerService } from '../../../infrastructure/mailer';
 import { UserModel } from '../../../generated/prisma/models';
 import { VerificationTokenType } from '../../../generated/prisma/enums';
+import { isValidTimeZone } from '../../../common/utils/local-time.util';
 import { PasswordService } from '../../auth/services/password.service';
 import { VerificationTokenService } from '../../auth/services/verification-token.service';
 import { ChangeEmailDto, ChangePasswordDto, UpdateProfileDto } from '../dto';
@@ -29,11 +30,20 @@ export class UsersService {
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto): Promise<UserModel> {
+    if (dto.timezone !== undefined && !isValidTimeZone(dto.timezone)) {
+      throw new BadRequestException(
+        `Unknown timezone "${dto.timezone}" — use an IANA name like Europe/Berlin`,
+      );
+    }
+
     return this.prisma.user.update({
       where: { id },
       data: {
         displayName: dto.displayName,
         avatar: dto.avatar,
+        jobTitle: dto.jobTitle,
+        companyName: dto.companyName,
+        timezone: dto.timezone,
       },
     });
   }

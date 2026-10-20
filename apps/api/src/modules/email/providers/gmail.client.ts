@@ -277,6 +277,22 @@ export class GmailClient implements MailProviderClient {
     return (data.sendAs ?? []).map((alias) => alias.sendAsEmail.toLowerCase());
   }
 
+  async getSignature(): Promise<string | null> {
+    const data = await this.request<{
+      sendAs?: {
+        isDefault?: boolean;
+        isPrimary?: boolean;
+        signature?: string;
+      }[];
+    }>('/settings/sendAs');
+    const sendAs = data.sendAs ?? [];
+    const main =
+      sendAs.find((alias) => alias.isDefault) ??
+      sendAs.find((alias) => alias.isPrimary);
+
+    return main?.signature?.trim() || null;
+  }
+
   async getMessage(providerMessageId: string): Promise<NormalizedMessage> {
     const message = await this.request<GmailMessage>(
       `/messages/${providerMessageId}?format=full`,
@@ -305,9 +321,62 @@ export class GmailClient implements MailProviderClient {
   }
 
   async markAsRead(providerMessageId: string): Promise<void> {
+    await this.modifyLabels(providerMessageId, { removeLabelIds: ['UNREAD'] });
+  }
+
+  async addLabel(providerMessageId: string, label: string): Promise<void> {
+    const { labels = [] } = await this.request<{ labels?: GmailLabel[] }>(
+      '/labels',
+    );
+    const existing = labels.find(
+      (candidate) => candidate.name.toLowerCase() === label.toLowerCase(),
+    );
+    const labelId =
+      existing?.id ??
+      (
+        await this.request<GmailLabel>('/labels', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: label,
+            labelListVisibility: 'labelShow',
+            messageListVisibility: 'show',
+          }),
+        })
+      ).id;
+
+    await this.modifyLabels(providerMessageId, { addLabelIds: [labelId] });
+  }
+
+  /** Gmail folders are labels: moving swaps the source label for the
+   * destination one. */
+  async moveMessage(
+    providerMessageId: string,
+    destinationFolderProviderId: string,
+    sourceFolderProviderId?: string,
+  ): Promise<undefined> {
+    await this.modifyLabels(providerMessageId, {
+      addLabelIds: [destinationFolderProviderId],
+      removeLabelIds:
+        sourceFolderProviderId &&
+        sourceFolderProviderId !== destinationFolderProviderId
+          ? [sourceFolderProviderId]
+          : [],
+    });
+    return undefined;
+  }
+
+  async archiveMessage(providerMessageId: string): Promise<undefined> {
+    await this.modifyLabels(providerMessageId, { removeLabelIds: ['INBOX'] });
+    return undefined;
+  }
+
+  private async modifyLabels(
+    providerMessageId: string,
+    change: { addLabelIds?: string[]; removeLabelIds?: string[] },
+  ): Promise<void> {
     await this.request(`/messages/${providerMessageId}/modify`, {
       method: 'POST',
-      body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
+      body: JSON.stringify(change),
     });
   }
 

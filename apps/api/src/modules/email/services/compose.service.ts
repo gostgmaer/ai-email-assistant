@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -62,7 +63,11 @@ export class ComposeService {
     private readonly inboxService: InboxService,
   ) {}
 
-  async send(userId: string, dto: ComposeEmailDto) {
+  async send(
+    userId: string,
+    dto: ComposeEmailDto,
+    options: { headers?: Record<string, string> } = {},
+  ) {
     const account = await this.emailAccountService.getAccessibleAccountOrThrow(
       userId,
       dto.accountId,
@@ -77,6 +82,7 @@ export class ComposeService {
       subject: dto.subject,
       bodyHtml: dto.bodyHtml,
       bodyText: dto.bodyText,
+      headers: options.headers,
     });
 
     return this.persistSentMessage(
@@ -151,14 +157,16 @@ export class ComposeService {
    * Used by the autonomous AI pipeline to hold a drafted reply for human
    * review instead of sending it. Reuses the same local-Drafts mechanism as
    * saveDraft() (so it shows up in the existing Drafts tab), but threads it
-   * to the message being replied to via inReplyToMessageId.
+   * to the message being replied to via inReplyToMessageId. bodyHtml
+   * defaults to the text, escaped; scheduledSendAt marks an approved
+   * auto-reply waiting to send (see AutomationService.sendScheduledReply).
    */
   async saveDraftReply(
     userId: string,
     originalMessageId: string,
-    content: { subject: string; bodyText: string },
+    content: { subject: string; bodyText: string; bodyHtml?: string },
     generationMetadata?: GenerationMetadata,
-    options: { replyAll?: boolean } = {},
+    options: { replyAll?: boolean; scheduledSendAt?: Date } = {},
   ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
@@ -204,11 +212,12 @@ export class ComposeService {
         cc: cc as unknown as InputJsonValue,
         bcc: [],
         subject: content.subject,
-        bodyHtml: textToSafeHtml(content.bodyText),
+        bodyHtml: content.bodyHtml ?? textToSafeHtml(content.bodyText),
         bodyText: content.bodyText,
         receivedAt: new Date(),
         isRead: true,
         inReplyToMessageId: originalMessageId,
+        scheduledSendAt: options.scheduledSendAt,
         generationMetadata: generationMetadata
           ? { ...generationMetadata, draftText: content.bodyText }
           : undefined,
@@ -258,6 +267,9 @@ export class ComposeService {
 
   async updateDraft(userId: string, draftMessageId: string, dto: SaveDraftDto) {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
+    // Editing a scheduled auto-reply means a human is taking it over: it
+    // no longer sends by itself.
+    await this.cancelScheduleOrThrow(draft);
 
     await this.prisma.emailThread.update({
       where: { id: draft.threadId },
@@ -280,9 +292,22 @@ export class ComposeService {
     });
   }
 
-  async sendDraft(userId: string, draftMessageId: string) {
+  /**
+   * fromSchedule is set only by AutomationService when a scheduled
+   * auto-reply's time comes; a person sending a scheduled draft early
+   * cancels the schedule first, so it can't go out twice.
+   */
+  async sendDraft(
+    userId: string,
+    draftMessageId: string,
+    options: { headers?: Record<string, string>; fromSchedule?: boolean } = {},
+  ) {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
     const account = draft.thread.folder.account;
+
+    if (!options.fromSchedule) {
+      await this.cancelScheduleOrThrow(draft);
+    }
 
     if (!draft.subject || !draft.bodyHtml || !(draft.to as unknown[]).length) {
       throw new ForbiddenException(
@@ -333,8 +358,9 @@ export class ComposeService {
           draft.inReplyToMessageId,
           content,
           draft.generationMetadata as unknown as GenerationMetadata | null,
+          options.headers,
         )
-      : await this.send(userId, content);
+      : await this.send(userId, content, { headers: options.headers });
 
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
 
@@ -346,6 +372,7 @@ export class ComposeService {
     originalMessageId: string,
     content: ComposeEmailDto,
     generationMetadata: GenerationMetadata | null,
+    headers?: Record<string, string>,
   ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
@@ -370,6 +397,7 @@ export class ComposeService {
       inReplyToProviderMessageId: original.providerMessageId,
       providerThreadId: original.thread.providerThreadId,
       ...buildThreadingHeaders(original),
+      headers,
     });
 
     // AI provenance carries over to the sent copy (it's what answers
@@ -397,6 +425,7 @@ export class ComposeService {
 
   async deleteDraft(userId: string, draftMessageId: string): Promise<void> {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
+    await this.cancelScheduleOrThrow(draft);
 
     // The chain row outlives the draft (SetNull, it's the audit record), so
     // a chain still waiting on approvers must be closed explicitly — or it
@@ -406,6 +435,65 @@ export class ComposeService {
       data: { status: 'CANCELLED' },
     });
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
+  }
+
+  /** "Cancel send" on a scheduled auto-reply: it stays in Drafts for
+   * review instead of sending. */
+  async cancelScheduledSend(userId: string, draftMessageId: string) {
+    const draft = await this.getOwnedDraft(userId, draftMessageId);
+    if (!draft.scheduledSendAt) {
+      throw new ConflictException('This draft is not scheduled to send');
+    }
+
+    await this.cancelScheduleOrThrow(draft);
+    return this.prisma.emailMessage.findUniqueOrThrow({
+      where: { id: draftMessageId },
+    });
+  }
+
+  /**
+   * Takes a scheduled auto-reply off its schedule. The SEND effect moves
+   * SCHEDULED -> CANCELLED in one conditional update, the same row
+   * AutomationService moves SCHEDULED -> PENDING right before sending —
+   * whichever lands first wins, so a draft can't be both cancelled and
+   * sent. Throws when the send already started. No-op for a draft that
+   * isn't scheduled.
+   */
+  private async cancelScheduleOrThrow(draft: {
+    id: string;
+    scheduledSendAt: Date | null;
+    inReplyToMessageId: string | null;
+  }): Promise<void> {
+    if (!draft.scheduledSendAt) {
+      return;
+    }
+
+    if (draft.inReplyToMessageId) {
+      const sendEffect = {
+        messageId: draft.inReplyToMessageId,
+        kind: 'SEND' as const,
+      };
+      const { count } = await this.prisma.automationEffect.updateMany({
+        where: { ...sendEffect, status: 'SCHEDULED' },
+        data: { status: 'CANCELLED' },
+      });
+      if (count === 0) {
+        const effect = await this.prisma.automationEffect.findUnique({
+          where: { messageId_kind: sendEffect },
+          select: { status: true },
+        });
+        if (effect?.status === 'PENDING' || effect?.status === 'DONE') {
+          throw new ConflictException(
+            'This reply is already being sent automatically.',
+          );
+        }
+      }
+    }
+
+    await this.prisma.emailMessage.update({
+      where: { id: draft.id },
+      data: { scheduledSendAt: null },
+    });
   }
 
   private async getOwnedDraft(userId: string, draftMessageId: string) {

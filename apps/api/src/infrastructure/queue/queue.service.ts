@@ -5,6 +5,7 @@ import { Queue } from 'bullmq';
 import {
   AIJobs,
   ApprovalJobs,
+  AutomationJobs,
   DigestJobs,
   DocumentJobs,
   EmailSyncJobs,
@@ -18,6 +19,7 @@ const DOCUMENT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 // other scheduled job so far uses a fixed `every` interval instead).
 const DAILY_DIGEST_CRON = '0 8 * * *';
 const APPROVAL_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
+const RULE_EXECUTION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 /** Everything DocumentsProcessingProcessor needs to call the AI service and
  * update the Document row, without re-querying the DB or re-deriving the
@@ -56,6 +58,8 @@ export class QueueService {
     @InjectQueue(QueueNames.Digest) private readonly digestQueue: Queue,
     @InjectQueue(QueueNames.Approvals)
     private readonly approvalsQueue: Queue,
+    @InjectQueue(QueueNames.Automation)
+    private readonly automationQueue: Queue,
   ) {}
 
   async enqueueInitialSync(accountId: string): Promise<void> {
@@ -195,6 +199,32 @@ export class QueueService {
     );
   }
 
+  /** Sends a scheduled auto-reply draft at `sendAt`. One job per draft;
+   * cancelling doesn't remove it — the job re-checks the send's status
+   * when it fires and does nothing if it was cancelled. */
+  async enqueueScheduledSend(
+    draftMessageId: string,
+    sendAt: Date,
+  ): Promise<void> {
+    await this.automationQueue.add(
+      AutomationJobs.SendScheduledReply,
+      { draftMessageId },
+      {
+        jobId: `${AutomationJobs.SendScheduledReply}-${draftMessageId}`,
+        delay: Math.max(0, sendAt.getTime() - Date.now()),
+      },
+    );
+  }
+
+  /** Idempotent: registers the daily RuleExecution retention cleanup. */
+  async scheduleRuleExecutionCleanup(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'rule-execution-cleanup',
+      { every: RULE_EXECUTION_CLEANUP_INTERVAL_MS },
+      { name: AutomationJobs.CleanupRuleExecutions, data: {} },
+    );
+  }
+
   async enqueueDigestForUser(userId: string): Promise<void> {
     await this.digestQueue.add(
       DigestJobs.SendForUser,
@@ -217,6 +247,8 @@ export class QueueService {
         return this.digestQueue;
       case QueueNames.Approvals:
         return this.approvalsQueue;
+      case QueueNames.Automation:
+        return this.automationQueue;
     }
   }
 }

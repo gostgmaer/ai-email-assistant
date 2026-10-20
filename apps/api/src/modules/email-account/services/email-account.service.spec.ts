@@ -69,7 +69,7 @@ describe('EmailAccountService — default automation seeding', () => {
         data: expect.objectContaining({
           accountId: 'acct-1',
           enabled: false,
-          conditions: [],
+          conditions: { all: [], matchAll: true },
           actions: [{ type: 'AUTO_REPLY', agentId: 'agent-1' }],
         }),
       }),
@@ -134,7 +134,7 @@ describe('EmailAccountService — default automation seeding', () => {
         data: expect.objectContaining({
           accountId: 'acct-2',
           enabled: false,
-          conditions: [],
+          conditions: { all: [], matchAll: true },
           actions: [{ type: 'AUTO_REPLY', agentId: 'agent-2' }],
         }),
       }),

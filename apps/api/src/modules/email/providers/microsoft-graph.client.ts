@@ -297,6 +297,41 @@ export class MicrosoftGraphClient implements MailProviderClient {
     });
   }
 
+  /** Outlook's equivalent of a label is a category. */
+  async addLabel(providerMessageId: string, label: string): Promise<void> {
+    const { categories = [] } = await this.request<{ categories?: string[] }>(
+      `/messages/${providerMessageId}?$select=categories`,
+    );
+    if (categories.some((c) => c.toLowerCase() === label.toLowerCase())) {
+      return;
+    }
+
+    await this.request(`/messages/${providerMessageId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ categories: [...categories, label] }),
+    });
+  }
+
+  async moveMessage(
+    providerMessageId: string,
+    destinationFolderProviderId: string,
+  ): Promise<string | undefined> {
+    // Graph returns the moved copy, which has a new id.
+    const moved = await this.request<{ id?: string } | undefined>(
+      `/messages/${providerMessageId}/move`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ destinationId: destinationFolderProviderId }),
+      },
+    );
+    return moved?.id;
+  }
+
+  async archiveMessage(providerMessageId: string): Promise<string | undefined> {
+    // "archive" is a well-known folder name Graph resolves itself.
+    return this.moveMessage(providerMessageId, 'archive');
+  }
+
   private normalizeMessage(message: GraphMessage): NormalizedMessage {
     const headers = message.internetMessageHeaders ?? [];
     const header = (name: string) =>

@@ -42,10 +42,29 @@ describe('AiProcessingProcessor', () => {
           id: accountId,
           userId,
           email: 'support@company.com',
+          displayName: null,
           autoScheduleMeetings: false,
           autoSendEnabled: true,
           prohibitedPhrases: [],
           aliases: [],
+          autoSendHourlyCap: 10,
+          autoSendDailyCap: 50,
+          autoSendConfidenceThreshold: 70,
+          quietHoursStart: null,
+          quietHoursEnd: null,
+          undoSendSeconds: 0,
+          businessHoursStart: '09:00',
+          businessHoursEnd: '17:00',
+          businessDays: [1, 2, 3, 4, 5],
+          signatureText: null,
+          signatureHtml: null,
+          user: {
+            timezone: 'UTC',
+            displayName: 'Support Team',
+            jobTitle: null,
+            companyName: null,
+          },
+          ...((overrides.account as object) ?? {}),
         },
         messages: [
           {
@@ -107,7 +126,9 @@ describe('AiProcessingProcessor', () => {
               (where.recipient === undefined ||
                 row.recipient === where.recipient) &&
               (where.messageId === undefined ||
-                row.messageId !== (where.messageId as { not: string }).not),
+                row.messageId !== (where.messageId as { not: string }).not) &&
+              (where.status === undefined ||
+                row.status !== (where.status as { not: string }).not),
           ).length,
         ),
       ),
@@ -194,20 +215,23 @@ describe('AiProcessingProcessor', () => {
     const calendarContextService = {
       buildAvailabilityContext: jest.fn().mockResolvedValue(null),
     };
+    const matchedRules = options.rule
+      ? [{ id: 'rule-1', name: 'Rule 1', actions: options.rule }]
+      : [];
     const workflowRuleService = {
-      evaluate: jest
-        .fn()
-        .mockResolvedValue(options.rule === undefined ? null : options.rule),
-      executeActions: jest.fn((actions: WorkflowAction[]) =>
-        Promise.resolve({
-          autoReply: actions.some((a) => a.type === 'AUTO_REPLY'),
-          approvalChainApproverUserIds: actions.find(
-            (a) => a.type === 'REQUIRE_APPROVAL_CHAIN',
-          )
-            ? ['approver-1']
-            : undefined,
-        }),
+      // Builds the rule context like the real service would, so a broken
+      // context builder fails these tests too.
+      evaluate: jest.fn(
+        async (
+          _accountId: string,
+          resolveContext: (needsKnownContact: boolean) => Promise<unknown>,
+        ) => {
+          await resolveContext(false);
+          return matchedRules;
+        },
       ),
+      executeActions: jest.fn().mockResolvedValue(undefined),
+      isKnownContact: jest.fn().mockResolvedValue(false),
     };
     const agentService = { getEnabledSystemPrompt: jest.fn() };
     const contactService = {
@@ -216,6 +240,7 @@ describe('AiProcessingProcessor', () => {
     };
     const notificationService = { create: jest.fn().mockResolvedValue({}) };
     const approvalChainService = { create: jest.fn().mockResolvedValue({}) };
+    const queueService = { enqueueScheduledSend: jest.fn() };
     const configService = {
       get: jest.fn((name: string) => options.env?.[name]),
     } as unknown as ConfigService;
@@ -235,6 +260,7 @@ describe('AiProcessingProcessor', () => {
       notificationService as never,
       approvalChainService as never,
       configService,
+      queueService as never,
     );
 
     const run = () =>
@@ -256,6 +282,7 @@ describe('AiProcessingProcessor', () => {
       workflowRuleService,
       notificationService,
       approvalChainService,
+      queueService,
     };
   }
 
@@ -911,6 +938,219 @@ describe('AiProcessingProcessor', () => {
 
       expect(deps.composeService.deleteDraft).not.toHaveBeenCalled();
       expect(deps.aiClientService.generateReply).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('automation rules and limits (phase 5)', () => {
+    const withAccount = (account: Record<string, unknown>) =>
+      buildMessage({ account });
+
+    it('evaluates rules against the fresh classification and runs every matched rule', async () => {
+      const deps = buildDeps({ rule: [{ type: 'ADD_LABEL', label: 'x' }] });
+      let ruleContext: Record<string, unknown> | undefined;
+      deps.workflowRuleService.evaluate.mockImplementation(
+        async (_accountId, resolveContext) => {
+          ruleContext = (await resolveContext(false)) as Record<
+            string,
+            unknown
+          >;
+          return [
+            {
+              id: 'a',
+              name: 'A',
+              actions: [{ type: 'ADD_LABEL', label: 'x' }],
+            },
+            { id: 'b', name: 'B', actions: [{ type: 'NOTIFY', userId: 'u' }] },
+          ];
+        },
+      );
+
+      await deps.run();
+
+      expect(ruleContext).toMatchObject({
+        category: 'Support',
+        sender: senderAddress.toLowerCase(),
+        isFirstMessage: true,
+      });
+      expect(deps.workflowRuleService.executeActions).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({ id: 'a' }),
+          expect.objectContaining({ id: 'b' }),
+        ],
+        expect.objectContaining({
+          ownerUserId: userId,
+          subject: 'Order question',
+          isAutoReply: false,
+        }),
+      );
+    });
+
+    it('lets the first rule with a reply action decide, even if a later one says AUTO_REPLY', async () => {
+      const deps = buildDeps();
+      deps.workflowRuleService.evaluate.mockResolvedValue([
+        { id: 'hold', name: 'Hold', actions: [{ type: 'REQUIRE_APPROVAL' }] },
+        { id: 'send', name: 'Send', actions: [{ type: 'AUTO_REPLY' }] },
+      ]);
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
+    });
+
+    it("uses the account's own confidence threshold", async () => {
+      const deps = buildDeps({
+        rule: AUTO_REPLY_RULE,
+        validationConfidence: 90,
+        message: withAccount({ autoSendConfidenceThreshold: 95 }),
+      });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+    });
+
+    it('holds as a draft over the hourly cap and tells the owner once', async () => {
+      const deps = buildDeps({
+        rule: AUTO_REPLY_RULE,
+        message: withAccount({ autoSendHourlyCap: 1 }),
+      });
+      deps.ledger.rows.set('other-message:SEND', {
+        messageId: 'other-message',
+        threadId: 'other-thread',
+        accountId,
+        kind: 'SEND',
+        status: 'DONE',
+        recipient: 'someone@else.com',
+      });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        userId,
+        'Auto-send limit reached',
+        expect.stringContaining('per hour'),
+      );
+    });
+
+    it('does not count a cancelled scheduled send toward the caps', async () => {
+      const deps = buildDeps({
+        rule: AUTO_REPLY_RULE,
+        message: withAccount({ autoSendHourlyCap: 1 }),
+      });
+      deps.ledger.rows.set('other-message:SEND', {
+        messageId: 'other-message',
+        threadId: 'other-thread',
+        accountId,
+        kind: 'SEND',
+        status: 'CANCELLED',
+        recipient: 'someone@else.com',
+      });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).toHaveBeenCalledTimes(1);
+    });
+
+    it('schedules the send as a cancellable draft during the undo window', async () => {
+      const deps = buildDeps({
+        rule: AUTO_REPLY_RULE,
+        message: withAccount({ undoSendSeconds: 30 }),
+      });
+      const before = Date.now();
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      const [, , , , options] = deps.composeService.saveDraftReply.mock
+        .calls[0] as [
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        { scheduledSendAt: Date },
+      ];
+      expect(options.scheduledSendAt.getTime()).toBeGreaterThanOrEqual(
+        before + 30_000,
+      );
+      expect(deps.queueService.enqueueScheduledSend).toHaveBeenCalledWith(
+        'draft-1',
+        options.scheduledSendAt,
+      );
+      expect(deps.ledger.rows.get(`${messageId}:SEND`)).toMatchObject({
+        status: 'SCHEDULED',
+        details: expect.objectContaining({
+          draftMessageId: 'draft-1',
+        }) as unknown,
+      });
+      expect(deps.ledger.rows.get(`${messageId}:DRAFT`)).toMatchObject({
+        status: 'DONE',
+      });
+    });
+
+    it('delays the send by a matched DELAY_SEND', async () => {
+      const deps = buildDeps({
+        rule: [{ type: 'AUTO_REPLY' }, { type: 'DELAY_SEND', minutes: 10 }],
+      });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      expect(deps.queueService.enqueueScheduledSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('records why the reply was allowed to send, for the audit log', async () => {
+      const deps = buildDeps({ rule: AUTO_REPLY_RULE });
+
+      await deps.run();
+
+      expect(deps.ledger.rows.get(`${messageId}:SEND`)).toMatchObject({
+        status: 'DONE',
+        details: {
+          rule: { id: 'rule-1', name: 'Rule 1' },
+          confidence: 90,
+          documents: [],
+        },
+      });
+    });
+
+    it('writes as the account owner and appends their signature after generation', async () => {
+      const deps = buildDeps({
+        rule: AUTO_REPLY_RULE,
+        message: withAccount({
+          signatureText: 'Alex Kim\n555-0100',
+          user: {
+            timezone: 'UTC',
+            displayName: 'Alex Kim',
+            jobTitle: 'Support Lead',
+            companyName: 'Acme',
+          },
+        }),
+      });
+
+      await deps.run();
+
+      expect(deps.aiClientService.generateReply).toHaveBeenCalledWith(
+        'Order question',
+        expect.anything(),
+        undefined,
+        undefined,
+        {
+          name: 'Alex Kim',
+          jobTitle: 'Support Lead',
+          company: 'Acme',
+          hasSignature: true,
+        },
+      );
+      const [, sent] = deps.composeService.reply.mock.calls[0] as [
+        string,
+        { bodyText: string },
+      ];
+      expect(sent.bodyText).toBe(
+        'Hi Casey,\n\nIt ships <b>today</b>.\n\nAlex Kim\n555-0100',
+      );
     });
   });
 });

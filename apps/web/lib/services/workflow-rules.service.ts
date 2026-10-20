@@ -1,5 +1,10 @@
 import { apiFetch } from "../api/client";
-import type { WorkflowAction, WorkflowCondition, WorkflowRule } from "../api/types";
+import type {
+  RuleDryRunResult,
+  WorkflowAction,
+  WorkflowConditionGroup,
+  WorkflowRule,
+} from "../api/types";
 
 export async function listWorkflowRules(
   accountId: string,
@@ -11,7 +16,7 @@ export interface WorkflowRuleInput {
   name: string;
   enabled?: boolean;
   order?: number;
-  conditions: WorkflowCondition[];
+  conditions: WorkflowConditionGroup;
   actions: WorkflowAction[];
 }
 
@@ -33,6 +38,28 @@ export async function updateWorkflowRule(
   return apiFetch<WorkflowRule>(
     `/email-accounts/${accountId}/workflow-rules/${ruleId}`,
     { method: "PATCH", body: data },
+  );
+}
+
+/** Tests a saved rule against the last 50 classified messages. */
+export async function dryRunWorkflowRule(
+  accountId: string,
+  ruleId: string,
+): Promise<RuleDryRunResult> {
+  return apiFetch<RuleDryRunResult>(
+    `/email-accounts/${accountId}/workflow-rules/${ruleId}/dry-run`,
+    { method: "POST" },
+  );
+}
+
+/** Tests conditions that aren't saved yet. */
+export async function dryRunConditions(
+  accountId: string,
+  data: { conditions: WorkflowConditionGroup; actions?: WorkflowAction[] },
+): Promise<RuleDryRunResult> {
+  return apiFetch<RuleDryRunResult>(
+    `/email-accounts/${accountId}/workflow-rules/dry-run`,
+    { method: "POST", body: data },
   );
 }
 

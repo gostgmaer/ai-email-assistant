@@ -5,12 +5,71 @@
  * the exact same shape without importing from each other.
  */
 
-export type WorkflowConditionField = 'category' | 'priority' | 'sender';
-export type WorkflowConditionOperator = 'equals' | 'contains';
+/** Text fields, compared case-insensitively. `to`/`cc` are lists: a
+ * positive operator matches when ANY address does, a negative one when
+ * none does. `body` is the message's own text, quoted history stripped. */
+export type WorkflowTextField =
+  | 'category'
+  | 'priority'
+  | 'sentiment'
+  | 'language'
+  | 'sender'
+  | 'senderDomain'
+  | 'to'
+  | 'cc'
+  | 'subject'
+  | 'body';
+
+/** Yes/no facts about the message, compared with equals/notEquals.
+ * isKnownContact: a CRM contact or someone this account has written to.
+ * withinBusinessHours: the account's business hours, in the owner's
+ * timezone. */
+export type WorkflowBooleanField =
+  'containsPii' | 'isFirstMessage' | 'isKnownContact' | 'withinBusinessHours';
+
+export type WorkflowConditionField = WorkflowTextField | WorkflowBooleanField;
+
+export type WorkflowConditionOperator =
+  | 'equals'
+  | 'notEquals'
+  | 'contains'
+  | 'notContains'
+  | 'startsWith'
+  | 'endsWith'
+  /** value is a list; matches when the field equals any entry. */
+  | 'in'
+  | 'notIn'
+  /** Case-insensitive JavaScript regex, run under a time limit — see
+   * rule-conditions.util.ts. */
+  | 'regex';
 
 export interface WorkflowCondition {
   field: WorkflowConditionField;
-  operator: WorkflowConditionOperator;
+  op: WorkflowConditionOperator;
+  value: string | string[] | boolean;
+}
+
+/** Exactly one of all (AND), any (OR) or not. Groups nest. */
+export type WorkflowConditionNode =
+  | WorkflowCondition
+  | { all: WorkflowConditionNode[] }
+  | { any: WorkflowConditionNode[] }
+  | { not: WorkflowConditionNode };
+
+/** A rule's stored `conditions`. A rule that should match every message
+ * must say so with matchAll: true and no conditions — an empty rule is
+ * otherwise rejected, so a half-built rule can't silently match all mail. */
+export type WorkflowConditionGroup = (
+  | { all: WorkflowConditionNode[] }
+  | { any: WorkflowConditionNode[] }
+  | { not: WorkflowConditionNode }
+) & { matchAll?: boolean };
+
+/** v1 condition (flat AND list), still accepted on input and converted —
+ * see normalizeConditions. */
+export interface LegacyWorkflowCondition {
+  field: 'category' | 'priority' | 'sender';
+  operator: 'equals' | 'contains';
   value: string;
 }
 
@@ -90,6 +149,57 @@ export type WorkflowAction =
        * APPROVAL_CHAIN_TTL_HOURS, 72); the current approver is reminded
        * halfway. See ApprovalChainService.sweep. */
       expiresInHours?: number;
-    };
+    }
+  /** Forward the message (text and HTML body, no attachments yet) to an
+   * address, with an optional note above it. Marked Auto-Submitted so
+   * the recipient's own auto-responders stay quiet. */
+  | { type: 'FORWARD'; to: string; note?: string }
+  /** Gmail label / Outlook category / IMAP keyword, by name — created if
+   * it doesn't exist (Gmail). */
+  | { type: 'ADD_LABEL'; label: string }
+  /** Move to one of this account's synced folders (MailFolder id). */
+  | { type: 'MOVE_TO_FOLDER'; folderId: string }
+  /** Out of the inbox: Gmail removes INBOX, Outlook/IMAP move to Archive. */
+  | { type: 'ARCHIVE' }
+  | { type: 'MARK_READ' }
+  /** Hide the thread from the inbox for this many minutes. */
+  | { type: 'SNOOZE'; minutes: number }
+  /** Create an action item for the account owner. The description
+   * defaults to "Follow up: <subject>". */
+  | { type: 'CREATE_TASK'; description?: string; dueInDays?: number }
+  /** POST a JSON summary of the message (no body, a 200-char snippet) to
+   * an HTTPS URL, signed with HMAC-SHA256 in X-Signature. secret is
+   * generated when the rule is saved. Private/internal addresses are
+   * refused — see webhook.util.ts. */
+  | { type: 'WEBHOOK'; url: string; secret?: string }
+  /** Hold an approved auto-reply this many minutes before it sends (it
+   * can be cancelled meanwhile). No effect on drafts. */
+  | { type: 'DELAY_SEND'; minutes: number }
+  /** Don't evaluate any lower rules for this message. */
+  | { type: 'STOP_PROCESSING' };
 
 export type WorkflowActionType = WorkflowAction['type'];
+
+/** Actions that decide how the reply goes out. Only the first matching
+ * rule that has one decides; later rules' reply actions are ignored. */
+export const REPLY_ACTION_TYPES: ReadonlySet<WorkflowActionType> = new Set([
+  'AUTO_REPLY',
+  'REQUIRE_APPROVAL',
+  'REQUIRE_APPROVAL_CHAIN',
+]);
+
+export type ReplyAction = Extract<
+  WorkflowAction,
+  { type: 'AUTO_REPLY' | 'REQUIRE_APPROVAL' | 'REQUIRE_APPROVAL_CHAIN' }
+>;
+
+export function isReplyAction(action: WorkflowAction): action is ReplyAction {
+  return REPLY_ACTION_TYPES.has(action.type);
+}
+
+/** What one action did, as recorded in RuleExecution.results. */
+export interface RuleActionResult {
+  type: WorkflowActionType;
+  status: 'done' | 'skipped' | 'failed';
+  detail?: string;
+}

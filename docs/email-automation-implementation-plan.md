@@ -30,7 +30,8 @@ These are solo-developer estimates.
 | 2 | ✅ Done (2026-10-20), except push sync (2b). Migration `20261020090200_automation_phase2_sync_health`. API: 264/264 tests and the typecheck pass. Not yet run against live Gmail, Outlook or IMAP. |
 | 3 | ✅ Done (2026-10-20). Migration `20261020090300_automation_phase3_security`, which backfills approval-chain snapshots. API: 292/292 tests and the typecheck pass. AI service: 43/43 pytest (up from 18). Not run against a live model or mailbox. |
 | 4 | ✅ Done (2026-10-20). Migration `20261020090400_automation_phase4_quality` backfills `lastMessageFromSelf`. API: 325/325 tests and the typecheck pass. AI service: 46/46 pytest. Not run against a live model or mailbox. |
-| 5–6 | Not started |
+| 5 | ✅ Done (2026-10-20). Migration `20261020090500_automation_phase5_features` converts stored rule conditions to v2. API: 438/438 tests and the typecheck pass. AI service: 51/51 pytest. Not run against a live model, mailbox or webhook receiver. |
+| 6 | Not started |
 
 **Where Phase 1 differs from the plan below:**
 - **1.3 uses an `AutomationEffect` ledger only, with no `aiStage` column.**
@@ -91,6 +92,41 @@ These are solo-developer estimates.
 - **4.3** was already done in Phase 1.
 - **4.4** uses the denormalized `EmailThread.lastMessageFromSelf` (the plan's `lastDirection` option), kept in step with `lastMessageAt`. The query is newest first and excludes drafts.
 - **4.5 where trimming happens.** Quote stripping and the budget run in apps/api (`thread-context.util.ts`) with heuristics, not `email-reply-parser`. The limits are 10 messages, about 24k characters, and 8k per message. The first and latest messages are always kept.
+
+**Where Phase 5 differs from the plan below:**
+- **5.1 conditions.**
+  - There is no `version` field: a stored list is v1, an object is v2. The migration converts stored rows, and v1 input is still accepted.
+  - `gt`/`lt` are left out, because no condition field is numeric. `hasAttachment` waits for attachment data in 6.1.
+  - Regexes run inside a `vm` context with a 25 ms timeout instead of `re2`, which avoids a native dependency. Patterns are capped at 200 characters and input at 10k. A timeout counts as no match.
+  - `to`/`cc` match when any address does. Their negative operators require that no address does.
+  - The rule builder UI edits one all/any level. The API accepts nesting up to 5 deep.
+- **5.2 actions and execution.**
+  - One `RULE_ACTIONS` ledger claim covers every matched rule's actions, rather than one claim per action. Actions are at most once; a crash partway through loses the rest.
+  - **Behaviour change:** within the rule that decides the reply, holding wins. With `REQUIRE_APPROVAL` + `AUTO_REPLY` on one rule, the reply used to auto-send; now it's held. `REQUIRE_APPROVAL_CHAIN` already won.
+  - FORWARD has no attachments yet (6.1). It's marked `Auto-Submitted: auto-generated` and never forwards an automatic reply, which prevents forwarding loops.
+  - ADD_LABEL is a Gmail label (created if missing), an Outlook category, or an IMAP keyword.
+  - ARCHIVE and MOVE_TO_FOLDER also refile the local thread. Microsoft Graph gives a moved message a new id, and the stored row follows it, because replies are created from that id. IMAP ARCHIVE needs a `\Archive` folder.
+  - WEBHOOK:
+    - A per-action secret is generated when the rule is saved. Requests are signed `X-Signature: sha256=HMAC(secret, "<timestamp>.<body>")` with `X-Signature-Timestamp`.
+    - The private-IP check runs at connect time, so DNS rebinding is covered. Redirects aren't followed, and there's a 5 s timeout.
+    - Secrets are redacted from history and dry-runs.
+- **5.3 history and audit.**
+  - `RuleExecution` records only matched rules, so there's no `matched` column. Its daily cleanup runs on the new `automation` queue.
+  - Dry-run also works for unsaved rules (`POST …/workflow-rules/dry-run`).
+  - The audit log is `GET /email-accounts/:id/automation-log`. It merges autonomous sends (`AutomationEffect.details`: rule, confidence, documents) with rule runs. Approvers stay on the approval-chain record from Phase 3.
+- **5.4 limits.**
+  - The settings are columns on `EmailAccount`, not an `AutomationSettings` table. The timezone lives only on `User`, and the owner's is used. Caps are rolling 1 h / 24 h windows, and cancelled sends don't count.
+  - How a scheduled send works:
+    - It is an AI draft with `scheduledSendAt`, a `SCHEDULED` SEND effect, and a delayed job.
+    - Cancelling and sending both make a conditional status change on the same row, so only one can win.
+    - Editing, deleting, or manually sending the draft cancels the schedule.
+    - The kill switches are checked again when the job fires.
+  - The quiet-hours end can be off by the DST shift on the change night.
+  - The existing `autoSendEnabled` switch is now also exposed in the API and UI.
+- **5.5 identity.**
+  - `User.displayName` already existed.
+  - Signatures are imported only from Gmail, because Graph has no signature API. The import happens only while the account has never had one set; `""` means none, on purpose.
+  - The signature is appended after the PII, policy, and grounding checks, so its phone number can't block a send. The model is told a signature will be added.
 
 **Conventions for every phase:**
 - One Prisma migration per phase. Name it `NNN_automation_phaseN_<topic>`.
@@ -493,7 +529,7 @@ Use a BullMQ dedupe key `ai-thread-${threadId}` with a short delay of about 30 s
 | 2 | `EmailAccount.syncStatus`, `consecutiveFailures`, `nextSyncAt`, `syncCursor`, `aliases`, `lastSyncError`; `EmailMessage.aiError` |
 | 3 | `EmailMessage.replyTo`, `messageIdHeader`, `references`; `Document.sensitivity`; `ApprovalChain.expiresAt`, snapshot fields, relation `SetNull` |
 | 4 | `EmailMessage.needsReply`, `replyReason`; optional `EmailThread.lastDirection` |
-| 5 | `WorkflowRule.conditionsVersion`; new `RuleExecution`, `AutomationSettings`; `User.timezone`, `displayName`, `jobTitle`, `companyName`; `EmailAccount.signatureHtml/Text` |
+| 5 | (as built) new `RuleExecution`; `User.timezone`, `jobTitle`, `companyName`; `EmailAccount` auto-send caps, confidence threshold, quiet/business hours, `undoSendSeconds`, `signatureHtml/Text`; `EmailMessage.scheduledSendAt`; `AutomationEffect.details` and statuses `SCHEDULED`/`CANCELLED`; stored rule conditions converted to v2 |
 | 6 | new `EmailAttachment`, `NotificationPreference`, `AgentTemplate` |
 
 ## New env vars

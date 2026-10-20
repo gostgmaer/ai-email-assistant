@@ -5,6 +5,9 @@ export interface PublicUser {
   email: string;
   displayName: string | null;
   avatar: string | null;
+  jobTitle: string | null;
+  companyName: string | null;
+  timezone: string;
   emailVerifiedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +20,9 @@ export function toPublicUser(user: UserModel): PublicUser {
     email: user.email,
     displayName: user.displayName,
     avatar: user.avatar,
+    jobTitle: user.jobTitle,
+    companyName: user.companyName,
+    timezone: user.timezone,
     emailVerifiedAt: user.emailVerifiedAt,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

@@ -53,6 +53,9 @@ import { QueueService } from './queue.service';
       {
         name: QueueNames.Approvals,
       },
+      {
+        name: QueueNames.Automation,
+      },
     ),
   ],
 

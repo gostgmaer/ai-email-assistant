@@ -2,6 +2,7 @@ import { apiFetch } from "../api/client";
 import type {
   EmailMessage,
   EmailThreadDetail,
+  MailFolderSummary,
   ThreadNote,
   ThreadsPage,
 } from "../api/types";
@@ -175,6 +176,19 @@ export async function sendDraft(id: string): Promise<EmailMessage> {
   return apiFetch<EmailMessage>(`/email/drafts/${id}/send`, {
     method: "POST",
   });
+}
+
+/** Stops a scheduled auto-reply from sending; it stays as a draft. */
+export async function cancelScheduledSend(id: string): Promise<EmailMessage> {
+  return apiFetch<EmailMessage>(`/email/drafts/${id}/cancel-scheduled-send`, {
+    method: "POST",
+  });
+}
+
+export async function listAccountFolders(
+  accountId: string,
+): Promise<MailFolderSummary[]> {
+  return apiFetch<MailFolderSummary[]>(`/email/accounts/${accountId}/folders`);
 }
 
 export async function deleteDraft(id: string): Promise<void> {

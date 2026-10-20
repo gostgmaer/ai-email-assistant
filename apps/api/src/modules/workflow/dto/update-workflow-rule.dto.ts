@@ -9,8 +9,9 @@ import {
 } from 'class-validator';
 
 import {
+  LegacyWorkflowCondition,
   WorkflowAction,
-  WorkflowCondition,
+  WorkflowConditionGroup,
 } from '../types/workflow-rule.types';
 import { passthroughArray } from './passthrough-array.transform';
 
@@ -33,11 +34,12 @@ export class UpdateWorkflowRuleDto {
 
   // See CreateWorkflowRuleDto's comment / passthroughArray's own comment
   // for why this is required, not decorative.
-  @ApiPropertyOptional({ type: [Object] })
+  // A v2 group object or a v1 list — shape checked by validateConditions,
+  // see CreateWorkflowRuleDto.
+  @ApiPropertyOptional({ type: Object })
   @IsOptional()
-  @IsArray()
   @passthroughArray()
-  conditions?: WorkflowCondition[];
+  conditions?: WorkflowConditionGroup | LegacyWorkflowCondition[];
 
   @ApiPropertyOptional({ type: [Object] })
   @IsOptional()

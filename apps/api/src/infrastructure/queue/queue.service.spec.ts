@@ -24,6 +24,7 @@ describe('QueueService', () => {
       other,
       other,
       other,
+      other,
     );
 
     return { service, aiQueue, emailSyncQueue, job };

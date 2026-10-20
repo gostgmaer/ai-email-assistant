@@ -20,7 +20,11 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
-import { CreateWorkflowRuleDto, UpdateWorkflowRuleDto } from '../dto';
+import {
+  CreateWorkflowRuleDto,
+  DryRunWorkflowRuleDto,
+  UpdateWorkflowRuleDto,
+} from '../dto';
 import { WorkflowRuleService } from '../services/workflow-rule.service';
 
 /**
@@ -55,6 +59,35 @@ export class WorkflowRuleController {
     @Body() dto: CreateWorkflowRuleDto,
   ) {
     return this.workflowRuleService.create(user.sub, accountId, dto);
+  }
+
+  @Post('dry-run')
+  @ApiOperation({
+    summary:
+      'Test unsaved rule conditions against the last 50 classified messages (no side effects)',
+  })
+  @ApiResponse({ status: 201, description: 'The messages that would match' })
+  async dryRunDraft(
+    @CurrentUser() user: JwtPayload,
+    @Param('accountId') accountId: string,
+    @Body() dto: DryRunWorkflowRuleDto,
+  ) {
+    return this.workflowRuleService.dryRun(user.sub, accountId, dto);
+  }
+
+  @Post(':ruleId/dry-run')
+  @ApiOperation({
+    summary:
+      'Test a saved rule against the last 50 classified messages (no side effects)',
+  })
+  @ApiResponse({ status: 201, description: 'The messages that would match' })
+  @ApiResponse({ status: 404, description: 'Rule not found' })
+  async dryRun(
+    @CurrentUser() user: JwtPayload,
+    @Param('accountId') accountId: string,
+    @Param('ruleId') ruleId: string,
+  ) {
+    return this.workflowRuleService.dryRun(user.sub, accountId, { ruleId });
   }
 
   @Patch(':ruleId')

@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/Button";
 import type {
   AccountMember,
   Integration,
+  RuleDryRunResult,
   WorkflowAction,
   WorkflowActionType,
-  WorkflowCondition,
-  WorkflowConditionField,
-  WorkflowConditionOperator,
 } from "@/lib/api/types";
 import { listAgents } from "@/lib/services/agents.service";
 import { listAccountMembers } from "@/lib/services/email-accounts.service";
@@ -18,30 +16,30 @@ import { listIntegrations } from "@/lib/services/integrations.service";
 import {
   createWorkflowRule,
   deleteWorkflowRule,
+  dryRunConditions,
+  dryRunWorkflowRule,
   listWorkflowRules,
   updateWorkflowRule,
 } from "@/lib/services/workflow-rules.service";
 
+import {
+  RuleActionExtraFields,
+  hasExtraFields,
+} from "./RuleActionExtraFields";
+import {
+  type ConditionsDraft,
+  RuleConditionsEditor,
+  describeConditions,
+  emptyConditionsDraft,
+  toConditionGroup,
+} from "./RuleConditionsEditor";
+import { RuleTestResults } from "./RuleTestResults";
 import {
   ApprovalChainActionFields,
   HubspotActionFields,
   SlackActionFields,
   TeamsActionFields,
 } from "./WorkflowActionFields";
-
-const CONDITION_FIELDS: { value: WorkflowConditionField; label: string }[] = [
-  { value: "category", label: "Category" },
-  { value: "priority", label: "Priority" },
-  { value: "sender", label: "Sender address" },
-];
-
-const CONDITION_OPERATORS: {
-  value: WorkflowConditionOperator;
-  label: string;
-}[] = [
-  { value: "equals", label: "equals" },
-  { value: "contains", label: "contains" },
-];
 
 const ACTION_TYPES: { value: WorkflowActionType; label: string }[] = [
   { value: "AUTO_REPLY", label: "Auto-send the AI reply" },
@@ -52,11 +50,17 @@ const ACTION_TYPES: { value: WorkflowActionType; label: string }[] = [
   { value: "CREATE_HUBSPOT_CONTACT", label: "Sync sender to HubSpot" },
   { value: "REQUIRE_APPROVAL", label: "Hold as draft (no auto-reply)" },
   { value: "REQUIRE_APPROVAL_CHAIN", label: "Require multi-step approval" },
+  { value: "FORWARD", label: "Forward to address" },
+  { value: "ADD_LABEL", label: "Add label" },
+  { value: "MOVE_TO_FOLDER", label: "Move to folder" },
+  { value: "ARCHIVE", label: "Archive" },
+  { value: "MARK_READ", label: "Mark as read" },
+  { value: "SNOOZE", label: "Snooze thread" },
+  { value: "CREATE_TASK", label: "Create a task" },
+  { value: "WEBHOOK", label: "Call a webhook" },
+  { value: "DELAY_SEND", label: "Delay the auto-reply" },
+  { value: "STOP_PROCESSING", label: "Stop (skip lower rules)" },
 ];
-
-function emptyCondition(): WorkflowCondition {
-  return { field: "category", operator: "equals", value: "" };
-}
 
 function emptyAction(): WorkflowAction {
   return { type: "AUTO_REPLY" };
@@ -75,8 +79,24 @@ function actionOfType(type: WorkflowActionType, members: AccountMember[] | undef
       return { type, integrationId: "" };
     case "REQUIRE_APPROVAL_CHAIN":
       return { type, approverUserIds: [] };
+    case "FORWARD":
+      return { type, to: "" };
+    case "ADD_LABEL":
+      return { type, label: "" };
+    case "MOVE_TO_FOLDER":
+      return { type, folderId: "" };
+    case "SNOOZE":
+      return { type, minutes: 24 * 60 };
+    case "WEBHOOK":
+      return { type, url: "" };
+    case "DELAY_SEND":
+      return { type, minutes: 5 };
+    case "CREATE_TASK":
     case "AUTO_REPLY":
     case "REQUIRE_APPROVAL":
+    case "ARCHIVE":
+    case "MARK_READ":
+    case "STOP_PROCESSING":
       return { type };
   }
 }
@@ -91,10 +111,15 @@ export function WorkflowRulesPanel({
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
-  const [conditions, setConditions] = useState<WorkflowCondition[]>([
-    emptyCondition(),
-  ]);
+  const [conditions, setConditions] = useState<ConditionsDraft>(
+    emptyConditionsDraft,
+  );
   const [actions, setActions] = useState<WorkflowAction[]>([emptyAction()]);
+  // Which rule's "Test rule" result is showing ("form" = the unsaved one).
+  const [testResult, setTestResult] = useState<{
+    key: string;
+    result: RuleDryRunResult;
+  } | null>(null);
 
   const { data: rules, isLoading } = useQuery({
     queryKey: ["workflow-rules", accountId],
@@ -123,14 +148,32 @@ export function WorkflowRulesPanel({
   }
 
   const createMutation = useMutation({
-    mutationFn: () => createWorkflowRule(accountId, { name, conditions, actions }),
+    mutationFn: () =>
+      createWorkflowRule(accountId, {
+        name,
+        conditions: toConditionGroup(conditions),
+        actions,
+      }),
     onSuccess: () => {
       setName("");
-      setConditions([emptyCondition()]);
+      setConditions(emptyConditionsDraft());
       setActions([emptyAction()]);
       setShowForm(false);
+      setTestResult(null);
       void invalidate();
     },
+  });
+
+  const testMutation = useMutation({
+    mutationFn: (ruleId?: string) =>
+      ruleId
+        ? dryRunWorkflowRule(accountId, ruleId)
+        : dryRunConditions(accountId, {
+            conditions: toConditionGroup(conditions),
+            actions,
+          }),
+    onSuccess: (result, ruleId) =>
+      setTestResult({ key: ruleId ?? "form", result }),
   });
 
   const toggleMutation = useMutation({
@@ -147,13 +190,6 @@ export function WorkflowRulesPanel({
   function memberLabel(userId: string) {
     const member = members?.find((m) => m.userId === userId);
     return member ? (member.user.displayName ?? member.user.email) : userId;
-  }
-
-  function describeCondition(condition: WorkflowCondition) {
-    const fieldLabel =
-      CONDITION_FIELDS.find((f) => f.value === condition.field)?.label ??
-      condition.field;
-    return `${fieldLabel} ${condition.operator} "${condition.value}"`;
   }
 
   function describeAction(action: WorkflowAction) {
@@ -195,6 +231,33 @@ export function WorkflowRulesPanel({
         return "Hold as draft";
       case "REQUIRE_APPROVAL_CHAIN":
         return `Require approval from ${action.approverUserIds.map(memberLabel).join(" → ")}`;
+      case "FORWARD":
+        return `Forward to ${action.to}`;
+      case "ADD_LABEL":
+        return `Label "${action.label}"`;
+      case "MOVE_TO_FOLDER":
+        return "Move to folder";
+      case "ARCHIVE":
+        return "Archive";
+      case "MARK_READ":
+        return "Mark as read";
+      case "SNOOZE":
+        return `Snooze ${Math.round(action.minutes / 60)}h`;
+      case "CREATE_TASK":
+        return `Create task${action.description ? ` "${action.description}"` : ""}`;
+      case "WEBHOOK": {
+        let host = action.url;
+        try {
+          host = new URL(action.url).host;
+        } catch {
+          // Show the raw value.
+        }
+        return `Webhook to ${host}${action.secret ? ` (signing secret ${action.secret})` : ""}`;
+      }
+      case "DELAY_SEND":
+        return `Delay auto-reply ${action.minutes} min`;
+      case "STOP_PROCESSING":
+        return "Stop processing lower rules";
     }
   }
 
@@ -202,9 +265,10 @@ export function WorkflowRulesPanel({
     <div className="mt-4 border-t border-zinc-100 pt-3">
       <p className="mb-2 text-xs text-zinc-500">
         Rules run in order on every new message, after AI classification.
-        The first rule whose conditions all match wins; its actions run. No
-        match falls back to holding the AI reply as a draft for you to
-        review.
+        Every rule that matches runs its actions, until one says
+        &quot;Stop&quot;. How the reply goes out (auto-send, hold, approval)
+        is decided by the first matching rule that says; no such rule falls
+        back to holding the AI reply as a draft for you to review.
       </p>
 
       {isLoading && <p className="text-xs text-zinc-400">Loading rules…</p>}
@@ -216,6 +280,17 @@ export function WorkflowRulesPanel({
               <p className="text-sm font-medium text-zinc-900">{rule.name}</p>
               {isOwner && (
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => testMutation.mutate(rule.id)}
+                    loading={
+                      testMutation.isPending &&
+                      testMutation.variables === rule.id
+                    }
+                  >
+                    Test
+                  </Button>
                   <button
                     type="button"
                     onClick={() =>
@@ -248,14 +323,17 @@ export function WorkflowRulesPanel({
               )}
             </div>
             <p className="mt-1 text-xs text-zinc-500">
-              When{" "}
-              {rule.conditions.length === 0
-                ? "any message arrives"
-                : rule.conditions.map(describeCondition).join(" and ")}
+              When {describeConditions(rule.conditions)}
             </p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs break-all text-zinc-500">
               Then: {rule.actions.map(describeAction).join(", ")}
             </p>
+            {testResult?.key === rule.id && (
+              <RuleTestResults
+                result={testResult.result}
+                onClose={() => setTestResult(null)}
+              />
+            )}
           </li>
         ))}
         {rules?.length === 0 && !isLoading && (
@@ -288,94 +366,7 @@ export function WorkflowRulesPanel({
             className="w-full rounded-md border border-zinc-300 px-3 py-1.5 text-sm"
           />
 
-          <div>
-            <p className="mb-1 text-xs font-medium text-zinc-600">
-              When all of these match:
-            </p>
-            <div className="space-y-1.5">
-              {conditions.map((condition, i) => (
-                <div key={i} className="flex gap-1.5">
-                  <select
-                    value={condition.field}
-                    onChange={(e) =>
-                      setConditions(
-                        conditions.map((c, j) =>
-                          j === i
-                            ? {
-                                ...c,
-                                field: e.target.value as WorkflowConditionField,
-                              }
-                            : c,
-                        ),
-                      )
-                    }
-                    className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
-                  >
-                    {CONDITION_FIELDS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={condition.operator}
-                    onChange={(e) =>
-                      setConditions(
-                        conditions.map((c, j) =>
-                          j === i
-                            ? {
-                                ...c,
-                                operator: e.target
-                                  .value as WorkflowConditionOperator,
-                              }
-                            : c,
-                        ),
-                      )
-                    }
-                    className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
-                  >
-                    {CONDITION_OPERATORS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    required
-                    placeholder="value"
-                    value={condition.value}
-                    onChange={(e) =>
-                      setConditions(
-                        conditions.map((c, j) =>
-                          j === i ? { ...c, value: e.target.value } : c,
-                        ),
-                      )
-                    }
-                    className="min-w-0 flex-1 rounded-md border border-zinc-300 px-2 py-1 text-xs"
-                  />
-                  {conditions.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setConditions(conditions.filter((_, j) => j !== i))
-                      }
-                      className="px-1 text-xs text-zinc-400 hover:text-red-600"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setConditions([...conditions, emptyCondition()])}
-              className="mt-1 text-xs text-indigo-600 hover:underline"
-            >
-              + Add condition
-            </button>
-          </div>
+          <RuleConditionsEditor value={conditions} onChange={setConditions} />
 
           <div>
             <p className="mb-1 text-xs font-medium text-zinc-600">
@@ -536,6 +527,15 @@ export function WorkflowRulesPanel({
                       }
                     />
                   )}
+                  {hasExtraFields(action) && (
+                    <RuleActionExtraFields
+                      accountId={accountId}
+                      action={action}
+                      onChange={(next) =>
+                        setActions(actions.map((a, j) => (j === i ? next : a)))
+                      }
+                    />
+                  )}
                   {action.type === "REQUIRE_APPROVAL_CHAIN" && (
                     <ApprovalChainActionFields
                       action={action}
@@ -568,17 +568,33 @@ export function WorkflowRulesPanel({
             </button>
           </div>
 
-          {createMutation.isError && (
+          {(createMutation.isError || testMutation.isError) && (
             <p className="text-xs text-red-600">
-              {createMutation.error instanceof Error
-                ? createMutation.error.message
-                : "Could not create rule"}
+              {(createMutation.error ?? testMutation.error) instanceof Error
+                ? (createMutation.error ?? testMutation.error)?.message
+                : "Could not save the rule"}
             </p>
+          )}
+
+          {testResult?.key === "form" && (
+            <RuleTestResults
+              result={testResult.result}
+              onClose={() => setTestResult(null)}
+            />
           )}
 
           <div className="flex gap-2">
             <Button type="submit" size="sm" loading={createMutation.isPending}>
               Save rule
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => testMutation.mutate(undefined)}
+              loading={testMutation.isPending && !testMutation.variables}
+            >
+              Test rule
             </Button>
             <Button
               type="button"

@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
 import { EmailAccountService } from '../../email-account';
@@ -383,6 +383,128 @@ describe('ComposeService', () => {
             '<root@mail.example.com>',
             '<original@mail.example.com>',
           ],
+        }),
+      );
+    });
+  });
+
+  describe('scheduled auto-replies', () => {
+    const scheduledAt = new Date('2026-10-20T12:00:30Z');
+
+    function buildDeps(effectStatus: string | null = 'SCHEDULED') {
+      const base = buildPrismaMock();
+      const prisma = {
+        ...base,
+        emailMessage: {
+          ...base.emailMessage,
+          update: jest.fn().mockResolvedValue({}),
+          findUniqueOrThrow: jest
+            .fn()
+            .mockResolvedValue({ id: draftMessageId }),
+        },
+        automationEffect: {
+          updateMany: jest
+            .fn()
+            .mockResolvedValue({ count: effectStatus === 'SCHEDULED' ? 1 : 0 }),
+          findUnique: jest
+            .fn()
+            .mockResolvedValue(effectStatus ? { status: effectStatus } : null),
+        },
+      };
+      prisma.emailMessage.findUnique.mockResolvedValue({
+        ...buildDraftMock(),
+        scheduledSendAt: scheduledAt,
+        inReplyToMessageId: null,
+      });
+
+      const sendMessage = jest
+        .fn()
+        .mockResolvedValue({ providerMessageId: 'sent-1', providerThreadId });
+      const service = new ComposeService(
+        prisma as unknown as PrismaService,
+        {
+          getAccessibleAccountOrThrow: jest
+            .fn()
+            .mockResolvedValue({ id: accountId, email: 'me@example.com' }),
+        } as unknown as EmailAccountService,
+        {
+          createClient: jest.fn().mockResolvedValue({ sendMessage }),
+        } as unknown as MailProviderFactory,
+        {} as unknown as InboxService,
+      );
+
+      return { service, prisma, sendMessage };
+    }
+
+    function withOriginal(prisma: ReturnType<typeof buildDeps>['prisma']) {
+      prisma.emailMessage.findUnique.mockResolvedValue({
+        ...buildDraftMock(),
+        scheduledSendAt: scheduledAt,
+        inReplyToMessageId: 'original-1',
+      });
+    }
+
+    it('cancelling moves the send SCHEDULED -> CANCELLED and keeps the draft', async () => {
+      const { service, prisma } = buildDeps();
+      withOriginal(prisma);
+
+      await service.cancelScheduledSend('user-1', draftMessageId);
+
+      expect(prisma.automationEffect.updateMany).toHaveBeenCalledWith({
+        where: { messageId: 'original-1', kind: 'SEND', status: 'SCHEDULED' },
+        data: { status: 'CANCELLED' },
+      });
+      expect(prisma.emailMessage.update).toHaveBeenCalledWith({
+        where: { id: draftMessageId },
+        data: { scheduledSendAt: null },
+      });
+      expect(prisma.emailThread.delete).not.toHaveBeenCalled();
+    });
+
+    it('refuses to cancel a reply that is already being sent', async () => {
+      const { service, prisma } = buildDeps('PENDING');
+      withOriginal(prisma);
+
+      await expect(
+        service.cancelScheduledSend('user-1', draftMessageId),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.emailMessage.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses to cancel a draft that is not scheduled', async () => {
+      const { service, prisma } = buildDeps();
+      prisma.emailMessage.findUnique.mockResolvedValue(buildDraftMock());
+
+      await expect(
+        service.cancelScheduledSend('user-1', draftMessageId),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('a person sending a scheduled draft early cancels the schedule first, so it goes out once', async () => {
+      const { service, prisma, sendMessage } = buildDeps();
+      withOriginal(prisma);
+      Object.assign(service, {
+        sendDraftAsReply: jest.fn().mockResolvedValue({ id: 'sent' }),
+      });
+
+      await service.sendDraft('user-1', draftMessageId);
+
+      expect(prisma.automationEffect.updateMany).toHaveBeenCalledTimes(1);
+      expect(sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('the scheduler sends without touching the schedule, with the given headers', async () => {
+      const { service, prisma, sendMessage } = buildDeps();
+
+      await service.sendDraft('user-1', draftMessageId, {
+        fromSchedule: true,
+        headers: { 'Auto-Submitted': 'auto-replied' },
+      });
+
+      expect(prisma.automationEffect.updateMany).not.toHaveBeenCalled();
+      expect(sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          headers: { 'Auto-Submitted': 'auto-replied' },
         }),
       );
     });

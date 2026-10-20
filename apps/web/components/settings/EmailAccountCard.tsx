@@ -10,6 +10,8 @@ import {
 import { providerLabel } from "@/lib/utils/format";
 
 import { AgentsPanel } from "./AgentsPanel";
+import { AutomationLogPanel } from "./AutomationLogPanel";
+import { AutomationSettingsPanel } from "./AutomationSettingsPanel";
 import { ContactsPanel } from "./ContactsPanel";
 import { IntegrationsPanel } from "./IntegrationsPanel";
 import { MembersPanel } from "./MembersPanel";
@@ -81,6 +83,8 @@ export function EmailAccountCard({
     () => autoExpandIntegrations ?? false,
   );
   const [showPolicy, setShowPolicy] = useState(false);
+  const [showAutomation, setShowAutomation] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
   const [policyInput, setPolicyInput] = useState(() =>
     account.prohibitedPhrases.join(", "),
   );
@@ -192,6 +196,20 @@ export function EmailAccountCard({
               <Button
                 variant="secondary"
                 size="sm"
+                onClick={() => setShowAutomation((v) => !v)}
+              >
+                Automation{account.autoSendEnabled ? "" : " (auto-send off)"}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowActivity((v) => !v)}
+              >
+                Activity
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowAgents((v) => !v)}
               >
                 Agents
@@ -244,6 +262,10 @@ export function EmailAccountCard({
       {showWorkflows && (
         <WorkflowRulesPanel accountId={account.id} isOwner={isOwner} />
       )}
+
+      {showAutomation && isOwner && <AutomationSettingsPanel account={account} />}
+
+      {showActivity && isOwner && <AutomationLogPanel accountId={account.id} />}
 
       {showAgents && <AgentsPanel accountId={account.id} isOwner={isOwner} />}
 

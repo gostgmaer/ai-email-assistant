@@ -39,6 +39,13 @@ export interface GenerateReplyResponse {
   usage: TokenUsage;
 }
 
+export interface SenderProfile {
+  name?: string | null;
+  jobTitle?: string | null;
+  company?: string | null;
+  hasSignature: boolean;
+}
+
 export interface RewriteResponse {
   text: string;
   provider: string;
@@ -344,12 +351,24 @@ export class AiClientService {
     // AI Agents (v2.0 §4): when set, replaces apps/ai's default reply.md
     // prompt entirely for this call — see ReplyRequest.system_prompt_override.
     systemPromptOverride?: string,
+    // Who the reply is written as (the mailbox owner's profile), and
+    // whether a signature will be appended afterwards — see
+    // ReplyRequest.sender_profile.
+    senderProfile?: SenderProfile,
   ): Promise<GenerateReplyResponse> {
     const res = await this.post<RawReplyResponse>('/email/reply', {
       subject,
       thread,
       instruction,
       system_prompt_override: systemPromptOverride,
+      sender_profile: senderProfile
+        ? {
+            name: senderProfile.name ?? undefined,
+            job_title: senderProfile.jobTitle ?? undefined,
+            company: senderProfile.company ?? undefined,
+            has_signature: senderProfile.hasSignature,
+          }
+        : undefined,
     });
 
     return {

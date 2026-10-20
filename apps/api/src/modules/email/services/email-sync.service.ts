@@ -223,13 +223,43 @@ export class EmailSyncService {
       ];
       return await this.prisma.emailAccount.update({
         where: { id: account.id },
-        data: { aliases, aliasesRefreshedAt: new Date() },
+        data: {
+          aliases,
+          aliasesRefreshedAt: new Date(),
+          signatureHtml: await this.importSignature(account, client),
+        },
       });
     } catch (error) {
       this.logger.warn(
         `Couldn't refresh aliases for account ${account.id}: ${errorMessage(error)}`,
       );
       return account;
+    }
+  }
+
+  /** The provider's signature (Gmail sendAs), for an account that has
+   * never had one set here — null signature fields mean "never set"; an
+   * empty string is the user choosing none, and is left alone. Returns
+   * undefined (no change) otherwise or on failure. */
+  private async importSignature(
+    account: EmailAccountModel,
+    client: MailProviderClient,
+  ): Promise<string | undefined> {
+    if (
+      !client.getSignature ||
+      account.signatureHtml !== null ||
+      account.signatureText !== null
+    ) {
+      return undefined;
+    }
+
+    try {
+      return (await client.getSignature()) ?? undefined;
+    } catch (error) {
+      this.logger.warn(
+        `Couldn't import the signature for account ${account.id}: ${errorMessage(error)}`,
+      );
+      return undefined;
     }
   }
 

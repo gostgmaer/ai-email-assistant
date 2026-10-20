@@ -110,6 +110,30 @@ export interface MailProviderClient {
   ): Promise<FolderChangeSet>;
   /** The mailbox's other send-as addresses, lowercased. Optional. */
   listAliases?(): Promise<string[]>;
+  /** The default send-as signature (HTML), if the provider exposes one
+   * (Gmail). Null when none is set. Optional. */
+  getSignature?(): Promise<string | null>;
+
+  /** Rule actions (ADD_LABEL / MOVE_TO_FOLDER / ARCHIVE). Optional — a
+   * provider without one makes that action fail for its accounts. label is
+   * a display name (Gmail label, Outlook category, IMAP keyword).
+   * moveMessage/archiveMessage resolve to the message's NEW provider id when
+   * moving re-keys it (Microsoft Graph), so the stored row can follow —
+   * replies are created from that id. Undefined when the id is stable. */
+  addLabel?(
+    providerMessageId: string,
+    label: string,
+    folderProviderId?: string,
+  ): Promise<void>;
+  moveMessage?(
+    providerMessageId: string,
+    destinationFolderProviderId: string,
+    sourceFolderProviderId?: string,
+  ): Promise<string | undefined>;
+  archiveMessage?(
+    providerMessageId: string,
+    folderProviderId?: string,
+  ): Promise<string | undefined>;
 
   listFolders(): Promise<NormalizedFolder[]>;
   listMessages(
