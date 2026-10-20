@@ -17,6 +17,7 @@ import {
 } from '../dto';
 import { NormalizedParticipant } from '../interfaces';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
+import { textToSafeHtml } from '../utils/text-to-html.util';
 import { InboxService } from './inbox.service';
 
 /** Provenance of an AI-generated reply — set only by the autonomous
@@ -35,7 +36,18 @@ export interface GenerationMetadata {
     filename: string;
     distance: number;
   }>;
+  /** Set only on held drafts: the AI's text exactly as generated, so
+   * sendDraft() can tell whether a human edited it before sending. */
+  draftText?: string;
 }
+
+/** Headers set on every autonomous (unreviewed) reply — RFC 3834 asks
+ * automatic responders to mark their mail so other responders don't
+ * answer it, which is what stops two auto-responders looping. */
+export const AUTO_REPLY_HEADERS: Record<string, string> = {
+  'Auto-Submitted': 'auto-replied',
+  'X-Auto-Response-Suppress': 'All',
+};
 
 @Injectable()
 export class ComposeService {
@@ -77,6 +89,7 @@ export class ComposeService {
     userId: string,
     dto: ReplyEmailDto,
     generationMetadata?: GenerationMetadata,
+    options: { headers?: Record<string, string> } = {},
   ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
@@ -106,6 +119,7 @@ export class ComposeService {
       bodyText: dto.bodyText,
       inReplyToProviderMessageId: original.providerMessageId,
       providerThreadId: original.thread.providerThreadId,
+      headers: options.headers,
     });
 
     return this.persistSentMessage(
@@ -169,12 +183,14 @@ export class ComposeService {
         cc: [],
         bcc: [],
         subject: content.subject,
-        bodyHtml: `<p>${content.bodyText.replace(/\n/g, '<br />')}</p>`,
+        bodyHtml: textToSafeHtml(content.bodyText),
         bodyText: content.bodyText,
         receivedAt: new Date(),
         isRead: true,
         inReplyToMessageId: originalMessageId,
-        generationMetadata: generationMetadata as unknown as InputJsonValue,
+        generationMetadata: generationMetadata
+          ? { ...generationMetadata, draftText: content.bodyText }
+          : undefined,
       },
     });
   }
@@ -275,7 +291,7 @@ export class ComposeService {
       );
     }
 
-    const sent = await this.send(userId, {
+    const content = {
       accountId: account.id,
       to: draft.to as unknown as NormalizedParticipant[],
       cc: draft.cc as unknown as NormalizedParticipant[] | undefined,
@@ -283,11 +299,78 @@ export class ComposeService {
       subject: draft.subject,
       bodyHtml: draft.bodyHtml,
       bodyText: draft.bodyText ?? undefined,
-    });
+    };
+
+    // A draft that answers a synced message (every AI-held reply, see
+    // saveDraftReply) must go out as a reply in that conversation — with
+    // In-Reply-To and the provider thread id — not as a brand-new email.
+    // inReplyToMessageId is SetNull on delete, so a draft whose original
+    // was deleted in the meantime falls back to a plain send.
+    const sent = draft.inReplyToMessageId
+      ? await this.sendDraftAsReply(
+          userId,
+          draft.inReplyToMessageId,
+          content,
+          draft.generationMetadata as unknown as GenerationMetadata | null,
+        )
+      : await this.send(userId, content);
 
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
 
     return sent;
+  }
+
+  private async sendDraftAsReply(
+    userId: string,
+    originalMessageId: string,
+    content: ComposeEmailDto,
+    generationMetadata: GenerationMetadata | null,
+  ) {
+    const original = await this.inboxService.getMessageOwned(
+      userId,
+      originalMessageId,
+    );
+    const account = await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      original.thread.account.id,
+    );
+
+    const client = await this.mailProviderFactory.createClient(account);
+
+    // Recipients/subject/body come from the draft, not the original — the
+    // reviewer may have edited any of them before sending.
+    const result = await client.sendMessage({
+      to: content.to,
+      cc: content.cc,
+      bcc: content.bcc,
+      subject: content.subject,
+      bodyHtml: content.bodyHtml,
+      bodyText: content.bodyText,
+      inReplyToProviderMessageId: original.providerMessageId,
+      providerThreadId: original.thread.providerThreadId,
+    });
+
+    // AI provenance carries over to the sent copy (it's what answers
+    // "did this use my documents?" later), plus whether the human changed
+    // the AI's text before sending — the draft-acceptance signal.
+    const { draftText, ...sentMetadata }: Partial<GenerationMetadata> =
+      generationMetadata ?? {};
+    const aiEdited =
+      draftText === undefined
+        ? undefined
+        : normalizeForComparison(draftText) !==
+          normalizeForComparison(content.bodyText ?? '');
+
+    return this.persistSentMessage(
+      account.id,
+      content,
+      result,
+      content.to,
+      content.cc,
+      content.bcc,
+      generationMetadata ? (sentMetadata as GenerationMetadata) : undefined,
+      aiEdited,
+    );
   }
 
   async deleteDraft(userId: string, draftMessageId: string): Promise<void> {
@@ -341,6 +424,7 @@ export class ComposeService {
     cc?: NormalizedParticipant[],
     bcc?: NormalizedParticipant[],
     generationMetadata?: GenerationMetadata,
+    aiEdited?: boolean,
   ) {
     const account = await this.prisma.emailAccount.findUniqueOrThrow({
       where: { id: accountId },
@@ -388,7 +472,12 @@ export class ComposeService {
         receivedAt: new Date(),
         isRead: true,
         generationMetadata: generationMetadata as unknown as InputJsonValue,
+        aiEdited,
       },
     });
   }
+}
+
+function normalizeForComparison(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
 }

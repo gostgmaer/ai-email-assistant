@@ -146,10 +146,27 @@ export class MicrosoftGraphClient implements MailProviderClient {
       };
     }
 
+    // Graph only accepts custom internetMessageHeaders named X-* (anything
+    // else, including the standard Auto-Submitted, is rejected with a 400),
+    // and only when creating a message via POST /messages — so they're
+    // applied on this path only, never to createReply above. Replies sent
+    // through Graph therefore go out without loop-prevention headers; the
+    // inbound-side checks in AiProcessingProcessor still apply.
+    const internetMessageHeaders = Object.entries(input.headers ?? {})
+      .filter(([name]) => /^x-/i.test(name))
+      .map(([name, value]) => ({ name, value }));
+
     // Graph's sendMail doesn't return the created message, so create+send a draft instead.
     const draft = await this.request<{ id: string; conversationId: string }>(
       '/messages',
-      { method: 'POST', body: JSON.stringify(message) },
+      {
+        method: 'POST',
+        body: JSON.stringify(
+          internetMessageHeaders.length > 0
+            ? { ...message, internetMessageHeaders }
+            : message,
+        ),
+      },
     );
 
     await this.request(`/messages/${draft.id}/send`, { method: 'POST' });
@@ -202,6 +219,9 @@ export class MicrosoftGraphClient implements MailProviderClient {
           autoResponseSuppress: header('X-Auto-Response-Suppress'),
           feedbackId: header('Feedback-ID'),
           hasEspSignature,
+          xAutoreply: header('X-Autoreply'),
+          xAutorespond: header('X-Autorespond'),
+          returnPath: header('Return-Path'),
         },
         message.from?.emailAddress.address,
         message.subject,

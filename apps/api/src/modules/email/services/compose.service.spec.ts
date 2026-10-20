@@ -183,4 +183,160 @@ describe('ComposeService', () => {
       ).resolves.toBeDefined();
     });
   });
+
+  describe('drafts that answer a synced message (AI-held replies)', () => {
+    const originalMessageId = 'original-1';
+
+    function buildDeps(prisma: ReturnType<typeof buildPrismaMock>) {
+      const sendMessage = jest
+        .fn()
+        .mockResolvedValue({ providerMessageId: 'sent-1', providerThreadId });
+
+      const emailAccountService = {
+        getOwnedAccountOrThrow: jest.fn(),
+        getAccessibleAccountOrThrow: jest
+          .fn()
+          .mockResolvedValue({ id: accountId, email: 'me@example.com' }),
+      } as unknown as EmailAccountService;
+
+      const mailProviderFactory = {
+        createClient: jest.fn().mockResolvedValue({
+          listFolders: jest.fn(),
+          listMessages: jest.fn(),
+          getMessage: jest.fn(),
+          sendMessage,
+          markAsRead: jest.fn(),
+        } satisfies MailProviderClient),
+      } as unknown as MailProviderFactory;
+
+      const inboxService = {
+        getMessageOwned: jest.fn().mockResolvedValue({
+          id: originalMessageId,
+          providerMessageId: 'provider-original-1',
+          subject: 'hello',
+          from: [{ address: 'them@example.com' }],
+          thread: {
+            providerThreadId,
+            account: { id: accountId, provider: 'GOOGLE', userId: 'user-1' },
+          },
+        }),
+      } as unknown as InboxService;
+
+      const service = new ComposeService(
+        prisma as unknown as PrismaService,
+        emailAccountService,
+        mailProviderFactory,
+        inboxService,
+      );
+
+      return { service, sendMessage };
+    }
+
+    const aiMetadata = {
+      ragUsed: false,
+      contactMemoryUsed: false,
+      crmContactUsed: false,
+      calendarAgentUsed: false,
+      provider: 'test',
+      model: 'test-model',
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      documents: [],
+      draftText: 'hi',
+    };
+
+    function withoutDraftText(metadata: typeof aiMetadata) {
+      const copy: Partial<typeof aiMetadata> = { ...metadata };
+      delete copy.draftText;
+      return copy as Omit<typeof aiMetadata, 'draftText'>;
+    }
+
+    it('sends the draft as a reply in the original conversation, not as a new email', async () => {
+      const prisma = buildPrismaMock();
+      prisma.emailMessage.findUnique.mockResolvedValue({
+        ...buildDraftMock(),
+        inReplyToMessageId: originalMessageId,
+        generationMetadata: aiMetadata,
+      });
+      const { service, sendMessage } = buildDeps(prisma);
+
+      await service.sendDraft('user-1', draftMessageId);
+
+      expect(sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: [{ address: 'them@example.com' }],
+          subject: 'Re: hello',
+          inReplyToProviderMessageId: 'provider-original-1',
+          providerThreadId,
+        }),
+      );
+    });
+
+    it('carries AI provenance to the sent copy and records that the text was not edited', async () => {
+      const prisma = buildPrismaMock();
+      prisma.emailMessage.findUnique.mockResolvedValue({
+        ...buildDraftMock(),
+        inReplyToMessageId: originalMessageId,
+        generationMetadata: aiMetadata,
+      });
+      const { service } = buildDeps(prisma);
+
+      await service.sendDraft('user-1', draftMessageId);
+
+      const expectedMetadata = withoutDraftText(aiMetadata);
+      expect(prisma.emailMessage.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          generationMetadata: expectedMetadata,
+          aiEdited: false,
+        }) as unknown,
+      });
+    });
+
+    it('records aiEdited when the reviewer changed the AI text', async () => {
+      const prisma = buildPrismaMock();
+      prisma.emailMessage.findUnique.mockResolvedValue({
+        ...buildDraftMock(),
+        bodyText: 'hi — and one more thing',
+        inReplyToMessageId: originalMessageId,
+        generationMetadata: aiMetadata,
+      });
+      const { service } = buildDeps(prisma);
+
+      await service.sendDraft('user-1', draftMessageId);
+
+      expect(prisma.emailMessage.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ aiEdited: true }) as unknown,
+      });
+    });
+
+    it('saveDraftReply escapes the AI text and remembers it for the edit check', async () => {
+      const prisma = {
+        ...buildPrismaMock(),
+        emailThread: {
+          create: jest.fn().mockResolvedValue({ id: 'draft-thread-1' }),
+        },
+      };
+      const { service } = buildDeps(
+        prisma as unknown as ReturnType<typeof buildPrismaMock>,
+      );
+      const metadata = withoutDraftText(aiMetadata);
+
+      await service.saveDraftReply(
+        'user-1',
+        originalMessageId,
+        { subject: 'Re: hello', bodyText: 'See <a href="x">this</a>' },
+        metadata,
+      );
+
+      expect(prisma.emailMessage.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          bodyHtml: '<p>See &lt;a href=&quot;x&quot;&gt;this&lt;/a&gt;</p>',
+          inReplyToMessageId: originalMessageId,
+          generationMetadata: {
+            ...metadata,
+            draftText: 'See <a href="x">this</a>',
+          },
+        }) as unknown,
+      });
+    });
+  });
 });

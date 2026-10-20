@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ChevronLeftIcon, ClockIcon, SparklesIcon } from "@/components/icons";
+import { PendingDraftCard } from "@/components/inbox/PendingDraftCard";
 import { ReplyBox } from "@/components/inbox/ReplyBox";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -359,6 +360,13 @@ export default function ThreadPage() {
               <div className="pl-12">
                 <MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} />
               </div>
+              {message.draftReplies?.map((draft) => (
+                <PendingDraftCard
+                  key={draft.id}
+                  draft={draft}
+                  threadId={thread.id}
+                />
+              ))}
             </article>
           );
         })}

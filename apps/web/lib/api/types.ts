@@ -184,6 +184,22 @@ export interface EmailMessage {
   priority: string | null;
   sentiment: string | null;
   isSpam: boolean;
+  /** Set on a draft that answers a synced message (every AI-held reply). */
+  inReplyToMessageId?: string | null;
+}
+
+/** An AI-generated reply held for review, as surfaced on the message it
+ * answers (see InboxService.getThread). */
+export interface PendingDraftReply {
+  id: string;
+  bodyText: string | null;
+  createdAt: string;
+  generationMetadata: GenerationMetadata | null;
+  approvalChain: { status: "PENDING" | "APPROVED" | "REJECTED" } | null;
+}
+
+export interface ThreadDetailMessage extends EmailMessage {
+  draftReplies: PendingDraftReply[];
 }
 
 export interface EmailThreadSummary {
@@ -225,7 +241,7 @@ export interface EmailThreadDetail {
     accountId: string;
     providerFolderId: string | null;
   };
-  messages: EmailMessage[];
+  messages: ThreadDetailMessage[];
   assignedTo: ThreadAssignee | null;
   notes: ThreadNote[];
 }

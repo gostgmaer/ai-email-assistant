@@ -62,6 +62,10 @@ export interface ComposeInput {
   inReplyToProviderMessageId?: string;
   /** Set when replying: the provider thread id to keep the reply in. */
   providerThreadId?: string;
+  /** Extra RFC 5322 headers, e.g. Auto-Submitted on autonomous replies.
+   * Microsoft Graph only accepts custom headers named X-*, so other names
+   * are dropped there (see MicrosoftGraphClient.sendMessage). */
+  headers?: Record<string, string>;
 }
 
 export interface SendResult {

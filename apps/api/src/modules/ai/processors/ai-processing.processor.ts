@@ -1,9 +1,14 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 
 import { PrismaService } from '../../../database';
-import { ContactModel } from '../../../generated/prisma/models';
+import { AutomationEffectKind } from '../../../generated/prisma/enums';
+import {
+  ContactModel,
+  EmailAccountModel,
+} from '../../../generated/prisma/models';
 import { AIJobs, QueueNames } from '../../../infrastructure/queue';
 // Leaf-file import rather than the '../../agent' barrel — see the
 // comment below on WorkflowRuleService for why.
@@ -26,16 +31,22 @@ import {
 import { isAutomatedAddress } from '../../email/providers/bulk-mail.util';
 import { NormalizedParticipant } from '../../email/interfaces';
 import {
+  AUTO_REPLY_HEADERS,
   ComposeService,
   GenerationMetadata,
 } from '../../email/services/compose.service';
+import { textToSafeHtml } from '../../email/utils/text-to-html.util';
 // Leaf-file import rather than the '../../notification' barrel — same
 // reasoning as AgentService above.
 import { NotificationService } from '../../notification/services/notification.service';
 import { TasksService } from '../../tasks';
 // Leaf-file import rather than the '../../workflow' barrel — see the
 // comment above on MeetingSchedulingService for why.
-import { WorkflowRuleService } from '../../workflow/services/workflow-rule.service';
+import {
+  ReplyDirectives,
+  WorkflowRuleService,
+  resolveReplyDirectives,
+} from '../../workflow/services/workflow-rule.service';
 import { EmailMessageDto } from '../dto';
 import {
   AiClientService,
@@ -58,6 +69,21 @@ interface AiProcessingJobData {
 // review over auto-sending them; revisit once there's real usage data on
 // how confidence scores correlate with actually-good replies.
 const REPLY_CONFIDENCE_AUTO_SEND_THRESHOLD = 70;
+
+// Auto-responder loop protection (see docs/email-automation-gaps.md G-04):
+// even with every inbound auto-reply signal checked, cap how often we
+// autonomously answer the same conversation or the same person, so a
+// responder we fail to recognise still can't ping-pong with us. Anything
+// over the cap is held as a draft, never dropped.
+const AUTO_SEND_WINDOW_MS = 24 * 60 * 60 * 1000;
+const MAX_AUTO_SENDS_PER_THREAD = 1;
+const MAX_AUTO_SENDS_PER_RECIPIENT = 3;
+
+interface EffectContext {
+  messageId: string;
+  accountId: string;
+  threadId: string;
+}
 
 @Processor(QueueNames.AI)
 export class AiProcessingProcessor extends WorkerHost {
@@ -85,6 +111,7 @@ export class AiProcessingProcessor extends WorkerHost {
     private readonly notificationService: NotificationService,
     @Inject(forwardRef(() => ApprovalChainService))
     private readonly approvalChainService: ApprovalChainService,
+    private readonly configService: ConfigService,
   ) {
     super();
   }
@@ -153,19 +180,38 @@ export class AiProcessingProcessor extends WorkerHost {
       return;
     }
 
+    const effectContext: EffectContext = {
+      messageId,
+      accountId: account.id,
+      threadId: message.threadId,
+    };
+
     // Best-effort, non-blocking: a failed/slow extraction call must never
     // stop the reply from being generated. Not awaited alongside the
     // pipeline below on purpose — kicked off here so it runs concurrently
     // with contactMemory/reply generation rather than adding to the
-    // critical path.
-    const extractionPromise = this.extractTasks(
-      account.userId,
-      messageId,
-      message.threadId,
-      subject,
-      thread,
-      account.autoScheduleMeetings,
-    );
+    // critical path. Claimed in the effect ledger first so a retried job
+    // doesn't create the same tasks (and auto-schedule the same meetings)
+    // twice; the trade-off is that a crash mid-extraction loses that one
+    // extraction, which is acceptable for a best-effort step.
+    const extractionPromise = this.claimEffect(effectContext, 'TASK_EXTRACTION')
+      .then((claimed) =>
+        claimed
+          ? this.extractTasks(
+              account.userId,
+              messageId,
+              message.threadId,
+              subject,
+              thread,
+              account.autoScheduleMeetings,
+            )
+          : undefined,
+      )
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Task extraction claim failed for message ${messageId}: ${describeError(error)}`,
+        );
+      });
 
     // Same best-effort/concurrent shape as extractionPromise above.
     const summarizePromise = this.summarizeThread(
@@ -204,6 +250,50 @@ export class AiProcessingProcessor extends WorkerHost {
           autoReplyAction.agentId,
         )) ?? undefined)
       : undefined;
+
+    // The matched rule's side-effect actions (assign, notify, Slack/Teams,
+    // HubSpot) run here, before reply generation, so routing still
+    // happens even if contact memory or reply generation fails below.
+    // Claimed in the effect ledger: on a retried job they already ran, so
+    // only the send-vs-draft decision is recovered, side-effect free.
+    let replyDirectives: ReplyDirectives | null = null;
+    if (matchedActions) {
+      replyDirectives = (await this.claimEffect(effectContext, 'RULE_ACTIONS'))
+        ? await this.workflowRuleService.executeActions(matchedActions, {
+            accountId: account.id,
+            threadId: message.threadId,
+            messageId,
+            senderEmail: sender.address,
+            senderName: sender.name,
+          })
+        : resolveReplyDirectives(matchedActions);
+    }
+
+    // Idempotency for the reply itself: a previous attempt of this job may
+    // already have drafted or sent it before failing on something later.
+    const [priorSend, priorDraft] = await Promise.all([
+      this.findEffect(messageId, 'SEND'),
+      this.findEffect(messageId, 'DRAFT'),
+    ]);
+
+    if (priorDraft || priorSend?.status === 'DONE') {
+      this.logger.log(
+        `Reply for message ${messageId} was already ${priorDraft ? 'drafted' : 'sent'} by an earlier attempt, not generating another.`,
+      );
+      await Promise.all([
+        extractionPromise,
+        summarizePromise,
+        touchContactPromise,
+      ]);
+      await this.markProcessed(messageId);
+      return;
+    }
+
+    // A PENDING send means an earlier attempt crashed between claiming the
+    // send and recording its result — the email may or may not have gone
+    // out. Sending again could duplicate it, so the reply is held as a
+    // draft and the user is told to check, instead of guessing.
+    const sendOutcomeUnknown = priorSend?.status === 'PENDING';
 
     // Calendar Agent (v3.0 multi-agent orchestration §Option B, see
     // docs/multi-agent-orchestration-plan.md) — runs regardless of which
@@ -304,24 +394,33 @@ export class AiProcessingProcessor extends WorkerHost {
     );
 
     // Workflow Builder (v2.0 §3): the account's WorkflowRule rows decide
-    // whether this reply auto-sends (and any other actions — assign,
-    // notify). matchedActions was already computed above (before reply
-    // generation, so an agent persona could influence the reply's
-    // wording) — executing it here just runs the actions themselves. No
-    // matching rule falls through to the existing default: draft for
-    // review.
+    // whether this reply auto-sends. replyDirectives was already resolved
+    // above (and the rule's other actions already ran). No matching rule
+    // falls through to the existing default: draft for review.
     let isSafeToAutoSend = false;
-    let approvalChainApproverUserIds: string[] | undefined;
-    if (matchedActions) {
-      const { autoReply, approvalChainApproverUserIds: chainApprovers } =
-        await this.workflowRuleService.executeActions(matchedActions, {
-          accountId: account.id,
-          threadId: message.threadId,
-          messageId,
-          senderEmail: sender.address,
-          senderName: sender.name,
-        });
-      approvalChainApproverUserIds = chainApprovers;
+    const approvalChainApproverUserIds =
+      replyDirectives?.approvalChainApproverUserIds;
+
+    // Account/loop-level blockers, checked before any of the per-reply
+    // rails below (and before paying for validateReply).
+    const autoSendBlocker =
+      replyDirectives?.autoReply && !sendOutcomeUnknown
+        ? await this.findAutoSendBlocker(
+            account,
+            message.threadId,
+            message.isAutoReply,
+            sender.address,
+          )
+        : null;
+
+    if (autoSendBlocker) {
+      this.logger.warn(
+        `Reply for message ${messageId} held for review instead of auto-sending — ${autoSendBlocker}.`,
+      );
+    }
+
+    if (replyDirectives && !autoSendBlocker && !sendOutcomeUnknown) {
+      const { autoReply } = replyDirectives;
 
       // Hard safety rails, not rule-overridable, cheapest first — each
       // short-circuits before paying for the next:
@@ -417,16 +516,51 @@ export class AiProcessingProcessor extends WorkerHost {
       );
     }
 
-    if (isSafeToAutoSend) {
-      await this.composeService.reply(
-        account.userId,
-        {
-          messageId,
-          bodyHtml: `<p>${reply.reply.replace(/\n/g, '<br />')}</p>`,
-          bodyText: reply.reply,
-        },
-        generationMetadata,
+    // Claimed before sending: if another attempt already claimed this send
+    // (a concurrent duplicate job), this one must not send at all.
+    if (
+      isSafeToAutoSend &&
+      !(await this.claimEffect(effectContext, 'SEND', {
+        recipient: sender.address.toLowerCase(),
+      }))
+    ) {
+      this.logger.warn(
+        `Send for message ${messageId} was already claimed by another attempt, skipping.`,
       );
+      await Promise.all([
+        extractionPromise,
+        summarizePromise,
+        touchContactPromise,
+      ]);
+      await this.markProcessed(messageId);
+      return;
+    }
+
+    if (isSafeToAutoSend) {
+      let sent: { providerMessageId: string };
+      try {
+        sent = await this.composeService.reply(
+          account.userId,
+          {
+            messageId,
+            bodyHtml: textToSafeHtml(reply.reply),
+            bodyText: reply.reply,
+          },
+          generationMetadata,
+          { headers: AUTO_REPLY_HEADERS },
+        );
+      } catch (error) {
+        // The provider rejected the send, so nothing went out — release
+        // the claim so the job's retry is allowed to try again.
+        await this.releaseEffect(messageId, 'SEND');
+        throw error;
+      }
+
+      await this.prisma.automationEffect.update({
+        where: { messageId_kind: { messageId, kind: 'SEND' } },
+        data: { status: 'DONE', providerMessageId: sent.providerMessageId },
+      });
+
       this.logger.log(
         `Auto-sent a reply to message ${messageId} (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
       );
@@ -474,6 +608,23 @@ export class AiProcessingProcessor extends WorkerHost {
           });
       }
 
+      await this.claimEffect(effectContext, 'DRAFT', { status: 'DONE' });
+
+      if (sendOutcomeUnknown) {
+        await this.notificationService
+          .create(
+            account.userId,
+            'Check whether an auto-reply was sent',
+            `An earlier attempt to auto-reply to "${subject}" was interrupted, so it may or may not have been sent. The reply is in Drafts — check Sent before sending it.`,
+            { threadId: message.threadId, messageId, draftId: draft.id },
+          )
+          .catch((error: unknown) => {
+            this.logger.warn(
+              `Failed to create send-outcome-unknown notification for message ${messageId}: ${describeError(error)}`,
+            );
+          });
+      }
+
       this.logger.log(
         `Drafted a reply to message ${messageId} for review (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
       );
@@ -489,6 +640,100 @@ export class AiProcessingProcessor extends WorkerHost {
     ]);
 
     await this.markProcessed(messageId);
+  }
+
+  /**
+   * Records an effect in the ledger before it runs. Returns false — and the
+   * caller must skip the effect — when a row for this (message, kind)
+   * already exists, i.e. an earlier or concurrent attempt got there first.
+   */
+  private async claimEffect(
+    context: EffectContext,
+    kind: AutomationEffectKind,
+    extra: { recipient?: string; status?: 'PENDING' | 'DONE' } = {},
+  ): Promise<boolean> {
+    try {
+      await this.prisma.automationEffect.create({
+        data: { ...context, kind, ...extra },
+      });
+      return true;
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  private findEffect(messageId: string, kind: AutomationEffectKind) {
+    return this.prisma.automationEffect.findUnique({
+      where: { messageId_kind: { messageId, kind } },
+      select: { status: true },
+    });
+  }
+
+  private async releaseEffect(
+    messageId: string,
+    kind: AutomationEffectKind,
+  ): Promise<void> {
+    await this.prisma.automationEffect
+      .delete({ where: { messageId_kind: { messageId, kind } } })
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Failed to release ${kind} claim for message ${messageId}: ${describeError(error)}`,
+        );
+      });
+  }
+
+  /**
+   * Reasons a rule-approved auto-send must be held as a draft regardless of
+   * how good the reply is: the kill switches, an inbound auto-reply (the
+   * loop case), and the per-thread / per-recipient auto-send caps. Returns
+   * null when nothing blocks it.
+   */
+  private async findAutoSendBlocker(
+    account: EmailAccountModel,
+    threadId: string,
+    inboundIsAutoReply: boolean,
+    recipientAddress: string,
+  ): Promise<string | null> {
+    if (this.configService.get<string>('AUTO_SEND_ENABLED') === 'false') {
+      return 'auto-send is disabled globally (AUTO_SEND_ENABLED=false)';
+    }
+
+    if (!account.autoSendEnabled) {
+      return `auto-send is disabled for ${account.email}`;
+    }
+
+    if (inboundIsAutoReply) {
+      return 'the inbound message is itself an automatic reply (auto-responder loop protection)';
+    }
+
+    const since = new Date(Date.now() - AUTO_SEND_WINDOW_MS);
+
+    const [threadSends, recipientSends] = await Promise.all([
+      this.prisma.automationEffect.count({
+        where: { threadId, kind: 'SEND', createdAt: { gte: since } },
+      }),
+      this.prisma.automationEffect.count({
+        where: {
+          accountId: account.id,
+          kind: 'SEND',
+          recipient: recipientAddress.toLowerCase(),
+          createdAt: { gte: since },
+        },
+      }),
+    ]);
+
+    if (threadSends >= MAX_AUTO_SENDS_PER_THREAD) {
+      return `this thread already got ${threadSends} auto-reply(s) in the last 24h`;
+    }
+
+    if (recipientSends >= MAX_AUTO_SENDS_PER_RECIPIENT) {
+      return `${recipientAddress} already got ${recipientSends} auto-replies in the last 24h`;
+    }
+
+    return null;
   }
 
   private async persistClassification(
@@ -591,6 +836,20 @@ export class AiProcessingProcessor extends WorkerHost {
       data: { aiProcessedAt: new Date() },
     });
   }
+}
+
+/** Prisma's unique-constraint violation (P2002), checked structurally so
+ * this doesn't depend on the generated client's error class identity. */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { code?: unknown }).code === 'P2002'
+  );
+}
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : JSON.stringify(error);
 }
 
 function firstParticipant(from: unknown): NormalizedParticipant | undefined {

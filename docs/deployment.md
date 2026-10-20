@@ -57,6 +57,7 @@ ACME_EMAIL=you@example.com                    # Let's Encrypt registration conta
 - `GOOGLE_CALLBACK_URL` / `GOOGLE_MAIL_CALLBACK_URL` / `GOOGLE_CALENDAR_CALLBACK_URL` and the Microsoft equivalents → `https://api.example.com/...`, and **must also be added as authorized redirect URIs in the Google Cloud Console / Azure App Registration** — this is the step most likely to get missed and silently break OAuth in production
 - `DATABASE_URL` / `REDIS_HOST` / `REDIS_PORT` / `AI_SERVICE_URL` are already set correctly by `docker-compose.prod.yml`'s `environment:` block — leave them out of this file, the compose values win
 - `NODE_ENV`, `LOG_LEVEL=info` (drop `debug` in production)
+- `AUTO_SEND_ENABLED` → global kill switch for autonomous replies (`false` holds every would-be auto-send as a draft; there's also a per-account `EmailAccount.autoSendEnabled`). `AI_MAX_MESSAGE_AGE_HOURS` (default `48`) → inbound mail older than this never enters the AI pipeline. See `docs/email-automation-implementation-plan.md`.
 
 **`apps/ai/.env`** (copy from `apps/ai/.env.example`):
 - Whichever `LLM_PROVIDER`'s API key you're using (`GOOGLE_API_KEY` etc.)

@@ -7,7 +7,10 @@ import {
   WorkflowAction,
   WorkflowCondition,
 } from '../types/workflow-rule.types';
-import { WorkflowRuleService } from './workflow-rule.service';
+import {
+  WorkflowRuleService,
+  resolveReplyDirectives,
+} from './workflow-rule.service';
 
 describe('WorkflowRuleService', () => {
   const userId = 'user-1';
@@ -460,6 +463,30 @@ describe('WorkflowRuleService', () => {
           actions: [],
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+});
+
+describe('resolveReplyDirectives', () => {
+  it('recovers the send-vs-draft decision without running any action', () => {
+    expect(resolveReplyDirectives([{ type: 'AUTO_REPLY' }])).toEqual({
+      autoReply: true,
+      approvalChainApproverUserIds: undefined,
+    });
+    expect(
+      resolveReplyDirectives([{ type: 'NOTIFY', userId: 'user-2' }]),
+    ).toEqual({ autoReply: false, approvalChainApproverUserIds: undefined });
+  });
+
+  it('never auto-sends when the rule also requires an approval chain', () => {
+    expect(
+      resolveReplyDirectives([
+        { type: 'AUTO_REPLY' },
+        { type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: ['approver-1'] },
+      ]),
+    ).toEqual({
+      autoReply: false,
+      approvalChainApproverUserIds: ['approver-1'],
     });
   });
 });

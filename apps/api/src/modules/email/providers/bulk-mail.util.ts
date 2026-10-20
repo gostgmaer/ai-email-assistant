@@ -14,6 +14,12 @@ export interface BulkMailHeaders {
    * unrelated senders), not a specific company, so this isn't a
    * vendor-identity rule the way a domain allowlist would be. */
   hasEspSignature?: boolean;
+  /** X-Autoreply / X-Autorespond — set by many vacation responders and
+   * ticketing systems that don't use the standard Auto-Submitted header. */
+  xAutoreply?: string;
+  xAutorespond?: string;
+  /** An empty Return-Path (`<>`) marks a bounce/DSN (RFC 5321 §4.5.5). */
+  returnPath?: string;
 }
 
 /**
@@ -58,6 +64,12 @@ export interface BulkMailSignals {
   billing: boolean;
   shipping: boolean;
   calendar: boolean;
+  /** The message is itself an automatic reply (vacation/out-of-office
+   * responder, ticket acknowledgement, bounce). Unlike `automated`, this is
+   * not a sync filter on its own — an auto-reply inside a real thread is
+   * still synced — it's the signal that must stop the AI pipeline from
+   * auto-sending back, or two responders can loop forever (RFC 3834). */
+  autoReply: boolean;
 }
 
 // Real-world test against a live inbox showed many automated senders (job
@@ -88,6 +100,17 @@ const SHIPPING_SUBJECT =
 const CALENDAR_SUBJECT =
   /\bmeeting invitation\b|\bcalendar (update|invite)\b|\baccepted the invitation\b|\bdeclined the invitation\b/i;
 
+// Out-of-office / vacation-responder subject prefixes, in the languages the
+// major mail clients localize their auto-reply subjects into.
+const AUTO_REPLY_SUBJECT =
+  /^\s*(automatic reply|auto(matic)?[- ]?(reply|response)|autoreply|out of (the )?office|ooo\b|away from (the )?office|on vacation|abwesend|abwesenheitsnotiz|r[ée]ponse automatique|respuesta autom[aá]tica|fuera de la oficina|risposta automatica)/i;
+
+// Bounce/DSN senders. mailer-daemon is already covered by
+// AUTOMATED_SENDER_LOCAL_PART; postmaster isn't (a real postmaster inbox
+// can be a person, so it isn't a sync filter — but it's never a
+// conversation partner an autonomous reply should go to).
+const BOUNCE_SENDER_LOCAL_PART = /^(mailer.?daemon|postmaster)$/i;
+
 /**
  * True for addresses that are structurally incapable of reading a reply
  * (noreply/donotreply/alert-style inboxes). Used both as part of
@@ -111,12 +134,19 @@ export function detectBulkMailSignals(
   senderAddress?: string,
   subject?: string,
 ): BulkMailSignals {
+  const autoReplyHeader =
+    !!(headers.autoSubmitted && !/^no$/i.test(headers.autoSubmitted.trim())) ||
+    !!headers.xAutoreply ||
+    !!headers.xAutorespond ||
+    !!(headers.precedence && /\bauto_reply\b/i.test(headers.precedence)) ||
+    headers.returnPath?.trim() === '<>';
+
   const automated =
+    autoReplyHeader ||
     !!(headers.listUnsubscribe || headers.listId) ||
     !!(
       headers.precedence && /\b(bulk|list|junk)\b/i.test(headers.precedence)
     ) ||
-    !!(headers.autoSubmitted && !/^no$/i.test(headers.autoSubmitted.trim())) ||
     !!headers.autoResponseSuppress ||
     !!headers.feedbackId ||
     !!headers.hasEspSignature ||
@@ -130,6 +160,10 @@ export function detectBulkMailSignals(
     billing: !!subject && BILLING_SUBJECT.test(subject),
     shipping: !!subject && SHIPPING_SUBJECT.test(subject),
     calendar: !!subject && CALENDAR_SUBJECT.test(subject),
+    autoReply:
+      autoReplyHeader ||
+      (!!subject && AUTO_REPLY_SUBJECT.test(subject)) ||
+      BOUNCE_SENDER_LOCAL_PART.test(senderAddress?.split('@')[0] ?? ''),
   };
 }
 

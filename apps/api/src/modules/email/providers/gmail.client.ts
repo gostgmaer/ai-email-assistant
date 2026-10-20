@@ -213,6 +213,9 @@ export class GmailClient implements MailProviderClient {
           autoResponseSuppress: header('X-Auto-Response-Suppress'),
           feedbackId: header('Feedback-ID'),
           hasEspSignature,
+          xAutoreply: header('X-Autoreply'),
+          xAutorespond: header('X-Autorespond'),
+          returnPath: header('Return-Path'),
         },
         from[0]?.address,
         subject,
@@ -281,6 +284,7 @@ export class GmailClient implements MailProviderClient {
       text: input.bodyText,
       inReplyTo: input.inReplyToProviderMessageId,
       references: input.inReplyToProviderMessageId,
+      headers: input.headers,
     });
 
     const buffer = await composer.compile().build();

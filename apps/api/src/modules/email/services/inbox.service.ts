@@ -302,7 +302,25 @@ export class InboxService {
           select: { id: true, provider: true, email: true, userId: true },
         },
         folder: true,
-        messages: { orderBy: { receivedAt: 'asc' } },
+        messages: {
+          orderBy: { receivedAt: 'asc' },
+          // AI replies held for review live as local drafts in a separate
+          // Drafts thread; surfacing them on the message they answer is
+          // what lets a reviewer see the draft next to the conversation.
+          include: {
+            draftReplies: {
+              where: { thread: { folder: { type: 'DRAFTS' } } },
+              orderBy: { createdAt: 'desc' },
+              select: {
+                id: true,
+                bodyText: true,
+                createdAt: true,
+                generationMetadata: true,
+                approvalChain: { select: { status: true } },
+              },
+            },
+          },
+        },
         assignedTo: {
           select: { id: true, email: true, displayName: true },
         },

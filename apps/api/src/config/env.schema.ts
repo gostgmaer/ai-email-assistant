@@ -65,6 +65,15 @@ export const envSchema = z.object({
   AI_SERVICE_URL: z.url(),
   AI_SERVICE_API_KEY: z.string().optional(),
 
+  // Automation safety (see docs/email-automation-implementation-plan.md).
+  // AUTO_SEND_ENABLED is a global kill switch: "false" turns every reply a
+  // rule would auto-send into a draft, across all accounts. An enum, not
+  // z.coerce.boolean() — coerce treats the string "false" as true.
+  AUTO_SEND_ENABLED: z.enum(['true', 'false']).default('true'),
+  // Inbound mail older than this never enters the AI pipeline, so a
+  // backfill/resync can't trigger replies to stale conversations.
+  AI_MAX_MESSAGE_AGE_HOURS: z.coerce.number().positive().default(48),
+
   // File Upload Service (@easydev_org/file-upload-sdk) — document uploads go
   // here instead of being held in memory; the AI service downloads directly
   // from it using the same HMAC scheme (see FILE_SERVICE_HMAC_SECRET below,

@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -20,6 +21,7 @@ import {
   sendEmail,
   updateDraft,
 } from "@/lib/services/email.service";
+import { formatDateTime, participantListLabel } from "@/lib/utils/format";
 import { parseRecipients, recipientsToInputValue } from "@/lib/utils/recipients";
 
 const composeSchema = z.object({
@@ -50,6 +52,15 @@ function ComposeContent() {
     queryKey: ["message", draftId],
     queryFn: () => getMessage(draftId!),
     enabled: Boolean(draftId),
+  });
+
+  // A draft answering a synced message (every AI-held reply) is shown
+  // with that message, so the reviewer edits it against what it replies to.
+  const inReplyToMessageId = draftMessage?.inReplyToMessageId ?? null;
+  const { data: originalMessage } = useQuery({
+    queryKey: ["message", inReplyToMessageId],
+    queryFn: () => getMessage(inReplyToMessageId!),
+    enabled: Boolean(inReplyToMessageId),
   });
 
   // True multi-step Approval Chains (v3.0) — null for a draft that isn't
@@ -208,6 +219,29 @@ function ComposeContent() {
                   .email
               }) — it can't be sent until every step approves. See the Approvals page.`}
         </p>
+      )}
+
+      {originalMessage && (
+        <div className="mb-4 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2">
+          <div className="mb-1 flex items-center justify-between gap-2 text-xs text-zinc-500">
+            <span>
+              Replying to{" "}
+              <span className="font-medium text-zinc-700">
+                {participantListLabel(originalMessage.from)}
+              </span>{" "}
+              · {formatDateTime(originalMessage.receivedAt)}
+            </span>
+            <Link
+              href={`/inbox/${originalMessage.threadId}`}
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Open conversation
+            </Link>
+          </div>
+          <p className="max-h-40 overflow-y-auto text-sm whitespace-pre-wrap text-zinc-700">
+            {originalMessage.bodyText ?? "(no text content)"}
+          </p>
+        </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

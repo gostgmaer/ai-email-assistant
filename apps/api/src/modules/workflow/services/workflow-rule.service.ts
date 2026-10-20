@@ -193,22 +193,15 @@ export class WorkflowRuleService {
   async executeActions(
     actions: WorkflowAction[],
     context: WorkflowActionContext,
-  ): Promise<{ autoReply: boolean; approvalChainApproverUserIds?: string[] }> {
-    let autoReply = false;
-    let approvalChainApproverUserIds: string[] | undefined;
-
+  ): Promise<ReplyDirectives> {
     for (const action of actions) {
       try {
         switch (action.type) {
+          // Reply-mode actions have no side effect of their own — they're
+          // folded into the return value by resolveReplyDirectives().
           case 'AUTO_REPLY':
-            autoReply = true;
-            break;
-
           case 'REQUIRE_APPROVAL':
-            break;
-
           case 'REQUIRE_APPROVAL_CHAIN':
-            approvalChainApproverUserIds = action.approverUserIds;
             break;
 
           case 'ASSIGN_TO':
@@ -267,11 +260,7 @@ export class WorkflowRuleService {
       }
     }
 
-    if (approvalChainApproverUserIds) {
-      autoReply = false;
-    }
-
-    return { autoReply, approvalChainApproverUserIds };
+    return resolveReplyDirectives(actions);
   }
 
   private async assignThread(
@@ -410,6 +399,38 @@ export class WorkflowRuleService {
       }
     }
   }
+}
+
+export interface ReplyDirectives {
+  autoReply: boolean;
+  approvalChainApproverUserIds?: string[];
+}
+
+/**
+ * The send-vs-draft decision a matched rule's actions encode, with no side
+ * effects — split out of executeActions() so a retried AI job can recover
+ * the decision without re-running ASSIGN/NOTIFY/Slack/HubSpot actions that
+ * already ran on an earlier attempt. REQUIRE_APPROVAL_CHAIN always forces
+ * autoReply to false: a chain must never be skipped just because the same
+ * rule also happens to include AUTO_REPLY.
+ */
+export function resolveReplyDirectives(
+  actions: WorkflowAction[],
+): ReplyDirectives {
+  const chainAction = actions.find(
+    (action) => action.type === 'REQUIRE_APPROVAL_CHAIN',
+  );
+  const approvalChainApproverUserIds =
+    chainAction?.type === 'REQUIRE_APPROVAL_CHAIN'
+      ? chainAction.approverUserIds
+      : undefined;
+
+  return {
+    autoReply:
+      !approvalChainApproverUserIds &&
+      actions.some((action) => action.type === 'AUTO_REPLY'),
+    approvalChainApproverUserIds,
+  };
 }
 
 function matchesCondition(

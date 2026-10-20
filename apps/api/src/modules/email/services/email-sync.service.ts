@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { PrismaService } from '../../../database';
 import {
@@ -25,6 +26,7 @@ export class EmailSyncService {
     private readonly emailAccountService: EmailAccountService,
     private readonly mailProviderFactory: MailProviderFactory,
     private readonly queueService: QueueService,
+    private readonly configService: ConfigService,
   ) {}
 
   async syncAccount(
@@ -143,7 +145,7 @@ export class EmailSyncService {
     const result = await client.listMessages(folder.providerFolderId, options);
 
     for (const message of result.messages) {
-      await this.persistMessage(folder.id, message, account);
+      await this.persistMessage(folder, message, account, mode);
     }
 
     if (result.cursor && result.cursor !== folder.syncCursor) {
@@ -155,11 +157,13 @@ export class EmailSyncService {
   }
 
   private async persistMessage(
-    folderId: string,
+    folder: MailFolderModel,
     message: NormalizedMessage,
     account: EmailAccountModel,
+    mode: 'full' | 'incremental',
   ): Promise<void> {
     const accountId = account.id;
+    const folderId = folder.id;
 
     const isInbound = !message.from.some(
       (sender) => sender.address.toLowerCase() === account.email.toLowerCase(),
@@ -248,6 +252,7 @@ export class EmailSyncService {
         bodyHtml: message.bodyHtml,
         receivedAt: message.receivedAt,
         isRead: message.isRead,
+        isAutoReply: message.bulkMailSignals.autoReply,
       },
       update: {
         isRead: message.isRead,
@@ -258,8 +263,49 @@ export class EmailSyncService {
     // for updates (re-syncs) or the SENT-folder copy of our own outbound
     // mail. Bulk mail is already filtered out above, before it's ever
     // persisted.
-    if (!existing && isInbound) {
+    if (
+      !existing &&
+      isInbound &&
+      this.isEligibleForAi(folder, message, account, mode)
+    ) {
       await this.queueService.enqueueAiProcessing(saved.id);
     }
+  }
+
+  /**
+   * Whether a newly synced inbound message may enter the AI pipeline (and
+   * so potentially get an autonomous reply). Persisting the message is
+   * unaffected — this only gates the AI job. Excluded:
+   * - anything from a full (initial) sync: that's importing history, and
+   *   connecting a mailbox must never fire replies into old threads;
+   * - folders that aren't real incoming mail (SPAM, TRASH, SENT, DRAFTS);
+   * - mail received before the account's aiEnabledFrom, or older than
+   *   AI_MAX_MESSAGE_AGE_HOURS — an incremental sync can still surface old
+   *   messages (a newly listed folder, a provider re-delivering a page).
+   */
+  private isEligibleForAi(
+    folder: MailFolderModel,
+    message: NormalizedMessage,
+    account: EmailAccountModel,
+    mode: 'full' | 'incremental',
+  ): boolean {
+    if (mode === 'full') {
+      return false;
+    }
+
+    if (folder.type !== 'INBOX' && folder.type !== 'CUSTOM') {
+      return false;
+    }
+
+    if (message.receivedAt < account.aiEnabledFrom) {
+      return false;
+    }
+
+    const maxAgeHours = Number(
+      this.configService.get<string>('AI_MAX_MESSAGE_AGE_HOURS') ?? 48,
+    );
+    const oldestAllowed = Date.now() - maxAgeHours * 60 * 60 * 1000;
+
+    return message.receivedAt.getTime() >= oldestAllowed;
   }
 }

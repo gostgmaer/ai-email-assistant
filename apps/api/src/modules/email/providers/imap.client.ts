@@ -169,6 +169,7 @@ export class ImapClient implements MailProviderClient {
         text: input.bodyText,
         inReplyTo: input.inReplyToProviderMessageId,
         references: input.inReplyToProviderMessageId,
+        headers: input.headers,
       });
 
       const messageId = info.messageId;
@@ -245,6 +246,9 @@ export class ImapClient implements MailProviderClient {
           autoResponseSuppress: header('x-auto-response-suppress'),
           feedbackId: header('feedback-id'),
           hasEspSignature,
+          xAutoreply: header('x-autoreply'),
+          xAutorespond: header('x-autorespond'),
+          returnPath: header('return-path'),
         },
         from[0]?.address,
         subject,
@@ -259,6 +263,16 @@ export class ImapClient implements MailProviderClient {
 
     if (value instanceof Date) {
       return value.toISOString();
+    }
+
+    // mailparser parses address-shaped headers (e.g. return-path) into an
+    // AddressObject; its `text` is the header as written, e.g. "<>".
+    if (
+      value &&
+      typeof value === 'object' &&
+      typeof (value as { text?: unknown }).text === 'string'
+    ) {
+      return (value as { text: string }).text;
     }
 
     return undefined;
