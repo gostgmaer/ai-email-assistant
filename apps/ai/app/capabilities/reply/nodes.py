@@ -7,10 +7,54 @@ from .state import ReplyState
 
 
 def load_prompt(state: ReplyState):
-    state["system_prompt"] = state.get("system_prompt_override") or prompt_loader.load(
-        "reply"
-    )
+    # An agent persona replaces reply.md's tone/style guidance, but never
+    # its safety rules: reply_guardrails.md is appended to every persona, so
+    # a persona saying "promise whatever it takes" can't switch off "don't
+    # invent facts" or "no placeholders".
+    override = state.get("system_prompt_override")
+    if override:
+        state["system_prompt"] = (
+            override.rstrip() + "\n\n" + prompt_loader.load("reply_guardrails")
+        )
+    else:
+        state["system_prompt"] = prompt_loader.load("reply")
     return state
+
+
+def _clean(value: str | None) -> str:
+    return " ".join((value or "").split())
+
+
+def sender_profile_instruction(profile: dict | None) -> str | None:
+    """The sender identity part of the system message. The profile is the
+    mailbox owner's own settings (trusted), unlike anything in the thread."""
+    if not profile:
+        return None
+
+    name = _clean(profile.get("name"))
+    job_title = _clean(profile.get("job_title"))
+    company = _clean(profile.get("company"))
+
+    lines: list[str] = []
+    if name or job_title or company:
+        who = name or "the mailbox owner"
+        if job_title and company:
+            who += f", {job_title} at {company}"
+        elif job_title or company:
+            who += f", {job_title or company}"
+        lines.append(f"You are writing as {who}. Write in the first person as them.")
+
+    if profile.get("has_signature"):
+        lines.append(
+            "A signature block is added automatically after your reply. Do not "
+            "write one: no name, title, company or contact details at the end. "
+            "A short closing such as \"Best,\" is fine."
+        )
+    elif name:
+        first_name = name.split(" ")[0]
+        lines.append(f"If the tone calls for a sign-off, sign as {first_name}.")
+
+    return "\n".join(f"- {line}" for line in lines) if lines else None
 
 
 def build_messages(state: ReplyState):
@@ -18,7 +62,12 @@ def build_messages(state: ReplyState):
         system_prompt=state["system_prompt"],
         subject=state["subject"],
         thread=state["thread"],
-        instruction=state.get("instruction"),
+        instruction=sender_profile_instruction(state.get("sender_profile")),
+        # The API's "instruction" field carries reference material
+        # (documents, contact facts, calendar notes), partly derived from
+        # third-party email — so it's passed as delimited, untrusted context,
+        # never as instructions.
+        context=state.get("instruction"),
     )
 
     return state

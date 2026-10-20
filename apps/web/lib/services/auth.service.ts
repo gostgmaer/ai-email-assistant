@@ -68,19 +68,16 @@ export async function resetPassword(
   });
 }
 
-export async function refresh(refreshToken: string): Promise<TokenPair> {
+export async function refresh(): Promise<TokenPair> {
+  // No body needed — the refresh token rides along as an httpOnly cookie.
   return apiFetch<TokenPair>("/auth/refresh", {
     method: "POST",
-    body: { refreshToken },
     skipAuth: true,
   });
 }
 
-export async function logout(refreshToken: string): Promise<void> {
-  await apiFetch<void>("/auth/logout", {
-    method: "POST",
-    body: { refreshToken },
-  });
+export async function logout(): Promise<void> {
+  await apiFetch<void>("/auth/logout", { method: "POST" });
 }
 
 export interface Session {
@@ -92,11 +89,10 @@ export interface Session {
   isCurrent: boolean;
 }
 
-export async function getSessions(currentRefreshToken?: string): Promise<Session[]> {
-  const qs = currentRefreshToken
-    ? `?refreshToken=${encodeURIComponent(currentRefreshToken)}`
-    : "";
-  return apiFetch<Session[]>(`/auth/sessions${qs}`);
+export async function getSessions(): Promise<Session[]> {
+  // "Current" session is now resolved server-side from the refresh-token
+  // cookie, so no client-supplied token is needed here.
+  return apiFetch<Session[]>("/auth/sessions");
 }
 
 export async function revokeSession(id: string): Promise<void> {

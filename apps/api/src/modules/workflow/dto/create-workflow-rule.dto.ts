@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
+  IsDefined,
   IsInt,
   IsOptional,
   IsString,
@@ -9,15 +10,17 @@ import {
 } from 'class-validator';
 
 import {
+  LegacyWorkflowCondition,
   WorkflowAction,
-  WorkflowCondition,
+  WorkflowConditionGroup,
 } from '../types/workflow-rule.types';
 import { passthroughArray } from './passthrough-array.transform';
 
 // conditions/actions are validated for real shape by
-// WorkflowRuleService.validateConditions/validateActions (a discriminated
-// union doesn't validate cleanly through class-validator's decorators) —
-// this DTO only checks "these are arrays" before it gets there.
+// validateConditions (rule-conditions.util.ts) and
+// WorkflowRuleService.validateActions — a recursive group tree and a
+// discriminated union don't validate cleanly through class-validator's
+// decorators. This DTO only checks they're present.
 //
 // @passthroughArray() is required, not decorative — see its own comment
 // for the class-transformer behavior it works around. Found via live
@@ -44,12 +47,12 @@ export class CreateWorkflowRuleDto {
 
   @ApiProperty({
     description:
-      'ALL must match (AND) for this rule to fire. Empty array matches every message.',
-    type: [Object],
+      'A group: { all: [...] } (AND), { any: [...] } (OR) or { not: ... }, nesting groups and conditions { field, op, value }. A rule with no conditions needs { all: [], matchAll: true }. The v1 flat list [{ field, operator, value }] is still accepted.',
+    type: Object,
   })
-  @IsArray()
+  @IsDefined()
   @passthroughArray()
-  conditions!: WorkflowCondition[];
+  conditions!: WorkflowConditionGroup | LegacyWorkflowCondition[];
 
   @ApiProperty({
     description: 'Executed in order when this rule matches.',

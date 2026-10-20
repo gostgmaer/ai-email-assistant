@@ -1,13 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
 import { Prisma } from '../../../generated/prisma/client';
+import { QueueService } from '../../../infrastructure/queue';
 // Leaf-file import rather than the '../../email-account' barrel — see
 // the comment in documents.controller.ts for why (avoids a Jest-only
 // circular require).
 import { EmailAccountService } from '../../email-account/services/email-account.service';
 import { ListThreadsDto } from '../dto';
-import { NormalizedParticipant } from '../interfaces';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
 
 @Injectable()
@@ -16,6 +20,7 @@ export class InboxService {
     private readonly prisma: PrismaService,
     private readonly mailProviderFactory: MailProviderFactory,
     private readonly emailAccountService: EmailAccountService,
+    private readonly queueService: QueueService,
   ) {}
 
   async listThreads(userId: string, query: ListThreadsDto) {
@@ -235,17 +240,15 @@ export class InboxService {
   /**
    * Heuristic follow-up suggestions (see docs/v1.2-plan.md): threads where
    * the user sent the most recent message and nothing has come back in
-   * `olderThanDays` — not an AI capability, this is deliberately a rules
-   * pass over data that's already there (the account's own address vs. the
-   * latest message's sender), reusing extracted meeting_requests/tasks as
-   * a secondary signal rather than a fresh LLM call per thread.
+   * `olderThanDays` — not an AI capability, a rules pass over data that's
+   * already there, reusing extracted meeting requests as a secondary
+   * signal rather than a fresh LLM call per thread.
    *
-   * "Sent the last message" can't be expressed as a DB-level filter — a
-   * thread's `folder` is fixed at creation (see EmailThread.folderId's
-   * comment) and doesn't move when the user replies from an Inbox
-   * conversation, so the only reliable signal is comparing the latest
-   * message's `from` address against the account's own email. That means
-   * this filters in application code after a bounded fetch, not via SQL.
+   * "The user sent the last message" is EmailThread.lastMessageFromSelf,
+   * kept in step with lastMessageAt by sync and compose. Filtering on it in
+   * the query (instead of fetching the 50 OLDEST threads and filtering in
+   * code, which missed every recent candidate once an account had more
+   * than 50 threads) returns the most recent candidates first.
    */
   async getFollowUpCandidates(userId: string, olderThanDays = 3) {
     const threshold = new Date(
@@ -255,43 +258,35 @@ export class InboxService {
     const threads = await this.prisma.emailThread.findMany({
       where: {
         account: { members: { some: { userId } }, deletedAt: null },
+        lastMessageFromSelf: true,
         lastMessageAt: { lt: threshold },
+        folder: { type: { not: 'DRAFTS' } },
         OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: new Date() } }],
       },
       include: {
         account: { select: { id: true, provider: true, email: true } },
-        messages: { orderBy: { receivedAt: 'desc' }, take: 1 },
         tasks: {
           where: { type: 'MEETING_REQUEST', status: 'PENDING' },
           select: { id: true, description: true },
         },
       },
-      orderBy: { lastMessageAt: 'asc' },
+      orderBy: { lastMessageAt: 'desc' },
       take: 50,
     });
 
-    return threads
-      .filter((thread) => {
-        const latest = thread.messages[0];
-        if (!latest) return false;
-        const sender = firstParticipant(latest.from);
-        return (
-          sender?.address.toLowerCase() === thread.account.email.toLowerCase()
-        );
-      })
-      .map((thread) => ({
-        threadId: thread.id,
-        subject: thread.subject,
-        lastMessageAt: thread.lastMessageAt,
-        daysSinceLastMessage: thread.lastMessageAt
-          ? Math.floor(
-              (Date.now() - thread.lastMessageAt.getTime()) /
-                (24 * 60 * 60 * 1000),
-            )
-          : null,
-        account: thread.account,
-        relatedMeetingRequests: thread.tasks,
-      }));
+    return threads.map((thread) => ({
+      threadId: thread.id,
+      subject: thread.subject,
+      lastMessageAt: thread.lastMessageAt,
+      daysSinceLastMessage: thread.lastMessageAt
+        ? Math.floor(
+            (Date.now() - thread.lastMessageAt.getTime()) /
+              (24 * 60 * 60 * 1000),
+          )
+        : null,
+      account: thread.account,
+      relatedMeetingRequests: thread.tasks,
+    }));
   }
 
   async getThread(userId: string, threadId: string) {
@@ -302,7 +297,26 @@ export class InboxService {
           select: { id: true, provider: true, email: true, userId: true },
         },
         folder: true,
-        messages: { orderBy: { receivedAt: 'asc' } },
+        messages: {
+          orderBy: { receivedAt: 'asc' },
+          // AI replies held for review live as local drafts in a separate
+          // Drafts thread; surfacing them on the message they answer is
+          // what lets a reviewer see the draft next to the conversation.
+          include: {
+            draftReplies: {
+              where: { thread: { folder: { type: 'DRAFTS' } } },
+              orderBy: { createdAt: 'desc' },
+              select: {
+                id: true,
+                bodyText: true,
+                createdAt: true,
+                generationMetadata: true,
+                scheduledSendAt: true,
+                approvalChain: { select: { status: true } },
+              },
+            },
+          },
+        },
         assignedTo: {
           select: { id: true, email: true, displayName: true },
         },
@@ -355,6 +369,43 @@ export class InboxService {
     return message;
   }
 
+  /**
+   * The "Retry AI" action for a message whose AI processing failed (or
+   * never finished). Safe to call repeatedly: the pipeline's effect ledger
+   * guarantees a retry never repeats a send, rule action or draft that an
+   * earlier attempt already completed.
+   */
+  async retryAiProcessing(userId: string, messageId: string): Promise<void> {
+    const message = await this.getMessageOwned(userId, messageId);
+
+    if (message.aiProcessedAt) {
+      throw new ConflictException(
+        'This message has already been processed by the AI assistant',
+      );
+    }
+
+    await this.prisma.emailMessage.update({
+      where: { id: messageId },
+      data: { aiFailedAt: null, aiError: null },
+    });
+    await this.queueService.enqueueAiProcessing(messageId, { retry: true });
+  }
+
+  /** The account's synced folders — what a MOVE_TO_FOLDER rule can
+   * target. Local-only folders (app-side Drafts/Sent) are left out. */
+  async listFolders(userId: string, accountId: string) {
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      accountId,
+    );
+
+    return this.prisma.mailFolder.findMany({
+      where: { accountId, providerFolderId: { not: null } },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, type: true },
+    });
+  }
+
   async markRead(userId: string, messageId: string): Promise<void> {
     const message = await this.getMessageOwned(userId, messageId);
 
@@ -375,9 +426,4 @@ export class InboxService {
       message.thread.folder.providerFolderId ?? undefined,
     );
   }
-}
-
-function firstParticipant(from: unknown): NormalizedParticipant | undefined {
-  const list = from as NormalizedParticipant[] | undefined;
-  return Array.isArray(list) ? list[0] : undefined;
 }

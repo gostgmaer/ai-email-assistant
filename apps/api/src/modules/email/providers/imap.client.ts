@@ -14,7 +14,9 @@ import {
   NormalizedParticipant,
   SendResult,
 } from '../interfaces';
+import { parseMessageIdList } from '../utils/reply-recipients.util';
 import { detectBulkMailSignals } from './bulk-mail.util';
+import { MailAuthError } from './mail-errors';
 
 const SPECIAL_USE_TYPE: Record<string, NormalizedFolder['type']> = {
   '\\Inbox': 'INBOX',
@@ -65,8 +67,15 @@ export class ImapClient implements MailProviderClient {
       const limit = options.limit ?? 25;
       let uids: number[];
 
-      if (options.sinceCursor) {
-        const sinceUid = Number(options.sinceCursor);
+      // Cursor is "<UIDVALIDITY>:<last seen UID>". UIDs are only
+      // meaningful within one UIDVALIDITY (RFC 3501 §2.3.1.1): when the
+      // server resets it, every stored UID is stale, so fall back to a
+      // fresh listing instead of searching from a meaningless UID. A bare
+      // number is the legacy cursor format, trusted as a UID.
+      const uidValidity = String(mailbox.uidValidity);
+      const sinceUid = parseImapCursor(options.sinceCursor, uidValidity);
+
+      if (sinceUid !== undefined) {
         const found = await client.search(
           { uid: `${sinceUid + 1}:*` },
           { uid: true },
@@ -99,11 +108,13 @@ export class ImapClient implements MailProviderClient {
       const oldestUid = uids.length ? Math.min(...uids) : undefined;
       const newestUid = uids.length ? Math.max(...uids) : undefined;
 
+      const lastUid = newestUid ?? sinceUid ?? mailbox.uidNext - 1;
+
       return {
         messages,
         nextPageToken:
           oldestUid && oldestUid > 1 ? String(oldestUid) : undefined,
-        cursor: newestUid ? String(newestUid) : options.sinceCursor,
+        cursor: `${uidValidity}:${lastUid}`,
       };
     });
   }
@@ -150,6 +161,76 @@ export class ImapClient implements MailProviderClient {
     });
   }
 
+  /** IMAP's equivalent of a label is a keyword flag; keywords are atoms,
+   * so anything else in the name becomes an underscore. */
+  async addLabel(
+    providerMessageId: string,
+    label: string,
+    folderProviderId?: string,
+  ): Promise<void> {
+    const keyword = label.replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 64);
+
+    await this.withMessage(providerMessageId, folderProviderId, (client, uid) =>
+      client.messageFlagsAdd(uid, [keyword], { uid: true }),
+    );
+  }
+
+  async moveMessage(
+    providerMessageId: string,
+    destinationFolderProviderId: string,
+    sourceFolderProviderId?: string,
+  ): Promise<undefined> {
+    // IMAP messages are keyed by Message-ID here, which survives a move.
+    await this.withMessage(
+      providerMessageId,
+      sourceFolderProviderId,
+      (client, uid) =>
+        client.messageMove(uid, destinationFolderProviderId, { uid: true }),
+    );
+    return undefined;
+  }
+
+  async archiveMessage(
+    providerMessageId: string,
+    folderProviderId?: string,
+  ): Promise<undefined> {
+    await this.withMessage(
+      providerMessageId,
+      folderProviderId,
+      async (client, uid) => {
+        const archive = (await client.list()).find(
+          (mailbox) => mailbox.specialUse === '\\Archive',
+        );
+        if (!archive) {
+          throw new BadRequestException(
+            'This IMAP server has no Archive folder',
+          );
+        }
+        await client.messageMove(uid, archive.path, { uid: true });
+      },
+    );
+    return undefined;
+  }
+
+  /** Opens the message's folder read-write and runs `fn` on its UID. */
+  private async withMessage(
+    providerMessageId: string,
+    folderProviderId: string | undefined,
+    fn: (client: ImapFlow, uid: number) => Promise<unknown>,
+  ): Promise<void> {
+    if (!folderProviderId) {
+      throw new BadRequestException(
+        'folderProviderId is required to update an IMAP message',
+      );
+    }
+
+    await this.withClient(async (client) => {
+      await client.mailboxOpen(folderProviderId);
+      const uid = await this.resolveUid(client, providerMessageId);
+      await fn(client, uid);
+    });
+  }
+
   async sendMessage(input: ComposeInput): Promise<SendResult> {
     const transporter = nodemailer.createTransport({
       host: this.config.smtp.host,
@@ -167,8 +248,11 @@ export class ImapClient implements MailProviderClient {
         subject: input.subject,
         html: input.bodyHtml,
         text: input.bodyText,
-        inReplyTo: input.inReplyToProviderMessageId,
-        references: input.inReplyToProviderMessageId,
+        // For IMAP the provider message id IS the RFC Message-ID, so it's
+        // a valid fallback for rows synced before the header was stored.
+        inReplyTo: input.inReplyToHeader ?? input.inReplyToProviderMessageId,
+        references: input.referencesHeader ?? input.inReplyToProviderMessageId,
+        headers: input.headers,
       });
 
       const messageId = info.messageId;
@@ -236,6 +320,11 @@ export class ImapClient implements MailProviderClient {
         : new Date(),
       isRead: message.flags ? message.flags.has('\\Seen') : false,
       inReplyTo: message.envelope?.inReplyTo,
+      replyTo: (message.envelope?.replyTo ?? []).map((a) =>
+        this.fromImapAddress(a),
+      ),
+      messageIdHeader: message.envelope?.messageId,
+      references: parseMessageIdList(parsed?.references),
       bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('list-unsubscribe'),
@@ -245,6 +334,9 @@ export class ImapClient implements MailProviderClient {
           autoResponseSuppress: header('x-auto-response-suppress'),
           feedbackId: header('feedback-id'),
           hasEspSignature,
+          xAutoreply: header('x-autoreply'),
+          xAutorespond: header('x-autorespond'),
+          returnPath: header('return-path'),
         },
         from[0]?.address,
         subject,
@@ -259,6 +351,16 @@ export class ImapClient implements MailProviderClient {
 
     if (value instanceof Date) {
       return value.toISOString();
+    }
+
+    // mailparser parses address-shaped headers (e.g. return-path) into an
+    // AddressObject; its `text` is the header as written, e.g. "<>".
+    if (
+      value &&
+      typeof value === 'object' &&
+      typeof (value as { text?: unknown }).text === 'string'
+    ) {
+      return (value as { text: string }).text;
     }
 
     return undefined;
@@ -288,7 +390,16 @@ export class ImapClient implements MailProviderClient {
       logger: false,
     });
 
-    await client.connect();
+    try {
+      await client.connect();
+    } catch (error) {
+      if ((error as { authenticationFailed?: boolean }).authenticationFailed) {
+        throw new MailAuthError(
+          `IMAP login failed for ${this.config.username}; reconnect this account`,
+        );
+      }
+      throw error;
+    }
 
     try {
       return await fn(client);
@@ -296,4 +407,22 @@ export class ImapClient implements MailProviderClient {
       await client.logout().catch(() => undefined);
     }
   }
+}
+
+function parseImapCursor(
+  cursor: string | undefined,
+  currentUidValidity: string,
+): number | undefined {
+  if (!cursor) {
+    return undefined;
+  }
+
+  const [validity, uid] = cursor.includes(':')
+    ? cursor.split(':')
+    : [currentUidValidity, cursor];
+
+  const parsed = Number(uid);
+  return validity === currentUidValidity && Number.isFinite(parsed)
+    ? parsed
+    : undefined;
 }

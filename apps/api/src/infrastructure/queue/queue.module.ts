@@ -50,6 +50,12 @@ import { QueueService } from './queue.service';
       {
         name: QueueNames.Digest,
       },
+      {
+        name: QueueNames.Approvals,
+      },
+      {
+        name: QueueNames.Automation,
+      },
     ),
   ],
 

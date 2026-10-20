@@ -13,6 +13,7 @@ import {
   listMyPendingApprovals,
   rejectChainStep,
 } from "@/lib/services/approval-chains.service";
+import { formatDateTime } from "@/lib/utils/format";
 
 function ApprovalCard({ chain }: { chain: ApprovalChain }) {
   const queryClient = useQueryClient();
@@ -39,7 +40,7 @@ function ApprovalCard({ chain }: { chain: ApprovalChain }) {
   });
 
   const currentStepIndex = chain.steps.findIndex((s) => s.status === "PENDING");
-  const recipients = chain.draftMessage.to
+  const recipients = (chain.draftMessage?.to ?? chain.draftRecipients ?? [])
     .map((p) => p.address)
     .filter(Boolean)
     .join(", ");
@@ -51,15 +52,20 @@ function ApprovalCard({ chain }: { chain: ApprovalChain }) {
           Step {currentStepIndex + 1} of {chain.steps.length}
         </span>
         <span className="text-[11px] text-zinc-400">{chain.account.email}</span>
+        {chain.expiresAt && (
+          <span className="text-[11px] text-amber-600">
+            Expires {formatDateTime(chain.expiresAt)}
+          </span>
+        )}
       </div>
 
       <p className="mt-1.5 text-sm font-medium text-zinc-900">
-        {chain.draftMessage.subject || "(no subject)"}
+        {chain.draftMessage?.subject ?? chain.draftSubject ?? "(no subject)"}
       </p>
       {recipients && (
         <p className="text-xs text-zinc-500">To: {recipients}</p>
       )}
-      {chain.draftMessage.bodyText && (
+      {chain.draftMessage?.bodyText && (
         <p className="mt-1.5 line-clamp-3 whitespace-pre-wrap text-sm text-zinc-600">
           {chain.draftMessage.bodyText}
         </p>

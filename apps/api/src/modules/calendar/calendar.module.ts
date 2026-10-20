@@ -13,6 +13,7 @@ import { MeetingSchedulingController } from './controllers/meeting-scheduling.co
 import { GoogleCalendarConnectGuard } from './guards/google-calendar-connect.guard';
 import { MicrosoftCalendarConnectGuard } from './guards/microsoft-calendar-connect.guard';
 import { CalendarAccountService } from './services/calendar-account.service';
+import { CalendarContextService } from './services/calendar-context.service';
 import { CalendarService } from './services/calendar.service';
 import { MeetingSchedulingService } from './services/meeting-scheduling.service';
 import { GoogleCalendarConnectStrategy } from './strategies/google-calendar-connect.strategy';
@@ -45,6 +46,7 @@ import { MicrosoftCalendarConnectStrategy } from './strategies/microsoft-calenda
   providers: [
     CalendarAccountService,
     CalendarService,
+    CalendarContextService,
     MeetingSchedulingService,
     GoogleCalendarConnectStrategy,
     MicrosoftCalendarConnectStrategy,
@@ -52,6 +54,10 @@ import { MicrosoftCalendarConnectStrategy } from './strategies/microsoft-calenda
     MicrosoftCalendarConnectGuard,
   ],
 
-  exports: [CalendarAccountService, MeetingSchedulingService],
+  exports: [
+    CalendarAccountService,
+    CalendarContextService,
+    MeetingSchedulingService,
+  ],
 })
 export class CalendarModule {}

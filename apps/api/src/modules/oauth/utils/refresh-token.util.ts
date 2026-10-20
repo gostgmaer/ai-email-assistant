@@ -3,6 +3,16 @@ import { ConfigService } from '@nestjs/config';
 
 import { OAuthProviderName } from '../interfaces';
 
+/** The stored OAuth grant is no longer usable and only a user reconnect
+ * can fix it. Extends BadRequestException (what every refresh failure
+ * threw before), so existing HTTP behavior is unchanged. */
+export class OAuthReconnectRequiredException extends BadRequestException {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OAuthReconnectRequiredException';
+  }
+}
+
 export interface RefreshedOAuthToken {
   accessToken: string;
   refreshToken?: string;
@@ -46,6 +56,14 @@ export async function refreshOAuthToken(
   });
 
   if (!response.ok) {
+    // 400/401 from the token endpoint means the grant itself is gone
+    // (invalid_grant: revoked, expired, password changed) — a retry will
+    // fail identically. Anything else (5xx, 429) may be transient.
+    if (response.status === 400 || response.status === 401) {
+      throw new OAuthReconnectRequiredException(
+        `${provider} rejected the stored refresh token; reconnect this account`,
+      );
+    }
     throw new BadRequestException(
       `Failed to refresh ${provider} access token; reconnect this account`,
     );

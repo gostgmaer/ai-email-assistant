@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module, OnApplicationBootstrap, forwardRef } from '@nestjs/common';
 
 // Leaf-file import rather than the '../auth' barrel — that barrel
 // re-exports auth.module.ts, which sits in a forwardRef() cycle with
@@ -12,7 +12,9 @@ import { AuthModule } from '../auth/auth.module';
 import { EmailAccountModule } from '../email-account';
 import { EmailModule } from '../email/email.module';
 import { NotificationModule } from '../notification';
+import { QueueService } from '../../infrastructure/queue';
 import { ApprovalChainController } from './controllers/approval-chain.controller';
+import { ApprovalSweepProcessor } from './processors/approval-sweep.processor';
 import { ApprovalChainService } from './services/approval-chain.service';
 
 @Module({
@@ -25,8 +27,14 @@ import { ApprovalChainService } from './services/approval-chain.service';
 
   controllers: [ApprovalChainController],
 
-  providers: [ApprovalChainService],
+  providers: [ApprovalChainService, ApprovalSweepProcessor],
 
   exports: [ApprovalChainService],
 })
-export class ApprovalModule {}
+export class ApprovalModule implements OnApplicationBootstrap {
+  constructor(private readonly queueService: QueueService) {}
+
+  async onApplicationBootstrap(): Promise<void> {
+    await this.queueService.scheduleApprovalSweep();
+  }
+}

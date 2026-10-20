@@ -67,8 +67,16 @@ export class EmailSyncProcessor extends WorkerHost {
   }
 
   private async runBackgroundScan(): Promise<void> {
+    // Skips accounts waiting for a reconnect (retrying can't help) and
+    // accounts still inside their failure backoff window (see
+    // EmailSyncService.recordSyncFailure).
     const accounts = await this.prisma.emailAccount.findMany({
-      where: { syncEnabled: true, deletedAt: null },
+      where: {
+        syncEnabled: true,
+        deletedAt: null,
+        syncStatus: { not: 'AUTH_REQUIRED' },
+        OR: [{ nextSyncAt: null }, { nextSyncAt: { lte: new Date() } }],
+      },
       select: { id: true },
     });
 

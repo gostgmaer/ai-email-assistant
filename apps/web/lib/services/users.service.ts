@@ -8,6 +8,9 @@ export async function getMe(): Promise<User> {
 export async function updateMe(data: {
   displayName?: string;
   avatar?: string;
+  jobTitle?: string;
+  companyName?: string;
+  timezone?: string;
 }): Promise<User> {
   return apiFetch<User>("/users/me", { method: "PATCH", body: data });
 }

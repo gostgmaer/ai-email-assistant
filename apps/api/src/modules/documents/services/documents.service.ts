@@ -582,11 +582,14 @@ export class DocumentsService {
   }
 }
 
-// pgvector's `<=>` is cosine distance (0 = identical, 2 = opposite). 0.8 is
-// deliberately permissive — cutting only chunks that are essentially
-// unrelated to the query — since there's no tuned/tested threshold for this
-// corpus yet; callers needing tighter precision can pass a lower value.
-const DEFAULT_MAX_DISTANCE = 0.8;
+// pgvector's `<=>` is cosine distance (0 = identical, 2 = opposite). Tightened
+// from the original 0.8 (which let essentially-unrelated chunks through and
+// contributed to a real hallucination — a reply about an unrelated casual
+// message ended up citing "Fullstack Developer position" details pulled from
+// a resume at distance ~0.40-0.45) down to 0.5: still permissive enough for
+// genuine topical matches, but excludes chunks that only weakly overlap with
+// the query. Callers needing tighter precision can still pass a lower value.
+const DEFAULT_MAX_DISTANCE = 0.5;
 
 // Re-ranking (Maximal Marginal Relevance): how much wider than the final
 // result count the initial vector-search candidate pool should be.

@@ -1,9 +1,4 @@
-import {
-  clearTokens,
-  getAccessToken,
-  getRefreshToken,
-  setTokens,
-} from "../auth/token-storage";
+import { clearTokens, getAccessToken, setTokens } from "../auth/token-storage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -28,13 +23,14 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 let refreshPromise: Promise<boolean> | null = null;
 
 async function refreshAccessToken(): Promise<boolean> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return false;
-
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
+    // The refresh token is an httpOnly cookie now, not a request body field —
+    // "include" is required for the browser to attach it, since API_URL is
+    // typically a different origin than the app in production.
+    credentials: "include",
+    body: JSON.stringify({}),
     cache: "no-store",
   });
 
@@ -43,10 +39,7 @@ async function refreshAccessToken(): Promise<boolean> {
     return false;
   }
 
-  const tokens = (await response.json()) as {
-    accessToken: string;
-    refreshToken: string;
-  };
+  const tokens = (await response.json()) as { accessToken: string };
   setTokens(tokens);
   return true;
 }
@@ -83,6 +76,9 @@ export async function apiFetch<T>(
       // GETs; a 304 has no body and response.ok is false for it, which broke
       // auth checks on repeat navigations. TanStack Query is our cache layer.
       cache: "no-store",
+      // Needed so the httpOnly refresh-token cookie (scoped to /auth) rides
+      // along on /auth/* requests such as /auth/sessions and /auth/refresh.
+      credentials: "include",
       headers: {
         // FormData bodies (file uploads) must NOT set Content-Type — fetch
         // needs to generate its own multipart boundary.
@@ -99,7 +95,10 @@ export async function apiFetch<T>(
 
   let response = await doFetch();
 
-  if (response.status === 401 && !skipAuth && getRefreshToken()) {
+  if (response.status === 401 && !skipAuth) {
+    // No client-side way to check for a refresh token anymore (httpOnly
+    // cookie), so we always attempt one refresh on a 401 and let the
+    // response say whether the cookie was valid.
     refreshPromise ??= refreshAccessToken().finally(() => {
       refreshPromise = null;
     });

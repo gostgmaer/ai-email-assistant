@@ -58,6 +58,16 @@ export class EmailController {
     return this.inboxService.listThreads(user.sub, query);
   }
 
+  @Get('accounts/:accountId/folders')
+  @ApiOperation({ summary: "An account's synced folders" })
+  @ApiResponse({ status: 200, description: 'Folders (id, name, type)' })
+  async listFolders(
+    @CurrentUser() user: JwtPayload,
+    @Param('accountId') accountId: string,
+  ) {
+    return this.inboxService.listFolders(user.sub, accountId);
+  }
+
   @Get('follow-ups')
   @ApiOperation({
     summary:
@@ -155,6 +165,17 @@ export class EmailController {
     return this.inboxService.getMessageOwned(user.sub, id);
   }
 
+  @Post('messages/:id/retry-ai')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Re-queue AI processing for a message whose processing failed',
+  })
+  @ApiResponse({ status: 202, description: 'Queued' })
+  @ApiResponse({ status: 409, description: 'Already processed' })
+  async retryAi(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    await this.inboxService.retryAiProcessing(user.sub, id);
+  }
+
   @Post('messages/:id/read')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Mark a message as read' })
@@ -203,6 +224,23 @@ export class EmailController {
   @ApiResponse({ status: 201, description: 'The sent message' })
   async sendDraft(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.composeService.sendDraft(user.sub, id);
+  }
+
+  @Post('drafts/:id/cancel-scheduled-send')
+  @ApiOperation({
+    summary:
+      'Cancel a scheduled auto-reply; it stays in Drafts for review instead',
+  })
+  @ApiResponse({ status: 201, description: 'The draft, no longer scheduled' })
+  @ApiResponse({
+    status: 409,
+    description: 'Not scheduled, or already being sent',
+  })
+  async cancelScheduledSend(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.composeService.cancelScheduledSend(user.sub, id);
   }
 
   @Delete('drafts/:id')

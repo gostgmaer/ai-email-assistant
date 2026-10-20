@@ -2,6 +2,7 @@ import { apiFetch } from "../api/client";
 import type {
   EmailMessage,
   EmailThreadDetail,
+  MailFolderSummary,
   ThreadNote,
   ThreadsPage,
 } from "../api/types";
@@ -97,6 +98,11 @@ export async function getMessage(id: string): Promise<MessageWithAccount> {
   return apiFetch<MessageWithAccount>(`/email/messages/${id}`);
 }
 
+/** Re-queues AI processing for a message whose processing failed. */
+export async function retryAiProcessing(id: string): Promise<void> {
+  await apiFetch(`/email/messages/${id}/retry-ai`, { method: "POST" });
+}
+
 export async function markMessageRead(id: string): Promise<void> {
   await apiFetch(`/email/messages/${id}/read`, { method: "POST" });
 }
@@ -124,6 +130,8 @@ export interface ReplyInput {
   messageId: string;
   bodyHtml: string;
   bodyText?: string;
+  /** Also copy everyone else on the message (minus your own addresses). */
+  replyAll?: boolean;
 }
 
 export async function replyToMessage(
@@ -168,6 +176,19 @@ export async function sendDraft(id: string): Promise<EmailMessage> {
   return apiFetch<EmailMessage>(`/email/drafts/${id}/send`, {
     method: "POST",
   });
+}
+
+/** Stops a scheduled auto-reply from sending; it stays as a draft. */
+export async function cancelScheduledSend(id: string): Promise<EmailMessage> {
+  return apiFetch<EmailMessage>(`/email/drafts/${id}/cancel-scheduled-send`, {
+    method: "POST",
+  });
+}
+
+export async function listAccountFolders(
+  accountId: string,
+): Promise<MailFolderSummary[]> {
+  return apiFetch<MailFolderSummary[]>(`/email/accounts/${accountId}/folders`);
 }
 
 export async function deleteDraft(id: string): Promise<void> {

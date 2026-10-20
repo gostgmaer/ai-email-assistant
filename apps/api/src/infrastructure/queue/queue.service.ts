@@ -4,6 +4,8 @@ import { Queue } from 'bullmq';
 
 import {
   AIJobs,
+  ApprovalJobs,
+  AutomationJobs,
   DigestJobs,
   DocumentJobs,
   EmailSyncJobs,
@@ -16,6 +18,8 @@ const DOCUMENT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 // 08:00 daily — this codebase's first cron-pattern repeatable job (every
 // other scheduled job so far uses a fixed `every` interval instead).
 const DAILY_DIGEST_CRON = '0 8 * * *';
+const APPROVAL_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
+const RULE_EXECUTION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 /** Everything DocumentsProcessingProcessor needs to call the AI service and
  * update the Document row, without re-querying the DB or re-deriving the
@@ -52,34 +56,74 @@ export class QueueService {
     @InjectQueue(QueueNames.Documents)
     private readonly documentsQueue: Queue,
     @InjectQueue(QueueNames.Digest) private readonly digestQueue: Queue,
+    @InjectQueue(QueueNames.Approvals)
+    private readonly approvalsQueue: Queue,
+    @InjectQueue(QueueNames.Automation)
+    private readonly automationQueue: Queue,
   ) {}
 
   async enqueueInitialSync(accountId: string): Promise<void> {
     // See enqueueAiProcessing: BullMQ rejects a custom jobId containing a
     // colon unless it splits into exactly 3 parts, so use a dash here.
+    // Removed as soon as it finishes either way: a finished job kept under
+    // this fixed id would make a later reconnect's enqueue a silent no-op
+    // (BullMQ ignores an add whose jobId already exists). Failures are
+    // recorded on the account itself (syncStatus/lastSyncError).
     await this.emailSyncQueue.add(
       EmailSyncJobs.InitialSync,
       { accountId },
-      { jobId: `${EmailSyncJobs.InitialSync}-${accountId}` },
+      {
+        jobId: `${EmailSyncJobs.InitialSync}-${accountId}`,
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
     );
   }
 
   async enqueueIncrementalSync(accountId: string): Promise<void> {
+    // One fixed id per account: while a sync for the account is queued or
+    // running, another add is a no-op, so overlapping syncs can't race on
+    // the same rows. A single attempt — EmailSyncService does its own
+    // backoff via nextSyncAt, and the background scan is the retry.
     await this.emailSyncQueue.add(
       EmailSyncJobs.IncrementalSync,
       { accountId },
-      { jobId: `${EmailSyncJobs.IncrementalSync}:${accountId}:${Date.now()}` },
+      {
+        jobId: `${EmailSyncJobs.IncrementalSync}-${accountId}`,
+        attempts: 1,
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
     );
   }
 
-  async enqueueAiProcessing(messageId: string): Promise<void> {
+  /**
+   * `retry` re-queues a message whose earlier job already finished (the
+   * "Retry AI" action): BullMQ silently ignores an add whose jobId still
+   * exists in the completed/failed sets, so the old job is removed first.
+   * A job that's still waiting or running is left alone either way.
+   */
+  async enqueueAiProcessing(
+    messageId: string,
+    options: { retry?: boolean; delayMs?: number } = {},
+  ): Promise<void> {
     // BullMQ only allows a colon in a custom jobId when it splits into
     // exactly 3 parts (legacy repeatable-job format) — use a dash instead
     // to avoid tripping that check.
+    const jobId = `${AIJobs.ProcessMessage}-${messageId}`;
+
+    if (options.retry) {
+      const existing = await this.aiQueue.getJob(jobId);
+      const state = await existing?.getState();
+      if (existing && (state === 'failed' || state === 'completed')) {
+        await existing.remove();
+      }
+    }
+
     await this.aiQueue.add(
       AIJobs.ProcessMessage,
       { messageId },
-      { jobId: `${AIJobs.ProcessMessage}-${messageId}` },
+      options.delayMs ? { jobId, delay: options.delayMs } : { jobId },
     );
   }
 
@@ -145,6 +189,42 @@ export class QueueService {
     );
   }
 
+  /** Idempotent: registers the recurring approval-chain sweep (reminders
+   * and expiry) if not already scheduled. */
+  async scheduleApprovalSweep(): Promise<void> {
+    await this.approvalsQueue.upsertJobScheduler(
+      'approval-chain-sweep',
+      { every: APPROVAL_SWEEP_INTERVAL_MS },
+      { name: ApprovalJobs.Sweep, data: {} },
+    );
+  }
+
+  /** Sends a scheduled auto-reply draft at `sendAt`. One job per draft;
+   * cancelling doesn't remove it — the job re-checks the send's status
+   * when it fires and does nothing if it was cancelled. */
+  async enqueueScheduledSend(
+    draftMessageId: string,
+    sendAt: Date,
+  ): Promise<void> {
+    await this.automationQueue.add(
+      AutomationJobs.SendScheduledReply,
+      { draftMessageId },
+      {
+        jobId: `${AutomationJobs.SendScheduledReply}-${draftMessageId}`,
+        delay: Math.max(0, sendAt.getTime() - Date.now()),
+      },
+    );
+  }
+
+  /** Idempotent: registers the daily RuleExecution retention cleanup. */
+  async scheduleRuleExecutionCleanup(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'rule-execution-cleanup',
+      { every: RULE_EXECUTION_CLEANUP_INTERVAL_MS },
+      { name: AutomationJobs.CleanupRuleExecutions, data: {} },
+    );
+  }
+
   async enqueueDigestForUser(userId: string): Promise<void> {
     await this.digestQueue.add(
       DigestJobs.SendForUser,
@@ -165,6 +245,10 @@ export class QueueService {
         return this.documentsQueue;
       case QueueNames.Digest:
         return this.digestQueue;
+      case QueueNames.Approvals:
+        return this.approvalsQueue;
+      case QueueNames.Automation:
+        return this.automationQueue;
     }
   }
 }

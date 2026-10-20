@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ChevronLeftIcon, ClockIcon, SparklesIcon } from "@/components/icons";
+import { PendingDraftCard } from "@/components/inbox/PendingDraftCard";
 import { ReplyBox } from "@/components/inbox/ReplyBox";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -20,6 +21,7 @@ import {
   deleteThreadNote,
   getThread,
   markMessageRead,
+  retryAiProcessing,
   snoozeThread,
   unsnoozeThread,
 } from "@/lib/services/email.service";
@@ -91,6 +93,12 @@ export default function ThreadPage() {
   });
 
   const markReadMutation = useMutation({ mutationFn: markMessageRead });
+
+  const retryAiMutation = useMutation({
+    mutationFn: retryAiProcessing,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["thread", threadId] }),
+  });
 
   const snoozeMutation = useMutation({
     mutationFn: (until: string) => snoozeThread(threadId, until),
@@ -345,11 +353,55 @@ export default function ThreadPage() {
                       Grounded in your documents
                     </span>
                   )}
+                  {message.needsReply === false && (
+                    <span
+                      title="The AI assistant decided this message doesn't need a reply, so it didn't draft one. You can still reply yourself."
+                      className="mt-1.5 mr-1.5 inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500"
+                    >
+                      No reply needed
+                      {message.replyReason ? ` · ${message.replyReason}` : ""}
+                    </span>
+                  )}
+                  {message.generationMetadata?.calendarAgentUsed && (
+                    <span
+                      title="The Calendar Agent checked real availability to inform this reply's tone — it never states a specific time itself."
+                      className="mt-1.5 ml-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                    >
+                      <ClockIcon className="h-3 w-3" />
+                      Calendar-aware
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="pl-12">
                 <MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} />
               </div>
+              {message.aiFailedAt && (
+                <div className="mt-3 ml-12 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                  <p className="min-w-0 text-xs text-red-700">
+                    The AI assistant couldn&apos;t process this email
+                    {message.aiError ? `: ${message.aiError}` : "."}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => retryAiMutation.mutate(message.id)}
+                    loading={
+                      retryAiMutation.isPending &&
+                      retryAiMutation.variables === message.id
+                    }
+                  >
+                    Retry AI
+                  </Button>
+                </div>
+              )}
+              {message.draftReplies?.map((draft) => (
+                <PendingDraftCard
+                  key={draft.id}
+                  draft={draft}
+                  threadId={thread.id}
+                />
+              ))}
             </article>
           );
         })}

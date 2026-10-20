@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -17,6 +18,11 @@ import {
 } from '../dto';
 import { NormalizedParticipant } from '../interfaces';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
+import {
+  buildReplyRecipients,
+  buildThreadingHeaders,
+} from '../utils/reply-recipients.util';
+import { textToSafeHtml } from '../utils/text-to-html.util';
 import { InboxService } from './inbox.service';
 
 /** Provenance of an AI-generated reply — set only by the autonomous
@@ -25,6 +31,7 @@ export interface GenerationMetadata {
   ragUsed: boolean;
   contactMemoryUsed: boolean;
   crmContactUsed: boolean;
+  calendarAgentUsed: boolean;
   provider: string;
   model: string;
   usage: { inputTokens: number; outputTokens: number; totalTokens: number };
@@ -34,7 +41,18 @@ export interface GenerationMetadata {
     filename: string;
     distance: number;
   }>;
+  /** Set only on held drafts: the AI's text exactly as generated, so
+   * sendDraft() can tell whether a human edited it before sending. */
+  draftText?: string;
 }
+
+/** Headers set on every autonomous (unreviewed) reply — RFC 3834 asks
+ * automatic responders to mark their mail so other responders don't
+ * answer it, which is what stops two auto-responders looping. */
+export const AUTO_REPLY_HEADERS: Record<string, string> = {
+  'Auto-Submitted': 'auto-replied',
+  'X-Auto-Response-Suppress': 'All',
+};
 
 @Injectable()
 export class ComposeService {
@@ -45,7 +63,11 @@ export class ComposeService {
     private readonly inboxService: InboxService,
   ) {}
 
-  async send(userId: string, dto: ComposeEmailDto) {
+  async send(
+    userId: string,
+    dto: ComposeEmailDto,
+    options: { headers?: Record<string, string> } = {},
+  ) {
     const account = await this.emailAccountService.getAccessibleAccountOrThrow(
       userId,
       dto.accountId,
@@ -60,6 +82,7 @@ export class ComposeService {
       subject: dto.subject,
       bodyHtml: dto.bodyHtml,
       bodyText: dto.bodyText,
+      headers: options.headers,
     });
 
     return this.persistSentMessage(
@@ -76,6 +99,7 @@ export class ComposeService {
     userId: string,
     dto: ReplyEmailDto,
     generationMetadata?: GenerationMetadata,
+    options: { headers?: Record<string, string> } = {},
   ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
@@ -94,10 +118,15 @@ export class ComposeService {
 
     const client = await this.mailProviderFactory.createClient(fullAccount);
 
-    const to = original.from as unknown as NormalizedParticipant[];
+    const { to, cc } = buildReplyRecipients(
+      original,
+      [fullAccount.email, ...fullAccount.aliases],
+      dto.replyAll,
+    );
 
     const result = await client.sendMessage({
       to,
+      cc: cc.length > 0 ? cc : undefined,
       subject: original.subject
         ? `Re: ${original.subject.replace(/^Re:\s*/i, '')}`
         : 'Re:',
@@ -105,6 +134,8 @@ export class ComposeService {
       bodyText: dto.bodyText,
       inReplyToProviderMessageId: original.providerMessageId,
       providerThreadId: original.thread.providerThreadId,
+      ...buildThreadingHeaders(original),
+      headers: options.headers,
     });
 
     return this.persistSentMessage(
@@ -116,7 +147,7 @@ export class ComposeService {
       },
       result,
       to,
-      undefined,
+      cc,
       undefined,
       generationMetadata,
     );
@@ -126,13 +157,16 @@ export class ComposeService {
    * Used by the autonomous AI pipeline to hold a drafted reply for human
    * review instead of sending it. Reuses the same local-Drafts mechanism as
    * saveDraft() (so it shows up in the existing Drafts tab), but threads it
-   * to the message being replied to via inReplyToMessageId.
+   * to the message being replied to via inReplyToMessageId. bodyHtml
+   * defaults to the text, escaped; scheduledSendAt marks an approved
+   * auto-reply waiting to send (see AutomationService.sendScheduledReply).
    */
   async saveDraftReply(
     userId: string,
     originalMessageId: string,
-    content: { subject: string; bodyText: string },
+    content: { subject: string; bodyText: string; bodyHtml?: string },
     generationMetadata?: GenerationMetadata,
+    options: { replyAll?: boolean; scheduledSendAt?: Date } = {},
   ) {
     const original = await this.inboxService.getMessageOwned(
       userId,
@@ -140,7 +174,17 @@ export class ComposeService {
     );
     const account = original.thread.account;
 
-    const to = original.from as unknown as NormalizedParticipant[];
+    const { email, aliases } = await this.prisma.emailAccount.findUniqueOrThrow(
+      {
+        where: { id: account.id },
+        select: { email: true, aliases: true },
+      },
+    );
+    const { to, cc } = buildReplyRecipients(
+      original,
+      [email, ...aliases],
+      options.replyAll,
+    );
 
     const folder = await this.findOrCreateLocalFolder(
       account.id,
@@ -165,15 +209,18 @@ export class ComposeService {
         providerMessageId: `local-draft-${randomUUID()}`,
         from: [],
         to: to as unknown as InputJsonValue,
-        cc: [],
+        cc: cc as unknown as InputJsonValue,
         bcc: [],
         subject: content.subject,
-        bodyHtml: `<p>${content.bodyText.replace(/\n/g, '<br />')}</p>`,
+        bodyHtml: content.bodyHtml ?? textToSafeHtml(content.bodyText),
         bodyText: content.bodyText,
         receivedAt: new Date(),
         isRead: true,
         inReplyToMessageId: originalMessageId,
-        generationMetadata: generationMetadata as unknown as InputJsonValue,
+        scheduledSendAt: options.scheduledSendAt,
+        generationMetadata: generationMetadata
+          ? { ...generationMetadata, draftText: content.bodyText }
+          : undefined,
       },
     });
   }
@@ -220,6 +267,9 @@ export class ComposeService {
 
   async updateDraft(userId: string, draftMessageId: string, dto: SaveDraftDto) {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
+    // Editing a scheduled auto-reply means a human is taking it over: it
+    // no longer sends by itself.
+    await this.cancelScheduleOrThrow(draft);
 
     await this.prisma.emailThread.update({
       where: { id: draft.threadId },
@@ -242,9 +292,22 @@ export class ComposeService {
     });
   }
 
-  async sendDraft(userId: string, draftMessageId: string) {
+  /**
+   * fromSchedule is set only by AutomationService when a scheduled
+   * auto-reply's time comes; a person sending a scheduled draft early
+   * cancels the schedule first, so it can't go out twice.
+   */
+  async sendDraft(
+    userId: string,
+    draftMessageId: string,
+    options: { headers?: Record<string, string>; fromSchedule?: boolean } = {},
+  ) {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
     const account = draft.thread.folder.account;
+
+    if (!options.fromSchedule) {
+      await this.cancelScheduleOrThrow(draft);
+    }
 
     if (!draft.subject || !draft.bodyHtml || !(draft.to as unknown[]).length) {
       throw new ForbiddenException(
@@ -274,7 +337,7 @@ export class ComposeService {
       );
     }
 
-    const sent = await this.send(userId, {
+    const content = {
       accountId: account.id,
       to: draft.to as unknown as NormalizedParticipant[],
       cc: draft.cc as unknown as NormalizedParticipant[] | undefined,
@@ -282,16 +345,155 @@ export class ComposeService {
       subject: draft.subject,
       bodyHtml: draft.bodyHtml,
       bodyText: draft.bodyText ?? undefined,
-    });
+    };
+
+    // A draft that answers a synced message (every AI-held reply, see
+    // saveDraftReply) must go out as a reply in that conversation — with
+    // In-Reply-To and the provider thread id — not as a brand-new email.
+    // inReplyToMessageId is SetNull on delete, so a draft whose original
+    // was deleted in the meantime falls back to a plain send.
+    const sent = draft.inReplyToMessageId
+      ? await this.sendDraftAsReply(
+          userId,
+          draft.inReplyToMessageId,
+          content,
+          draft.generationMetadata as unknown as GenerationMetadata | null,
+          options.headers,
+        )
+      : await this.send(userId, content, { headers: options.headers });
 
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
 
     return sent;
   }
 
+  private async sendDraftAsReply(
+    userId: string,
+    originalMessageId: string,
+    content: ComposeEmailDto,
+    generationMetadata: GenerationMetadata | null,
+    headers?: Record<string, string>,
+  ) {
+    const original = await this.inboxService.getMessageOwned(
+      userId,
+      originalMessageId,
+    );
+    const account = await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      original.thread.account.id,
+    );
+
+    const client = await this.mailProviderFactory.createClient(account);
+
+    // Recipients/subject/body come from the draft, not the original — the
+    // reviewer may have edited any of them before sending.
+    const result = await client.sendMessage({
+      to: content.to,
+      cc: content.cc,
+      bcc: content.bcc,
+      subject: content.subject,
+      bodyHtml: content.bodyHtml,
+      bodyText: content.bodyText,
+      inReplyToProviderMessageId: original.providerMessageId,
+      providerThreadId: original.thread.providerThreadId,
+      ...buildThreadingHeaders(original),
+      headers,
+    });
+
+    // AI provenance carries over to the sent copy (it's what answers
+    // "did this use my documents?" later), plus whether the human changed
+    // the AI's text before sending — the draft-acceptance signal.
+    const { draftText, ...sentMetadata }: Partial<GenerationMetadata> =
+      generationMetadata ?? {};
+    const aiEdited =
+      draftText === undefined
+        ? undefined
+        : normalizeForComparison(draftText) !==
+          normalizeForComparison(content.bodyText ?? '');
+
+    return this.persistSentMessage(
+      account.id,
+      content,
+      result,
+      content.to,
+      content.cc,
+      content.bcc,
+      generationMetadata ? (sentMetadata as GenerationMetadata) : undefined,
+      aiEdited,
+    );
+  }
+
   async deleteDraft(userId: string, draftMessageId: string): Promise<void> {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
+    await this.cancelScheduleOrThrow(draft);
+
+    // The chain row outlives the draft (SetNull, it's the audit record), so
+    // a chain still waiting on approvers must be closed explicitly — or it
+    // would sit in their queue forever, gating nothing.
+    await this.prisma.approvalChain.updateMany({
+      where: { draftMessageId, status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    });
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
+  }
+
+  /** "Cancel send" on a scheduled auto-reply: it stays in Drafts for
+   * review instead of sending. */
+  async cancelScheduledSend(userId: string, draftMessageId: string) {
+    const draft = await this.getOwnedDraft(userId, draftMessageId);
+    if (!draft.scheduledSendAt) {
+      throw new ConflictException('This draft is not scheduled to send');
+    }
+
+    await this.cancelScheduleOrThrow(draft);
+    return this.prisma.emailMessage.findUniqueOrThrow({
+      where: { id: draftMessageId },
+    });
+  }
+
+  /**
+   * Takes a scheduled auto-reply off its schedule. The SEND effect moves
+   * SCHEDULED -> CANCELLED in one conditional update, the same row
+   * AutomationService moves SCHEDULED -> PENDING right before sending —
+   * whichever lands first wins, so a draft can't be both cancelled and
+   * sent. Throws when the send already started. No-op for a draft that
+   * isn't scheduled.
+   */
+  private async cancelScheduleOrThrow(draft: {
+    id: string;
+    scheduledSendAt: Date | null;
+    inReplyToMessageId: string | null;
+  }): Promise<void> {
+    if (!draft.scheduledSendAt) {
+      return;
+    }
+
+    if (draft.inReplyToMessageId) {
+      const sendEffect = {
+        messageId: draft.inReplyToMessageId,
+        kind: 'SEND' as const,
+      };
+      const { count } = await this.prisma.automationEffect.updateMany({
+        where: { ...sendEffect, status: 'SCHEDULED' },
+        data: { status: 'CANCELLED' },
+      });
+      if (count === 0) {
+        const effect = await this.prisma.automationEffect.findUnique({
+          where: { messageId_kind: sendEffect },
+          select: { status: true },
+        });
+        if (effect?.status === 'PENDING' || effect?.status === 'DONE') {
+          throw new ConflictException(
+            'This reply is already being sent automatically.',
+          );
+        }
+      }
+    }
+
+    await this.prisma.emailMessage.update({
+      where: { id: draft.id },
+      data: { scheduledSendAt: null },
+    });
   }
 
   private async getOwnedDraft(userId: string, draftMessageId: string) {
@@ -340,6 +542,7 @@ export class ComposeService {
     cc?: NormalizedParticipant[],
     bcc?: NormalizedParticipant[],
     generationMetadata?: GenerationMetadata,
+    aiEdited?: boolean,
   ) {
     const account = await this.prisma.emailAccount.findUniqueOrThrow({
       where: { id: accountId },
@@ -365,11 +568,13 @@ export class ComposeService {
         subject: content.subject,
         snippet: content.bodyText?.slice(0, 200),
         lastMessageAt: new Date(),
+        lastMessageFromSelf: true,
       },
       update: {
         subject: content.subject,
         snippet: content.bodyText?.slice(0, 200),
         lastMessageAt: new Date(),
+        lastMessageFromSelf: true,
       },
     });
 
@@ -387,7 +592,12 @@ export class ComposeService {
         receivedAt: new Date(),
         isRead: true,
         generationMetadata: generationMetadata as unknown as InputJsonValue,
+        aiEdited,
       },
     });
   }
+}
+
+function normalizeForComparison(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
 }

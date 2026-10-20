@@ -1,6 +1,10 @@
 import { apiFetch, apiUrl } from "../api/client";
 import { getAccessToken } from "../auth/token-storage";
-import type { AccountMember, EmailAccount } from "../api/types";
+import type {
+  AccountMember,
+  AutomationLogEntry,
+  EmailAccount,
+} from "../api/types";
 
 export async function listEmailAccounts(): Promise<EmailAccount[]> {
   return apiFetch<EmailAccount[]>("/email-accounts");
@@ -57,12 +61,36 @@ export async function updateEmailAccount(
     filterShipping?: boolean;
     filterCalendar?: boolean;
     prohibitedPhrases?: string[];
+    autoSendEnabled?: boolean;
+    autoSendHourlyCap?: number;
+    autoSendDailyCap?: number;
+    autoSendConfidenceThreshold?: number;
+    quietHoursStart?: string | null;
+    quietHoursEnd?: string | null;
+    undoSendSeconds?: number;
+    businessHoursStart?: string;
+    businessHoursEnd?: string;
+    businessDays?: number[];
+    signatureText?: string | null;
+    signatureHtml?: string | null;
   },
 ): Promise<EmailAccount> {
   return apiFetch<EmailAccount>(`/email-accounts/${id}`, {
     method: "PATCH",
     body: data,
   });
+}
+
+/** Autonomous sends and rule runs on an account, newest first (owner
+ * only). Pass the last entry's `at` as `before` for the next page. */
+export async function getAutomationLog(
+  accountId: string,
+  before?: string,
+): Promise<AutomationLogEntry[]> {
+  const query = before ? `?before=${encodeURIComponent(before)}` : "";
+  return apiFetch<AutomationLogEntry[]>(
+    `/email-accounts/${accountId}/automation-log${query}`,
+  );
 }
 
 export async function disconnectEmailAccount(id: string): Promise<void> {

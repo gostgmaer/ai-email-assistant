@@ -8,6 +8,17 @@ class EmailMessageSchema(BaseModel):
     content: str
 
 
+class SenderProfile(BaseModel):
+    """Who the reply is written as — the mailbox owner's own profile."""
+
+    name: str | None = Field(None, max_length=120)
+    job_title: str | None = Field(None, max_length=120)
+    company: str | None = Field(None, max_length=120)
+    # A signature is appended to the reply after generation (never written
+    # by the model), so the model must not sign with a name block itself.
+    has_signature: bool = False
+
+
 class ReplyRequest(BaseModel):
     subject: str
     thread: list[EmailMessageSchema]
@@ -19,6 +30,7 @@ class ReplyRequest(BaseModel):
     # default — an agent persona is meant to fully define how that account
     # replies, not layer on top of the generic one.
     system_prompt_override: str | None = None
+    sender_profile: SenderProfile | None = None
 
 
 class TokenUsageResponse(BaseModel):

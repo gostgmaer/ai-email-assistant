@@ -29,6 +29,10 @@ enum SyncStatus {
   IDLE
   SYNCING
   ERROR
+  // The provider rejected our credentials (revoked/expired refresh token,
+  // changed IMAP password). Retrying can't fix it — background sync stops
+  // for this account until the user reconnects it.
+  AUTH_REQUIRED
 }
 
 enum VerificationTokenType {
@@ -61,6 +65,15 @@ model User {
   displayName String?
   avatar      String?
 
+  // Sender identity for AI-generated replies (passed to the reply prompt
+  // as sender_profile, see AiProcessingProcessor). Optional.
+  jobTitle    String?
+  companyName String?
+
+  // IANA zone (e.g. "Europe/Berlin"). Quiet hours and business hours on the
+  // user's accounts are read in this zone. Defaults to UTC.
+  timezone String @default("UTC")
+
   // Null for OAuth-only users (Google/Microsoft) who never set a password.
   passwordHash    String?
   emailVerifiedAt DateTime?
@@ -81,7 +94,7 @@ model User {
   documents          Document[]
   tasks              Task[]
   accountMemberships AccountMember[]
-  assignedThreads    EmailThread[]   @relation("ThreadAssignee")
+  assignedThreads    EmailThread[]       @relation("ThreadAssignee")
   threadNotes        ThreadNote[]
   approvalSteps      ApprovalStep[]
 
@@ -172,6 +185,19 @@ model EmailAccount {
   // NEW_MESSAGE/classify-based evaluation — see docs/v2.0-plan.md §3.
   autoScheduleMeetings Boolean @default(false)
 
+  // Per-account kill switch for autonomous sending (alongside the global
+  // AUTO_SEND_ENABLED env var — both must allow it). When false, a reply a
+  // matching AUTO_REPLY rule would have sent is held as a draft instead;
+  // everything else in the AI pipeline (classify, rules, drafts) still
+  // runs. See docs/email-automation-implementation-plan.md §0.2.
+  autoSendEnabled Boolean @default(true)
+
+  // Inbound mail received before this moment never enters the AI
+  // pipeline — the first sync of a newly connected mailbox imports
+  // history, and replying to (or auto-sending into) weeks-old threads is
+  // never what connecting an account means. Defaults to the connect time.
+  aiEnabledFrom DateTime @default(now())
+
   // Per-category sync filters (see bulk-mail.util.ts). Default true means
   // "exclude by default" — the aggressive-filtering behavior most users
   // want out of the box. Flip to false to let that category sync anyway.
@@ -195,12 +221,56 @@ model EmailAccount {
   // else auto-send-adjacent here.
   prohibitedPhrases String[] @default([])
 
+  // Auto-send limits (docs/email-automation-implementation-plan.md §5.4).
+  // Caps count this account's autonomous sends over a rolling hour/day;
+  // over a cap, the reply is held as a draft. The confidence threshold is
+  // the minimum validate_reply score for an auto-send.
+  autoSendHourlyCap           Int @default(10)
+  autoSendDailyCap            Int @default(50)
+  autoSendConfidenceThreshold Int @default(70)
+
+  // "HH:MM" in the owner's User.timezone. An auto-send that falls inside
+  // quiet hours is scheduled for the window's end. Both null = no quiet
+  // hours. The window may wrap midnight (22:00-07:00).
+  quietHoursStart String?
+  quietHoursEnd   String?
+
+  // Undo window: autonomous replies wait this long (0-300s) as a scheduled
+  // draft before they actually send, so they can be cancelled.
+  undoSendSeconds Int @default(0)
+
+  // What the withinBusinessHours rule condition checks, in the owner's
+  // User.timezone. Days use 0 = Sunday ... 6 = Saturday.
+  businessHoursStart String @default("09:00")
+  businessHoursEnd   String @default("17:00")
+  businessDays       Int[]  @default([1, 2, 3, 4, 5])
+
+  // Appended to every AI-generated reply after generation — the model never
+  // writes it. Null = never set (Gmail's sendAs signature is imported on
+  // sync); an empty string = explicitly no signature.
+  signatureText String?
+  signatureHtml String?
+
   // IMAP-only connection settings (host/port/secure/username); null for GOOGLE/MICROSOFT
   imapConfig Json?
 
   syncStatus    SyncStatus @default(IDLE)
   lastSyncedAt  DateTime?
   lastSyncError String?
+
+  // Sync health (see EmailSyncService.recordSyncFailure): consecutive
+  // failed syncs, and the earliest time the background scan may try this
+  // account again (exponential backoff). Both reset on a successful sync
+  // or a reconnect.
+  consecutiveSyncFailures Int       @default(0)
+  nextSyncAt              DateTime?
+
+  // The account's other send-as addresses (Gmail sendAs, Microsoft
+  // proxyAddresses), lowercased. Mail from any of these is the user's own
+  // — never "inbound", never something to auto-reply to. Refreshed at most
+  // daily (aliasesRefreshedAt) since it costs an extra API call.
+  aliases            String[]  @default([])
+  aliasesRefreshedAt DateTime?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -216,6 +286,7 @@ model EmailAccount {
   contacts       Contact[]
   integrations   Integration[]
   approvalChains ApprovalChain[]
+  ruleExecutions RuleExecution[]
 
   @@unique([provider, email])
   @@index([userId])
@@ -258,7 +329,6 @@ model AccountMember {
  * enabled rule (ordered by `order`) whose `conditions` all match wins;
  * its `actions` execute in order. No match falls through to today's
  * default: draft the reply for human review.
- *
  * `conditions`/`actions` are typed at the application layer
  * (WorkflowCondition[] / WorkflowAction[] in workflow-rule.types.ts) —
  * kept as Json rather than normalized tables for the same reason
@@ -279,8 +349,10 @@ model WorkflowRule {
   // Lower runs first. Ties broken by createdAt.
   order Int @default(0)
 
-  /// WorkflowCondition[] — ALL must match (AND) for v1. Empty array matches
-  /// every message (a catch-all rule).
+  /// WorkflowConditionGroup — a tree of all/any/not groups over
+  /// conditions (see workflow-rule.types.ts). A rule with no conditions must
+  /// say so explicitly with `matchAll: true`. Rows saved before 2026-10
+  /// held a flat AND list; the phase 5 migration converted them.
   conditions Json
 
   /// WorkflowAction[] — executed in order when this rule matches.
@@ -289,13 +361,56 @@ model WorkflowRule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  executions RuleExecution[]
+
   @@index([accountId, order])
+}
+
+/**
+ * Rule history (docs/email-automation-implementation-plan.md §5.3): one row
+ * per rule that matched a message, with what each of its actions did.
+ * Rules that didn't match aren't recorded — "Test rule" (dry-run) answers
+ * that question. Kept for 90 days (AutomationProcessor's cleanup job).
+ */
+model RuleExecution {
+  id String @id @default(uuid())
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // SetNull: history outlives a deleted rule; ruleName is the snapshot.
+  ruleId   String?
+  rule     WorkflowRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  ruleName String
+
+  messageId String
+  message   EmailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  /// WorkflowAction[] as they were when the rule ran.
+  actions Json
+
+  /// RuleActionResult[] — one per action: { type, status: done | skipped |
+  /// failed, detail? }.
+  results Json
+
+  durationMs Int
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([ruleId, createdAt])
+  @@index([messageId])
 }
 
 enum ApprovalChainStatus {
   PENDING
   APPROVED
   REJECTED
+  // Nobody finished deciding before expiresAt — the draft is kept and can
+  // be sent manually, same as REJECTED.
+  EXPIRED
+  // The gated draft was deleted (or sent manually) while still PENDING.
+  CANCELLED
 }
 
 // WAITING (not yet this step's turn) is distinct from PENDING (this
@@ -320,7 +435,6 @@ enum ApprovalStepStatus {
  * draft — see AiProcessingProcessor. 1:1 with the draft EmailMessage via
  * a unique FK: each drafted reply that matches a chain rule gets its own
  * approval run, never reused across drafts.
- *
  * Steps run in `order`, one pending approver at a time (see
  * ApprovalChainService.approve/reject) — approving a non-final step just
  * advances to the next approver; approving the final step sends the
@@ -335,10 +449,26 @@ model ApprovalChain {
   accountId String
   account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  draftMessageId String       @unique
-  draftMessage   EmailMessage @relation(fields: [draftMessageId], references: [id], onDelete: Cascade)
+  // SetNull, not Cascade: sending the draft deletes it, and the chain is
+  // the audit record of who approved what — it must outlive the draft.
+  // The draft* snapshot fields below keep that record meaningful after.
+  draftMessageId String?       @unique
+  draftMessage   EmailMessage? @relation(fields: [draftMessageId], references: [id], onDelete: SetNull)
 
   status ApprovalChainStatus @default(PENDING)
+
+  // Snapshot of the gated draft taken when the chain is created.
+  draftSubject    String?
+  draftRecipients Json?
+
+  // Provider-side id of the message the approved draft was sent as.
+  sentMessageId String?
+
+  // Pending chains expire (EXPIRED) at expiresAt; the current approver is
+  // reminded once, halfway there (reminderSentAt). See
+  // ApprovalChainService.sweep.
+  expiresAt      DateTime?
+  reminderSentAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -346,6 +476,7 @@ model ApprovalChain {
   steps ApprovalStep[]
 
   @@index([accountId])
+  @@index([status, expiresAt])
 }
 
 model ApprovalStep {
@@ -595,6 +726,12 @@ model EmailThread {
 
   lastMessageAt DateTime?
 
+  // Whether the newest message (the one lastMessageAt describes) was sent
+  // by the account itself — kept in step with lastMessageAt by sync and
+  // compose, so "threads awaiting the other side's reply" (follow-ups) is a
+  // plain indexed query instead of fetching threads and filtering in code.
+  lastMessageFromSelf Boolean @default(false)
+
   // Set to hide this thread from the default inbox view until this time —
   // purely a query-time filter (see InboxService.listThreads), not a job:
   // there's nothing to actively "resurface", the thread just stops being
@@ -627,6 +764,7 @@ model EmailThread {
   @@index([folderId])
   @@index([snoozedUntil])
   @@index([assignedToUserId])
+  @@index([lastMessageFromSelf, lastMessageAt])
 }
 
 /**
@@ -688,6 +826,40 @@ model EmailMessage {
   // reply) has run for this message, so retries/resyncs don't reprocess it.
   aiProcessedAt DateTime?
 
+  // True when the message looks machine-generated as a reply (Auto-
+  // Submitted, X-Autoreply, out-of-office subject, bounce sender — see
+  // detectBulkMailSignals' autoReply). Such a message can still be synced
+  // (it's part of a real conversation) but must never trigger an
+  // autonomous send back, or two auto-responders can loop forever.
+  isAutoReply Boolean @default(false)
+
+  // Set only on a message sent from an AI-generated draft: whether the
+  // human changed the AI's text before sending. Null for everything else.
+  aiEdited Boolean?
+
+  // Set when the AI pipeline gave up on this message after its last retry
+  // (see AiProcessingProcessor's failed handler) — what the UI shows as
+  // "AI processing failed — retry". Cleared when it's re-queued.
+  aiFailedAt DateTime?
+  aiError    String?
+
+  // Reply addressing/threading headers (RFC 5322). replyTo is where a reply
+  // should go when set (forms, help desks, lists); messageIdHeader and
+  // references are what a reply's In-Reply-To/References must carry for
+  // other clients to thread it — Gmail's own message id is NOT a
+  // Message-ID. Null/empty for rows synced before these existed.
+  replyTo         Json?
+  messageIdHeader String?
+  references      String[] @default([])
+
+  automationEffects AutomationEffect[]
+  ruleExecutions    RuleExecution[]
+
+  // Set on an AI draft whose auto-send is scheduled (undo window, quiet
+  // hours, DELAY_SEND) — when it will send unless cancelled. Cleared when
+  // the send is cancelled; the draft row is gone once it sends.
+  scheduledSendAt DateTime?
+
   /// Set only on AI-generated replies (drafted or auto-sent) — records what
   /// grounded the generation so "did this use my documents?" is answerable
   /// without re-deriving it. Null for synced/manually-composed messages.
@@ -714,6 +886,12 @@ model EmailMessage {
   containsPii Boolean  @default(false)
   piiTypes    String[] @default([])
 
+  // Whether this message calls for a reply (classify's needs_reply, after
+  // AiProcessingProcessor's deterministic pre-filter) and why. No reply is
+  // generated when false. Null for messages processed before this existed.
+  needsReply  Boolean?
+  replyReason String?
+
   tasks Task[]
 
   // Set only when this (draft) message was created by a rule with a
@@ -726,7 +904,70 @@ model EmailMessage {
   @@unique([threadId, providerMessageId])
   @@index([threadId])
   @@index([inReplyToMessageId])
+  // Incremental sync gets changes as bare provider ids (Gmail history,
+  // Graph delta) and must find the local row without knowing its thread.
+  @@index([providerMessageId])
   @@index([priority])
+}
+
+enum AutomationEffectKind {
+  RULE_ACTIONS
+  TASK_EXTRACTION
+  SEND
+  DRAFT
+}
+
+enum AutomationEffectStatus {
+  PENDING
+  DONE
+  // SEND only: approved for auto-send and waiting as a draft until
+  // EmailMessage.scheduledSendAt (undo window, quiet hours, DELAY_SEND).
+  SCHEDULED
+  // SEND only: a scheduled send that was cancelled (by the user, or because
+  // auto-send was switched off before it fired). Not counted by the caps.
+  CANCELLED
+}
+
+/**
+ * Effect ledger for the autonomous AI pipeline (see
+ * docs/email-automation-implementation-plan.md §1.3). AI jobs retry on
+ * failure, and every side effect (sending a reply, running a rule's
+ * Slack/HubSpot/notify actions, extracting tasks) must happen at most once
+ * per inbound message no matter how many times the job runs. A row is
+ * written BEFORE the effect runs (claim) — the unique (messageId, kind)
+ * makes a second claim fail, which is what turns a retry into a skip.
+ * SEND rows double as the auto-reply history the loop-protection caps
+ * count (per thread / per recipient, last 24h), so they carry threadId,
+ * accountId and the recipient address.
+ */
+model AutomationEffect {
+  id String @id @default(uuid())
+
+  messageId String
+  message   EmailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  accountId String
+  threadId  String
+
+  kind   AutomationEffectKind
+  status AutomationEffectStatus @default(PENDING)
+
+  // SEND only: lowercased address the reply went to, and the provider's
+  // id for the sent message once the send succeeded.
+  recipient         String?
+  providerMessageId String?
+
+  // SEND only: why it was allowed to go out unreviewed, for the automation
+  // audit log — { ruleIds, ruleNames, confidence, documents, draftMessageId,
+  // scheduledFor }. Null for rows written before this existed.
+  details Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, kind])
+  @@index([accountId, kind, createdAt])
+  @@index([threadId, kind, createdAt])
 }
 
 enum TaskType {

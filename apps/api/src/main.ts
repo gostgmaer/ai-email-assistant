@@ -1,9 +1,21 @@
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import * as Sentry from '@sentry/node';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { AppModule } from './app.module';
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV,
+    tracesSampleRate: 0.1,
+  });
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -11,6 +23,9 @@ async function bootstrap() {
   });
 
   app.useLogger(app.get(Logger));
+
+  app.use(helmet());
+  app.use(cookieParser());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,8 +41,10 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
+  const configService = app.get(ConfigService);
+  const frontendUrl = configService.getOrThrow<string>('FRONTEND_URL');
   app.enableCors({
-    origin: true,
+    origin: [frontendUrl],
     credentials: true,
   });
 

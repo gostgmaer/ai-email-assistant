@@ -23,6 +23,12 @@ class ClassificationSchema(BaseModel):
     # category/priority/sentiment's existing loosely-typed convention on
     # the apps/api side.
     pii_types: list[str]
+    # Whether the most recent message actually calls for a reply from the
+    # recipient. Defaults to True so a model that omits it can't silently
+    # suppress replies; apps/api skips reply generation when it's False.
+    needs_reply: bool = True
+    # One short phrase on why (e.g. "asks for a quote", "thank-you only").
+    reply_reason: str = ""
 
 
 class TokenUsageSchema(BaseModel):

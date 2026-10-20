@@ -3,6 +3,7 @@ import MailComposer from 'nodemailer/lib/mail-composer';
 
 import {
   ComposeInput,
+  FolderChangeSet,
   ListMessagesOptions,
   ListMessagesResult,
   MailProviderClient,
@@ -11,7 +12,14 @@ import {
   NormalizedParticipant,
   SendResult,
 } from '../interfaces';
+import { parseMessageIdList } from '../utils/reply-recipients.util';
 import { detectBulkMailSignals } from './bulk-mail.util';
+import {
+  MailAuthError,
+  MailRateLimitError,
+  SyncCursorExpiredError,
+  parseRetryAfter,
+} from './mail-errors';
 
 const API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
@@ -95,6 +103,22 @@ interface GmailMessage {
   payload?: GmailMessagePart;
 }
 
+interface GmailHistoryMessage {
+  message: { id: string; labelIds?: string[] };
+  labelIds?: string[];
+}
+
+interface GmailHistoryResponse {
+  history?: {
+    messagesAdded?: GmailHistoryMessage[];
+    messagesDeleted?: GmailHistoryMessage[];
+    labelsAdded?: GmailHistoryMessage[];
+    labelsRemoved?: GmailHistoryMessage[];
+  }[];
+  historyId?: string;
+  nextPageToken?: string;
+}
+
 interface GmailListMessagesResponse {
   messages?: { id: string; threadId: string }[];
   nextPageToken?: string;
@@ -143,6 +167,132 @@ export class GmailClient implements MailProviderClient {
     return { messages, nextPageToken: list.nextPageToken };
   }
 
+  async getChangeCursor(): Promise<string> {
+    // Gmail's history is mailbox-wide, so the cursor is the mailbox's
+    // current historyId regardless of folder; listChanges narrows by label.
+    const profile = await this.request<{ historyId: string }>('/profile');
+    return profile.historyId;
+  }
+
+  async listChanges(
+    folderProviderId: string,
+    cursor: string,
+  ): Promise<FolderChangeSet> {
+    // Final state per message id: a later record overrides an earlier one
+    // (e.g. added then deleted within the same window ends up removed).
+    const changes = new Map<string, { removed: boolean; isRead?: boolean }>();
+    const upsert = (id: string, isRead?: boolean) => {
+      const previous = changes.get(id);
+      changes.set(id, {
+        removed: false,
+        isRead: isRead ?? (previous?.removed ? undefined : previous?.isRead),
+      });
+    };
+    const readStateOf = (labelIds?: string[]) =>
+      labelIds ? !labelIds.includes('UNREAD') : undefined;
+
+    let nextCursor = cursor;
+    let pageToken: string | undefined;
+
+    do {
+      const params = new URLSearchParams({
+        startHistoryId: cursor,
+        labelId: folderProviderId,
+        maxResults: '500',
+      });
+      for (const type of [
+        'messageAdded',
+        'messageDeleted',
+        'labelAdded',
+        'labelRemoved',
+      ]) {
+        params.append('historyTypes', type);
+      }
+      if (pageToken) {
+        params.set('pageToken', pageToken);
+      }
+
+      let page: GmailHistoryResponse;
+      try {
+        page = await this.request<GmailHistoryResponse>(
+          `/history?${params.toString()}`,
+        );
+      } catch (error) {
+        // Gmail keeps roughly a week of history; an older startHistoryId
+        // is answered with 404 and the folder needs a fresh baseline.
+        if (error instanceof NotFoundException) {
+          throw new SyncCursorExpiredError(
+            `Gmail history for ${folderProviderId} expired (startHistoryId ${cursor})`,
+          );
+        }
+        throw error;
+      }
+
+      for (const record of page.history ?? []) {
+        for (const { message } of record.messagesAdded ?? []) {
+          upsert(message.id, readStateOf(message.labelIds));
+        }
+        for (const { message } of record.messagesDeleted ?? []) {
+          changes.set(message.id, { removed: true });
+        }
+        for (const { message, labelIds } of record.labelsAdded ?? []) {
+          if (labelIds?.includes(folderProviderId)) {
+            upsert(message.id, readStateOf(message.labelIds));
+          } else if (labelIds?.includes('UNREAD')) {
+            upsert(message.id, false);
+          }
+        }
+        // A label removed from this folder (archive/move) isn't mirrored:
+        // threads are anchored to one folder for display and the message
+        // still exists. Only the read-state half of this record matters.
+        for (const { message, labelIds } of record.labelsRemoved ?? []) {
+          if (labelIds?.includes('UNREAD')) {
+            upsert(message.id, true);
+          }
+        }
+      }
+
+      nextCursor = page.historyId ?? nextCursor;
+      pageToken = page.nextPageToken;
+    } while (pageToken);
+
+    const upserted: FolderChangeSet['upserted'] = [];
+    const removed: string[] = [];
+    for (const [providerMessageId, change] of changes) {
+      if (change.removed) {
+        removed.push(providerMessageId);
+      } else {
+        upserted.push({ providerMessageId, isRead: change.isRead });
+      }
+    }
+
+    return { upserted, removed, nextCursor };
+  }
+
+  async listAliases(): Promise<string[]> {
+    const data = await this.request<{
+      sendAs?: { sendAsEmail: string }[];
+    }>('/settings/sendAs');
+
+    return (data.sendAs ?? []).map((alias) => alias.sendAsEmail.toLowerCase());
+  }
+
+  async getSignature(): Promise<string | null> {
+    const data = await this.request<{
+      sendAs?: {
+        isDefault?: boolean;
+        isPrimary?: boolean;
+        signature?: string;
+      }[];
+    }>('/settings/sendAs');
+    const sendAs = data.sendAs ?? [];
+    const main =
+      sendAs.find((alias) => alias.isDefault) ??
+      sendAs.find((alias) => alias.isPrimary);
+
+    return main?.signature?.trim() || null;
+  }
+
   async getMessage(providerMessageId: string): Promise<NormalizedMessage> {
     const message = await this.request<GmailMessage>(
       `/messages/${providerMessageId}?format=full`,
@@ -152,7 +302,9 @@ export class GmailClient implements MailProviderClient {
   }
 
   async sendMessage(input: ComposeInput): Promise<SendResult> {
-    const raw = await this.buildRawMessage(input);
+    const raw = await this.buildRawMessage(
+      await this.withThreadingHeaders(input),
+    );
 
     const body: Record<string, unknown> = { raw };
 
@@ -169,9 +321,62 @@ export class GmailClient implements MailProviderClient {
   }
 
   async markAsRead(providerMessageId: string): Promise<void> {
+    await this.modifyLabels(providerMessageId, { removeLabelIds: ['UNREAD'] });
+  }
+
+  async addLabel(providerMessageId: string, label: string): Promise<void> {
+    const { labels = [] } = await this.request<{ labels?: GmailLabel[] }>(
+      '/labels',
+    );
+    const existing = labels.find(
+      (candidate) => candidate.name.toLowerCase() === label.toLowerCase(),
+    );
+    const labelId =
+      existing?.id ??
+      (
+        await this.request<GmailLabel>('/labels', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: label,
+            labelListVisibility: 'labelShow',
+            messageListVisibility: 'show',
+          }),
+        })
+      ).id;
+
+    await this.modifyLabels(providerMessageId, { addLabelIds: [labelId] });
+  }
+
+  /** Gmail folders are labels: moving swaps the source label for the
+   * destination one. */
+  async moveMessage(
+    providerMessageId: string,
+    destinationFolderProviderId: string,
+    sourceFolderProviderId?: string,
+  ): Promise<undefined> {
+    await this.modifyLabels(providerMessageId, {
+      addLabelIds: [destinationFolderProviderId],
+      removeLabelIds:
+        sourceFolderProviderId &&
+        sourceFolderProviderId !== destinationFolderProviderId
+          ? [sourceFolderProviderId]
+          : [],
+    });
+    return undefined;
+  }
+
+  async archiveMessage(providerMessageId: string): Promise<undefined> {
+    await this.modifyLabels(providerMessageId, { removeLabelIds: ['INBOX'] });
+    return undefined;
+  }
+
+  private async modifyLabels(
+    providerMessageId: string,
+    change: { addLabelIds?: string[]; removeLabelIds?: string[] },
+  ): Promise<void> {
     await this.request(`/messages/${providerMessageId}/modify`, {
       method: 'POST',
-      body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
+      body: JSON.stringify(change),
     });
   }
 
@@ -204,6 +409,9 @@ export class GmailClient implements MailProviderClient {
         : new Date(),
       isRead: !(message.labelIds ?? []).includes('UNREAD'),
       inReplyTo: header('In-Reply-To'),
+      replyTo: this.parseAddressList(header('Reply-To')),
+      messageIdHeader: header('Message-ID')?.trim(),
+      references: parseMessageIdList(header('References')),
       bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('List-Unsubscribe'),
@@ -213,6 +421,9 @@ export class GmailClient implements MailProviderClient {
           autoResponseSuppress: header('X-Auto-Response-Suppress'),
           feedbackId: header('Feedback-ID'),
           hasEspSignature,
+          xAutoreply: header('X-Autoreply'),
+          xAutorespond: header('X-Autorespond'),
+          returnPath: header('Return-Path'),
         },
         from[0]?.address,
         subject,
@@ -279,13 +490,51 @@ export class GmailClient implements MailProviderClient {
       subject: input.subject,
       html: input.bodyHtml,
       text: input.bodyText,
-      inReplyTo: input.inReplyToProviderMessageId,
-      references: input.inReplyToProviderMessageId,
+      inReplyTo: input.inReplyToHeader,
+      references: input.referencesHeader,
+      headers: input.headers,
     });
 
     const buffer = await composer.compile().build();
 
     return buffer.toString('base64url');
+  }
+
+  /**
+   * In-Reply-To/References must carry the parent's RFC Message-ID — Gmail's
+   * own message id (what inReplyToProviderMessageId is) means nothing to
+   * any other mail client, so replies never threaded outside Gmail. Rows
+   * synced before the Message-ID was stored don't have it, so it's looked
+   * up from the provider on demand.
+   */
+  private async withThreadingHeaders(
+    input: ComposeInput,
+  ): Promise<ComposeInput> {
+    if (input.inReplyToHeader || !input.inReplyToProviderMessageId) {
+      return input;
+    }
+
+    const parent = await this.request<GmailMessage>(
+      `/messages/${input.inReplyToProviderMessageId}?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References`,
+    );
+    const headers = parent.payload?.headers ?? [];
+    const header = (name: string) =>
+      headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
+    const messageId = header('Message-ID')?.trim();
+    if (!messageId) {
+      return input;
+    }
+
+    return {
+      ...input,
+      inReplyToHeader: messageId,
+      referencesHeader: [
+        ...parseMessageIdList(header('References')).filter(
+          (ref) => ref !== messageId,
+        ),
+        messageId,
+      ],
+    };
   }
 
   private formatAddress(participant: NormalizedParticipant): string {
@@ -310,6 +559,24 @@ export class GmailClient implements MailProviderClient {
 
     if (!response.ok) {
       const text = await response.text();
+
+      if (response.status === 401) {
+        throw new MailAuthError(
+          `Gmail rejected the access token (401): ${text}`,
+        );
+      }
+
+      // Gmail signals throttling as 429, or as 403 with a rate-limit reason.
+      if (
+        response.status === 429 ||
+        (response.status === 403 && /rateLimitExceeded/i.test(text))
+      ) {
+        throw new MailRateLimitError(
+          `Gmail rate limit (${response.status}): ${text}`,
+          parseRetryAfter(response.headers.get('retry-after')),
+        );
+      }
+
       throw new BadRequestException(
         `Gmail API error (${response.status}): ${text}`,
       );

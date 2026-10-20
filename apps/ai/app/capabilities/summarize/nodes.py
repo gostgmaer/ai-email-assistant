@@ -6,6 +6,7 @@ from langchain_core.messages import SystemMessage
 
 from app.core.llm import llm_manager
 from app.core.prompts import prompt_manager
+from app.core.workflow.executor import llm_executor
 
 from .state import SummarizeState
 
@@ -46,11 +47,14 @@ Subject: {state["subject"]}
 
 
 def invoke_llm(state: SummarizeState) -> SummarizeState:
-    """Invoke configured LLM."""
+    """Invoke configured LLM.
 
-    llm = llm_manager.get_model()
+    Routed through llm_executor (not llm_manager.get_model() directly)
+    so this capability gets the same retry/backoff + provider fallback
+    as the rest — see app/core/workflow/executor.py.
+    """
 
-    response = llm.invoke(state["messages"])
+    response = llm_executor.invoke(state["messages"])
 
     state["response"] = response
 

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import configuration from './config/configuration';
 import { PrismaModule } from './database';
@@ -25,6 +26,7 @@ import { AgentModule } from './modules/agent';
 import { CrmModule } from './modules/crm';
 import { IntegrationModule } from './modules/integration';
 import { ApprovalModule } from './modules/approval';
+import { AutomationModule } from './modules/automation';
 
 @Module({
   imports: [
@@ -35,6 +37,13 @@ import { ApprovalModule } from './modules/approval';
       envFilePath: '.env',
       load: [configuration],
     }),
+    // Registers the ThrottlerStorage/options ThrottlerGuard depends on.
+    // Scoped intentionally: only auth.controller.ts applies the guard
+    // (via @UseGuards(ThrottlerGuard) + @Throttle(...)), so this does not
+    // rate-limit the rest of the API.
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: 60000, limit: 20 },
+    ]),
     AppLoggerModule,
     PrismaModule,
     RedisModule,
@@ -58,6 +67,7 @@ import { ApprovalModule } from './modules/approval';
     CrmModule,
     IntegrationModule,
     ApprovalModule,
+    AutomationModule,
   ],
 })
 export class AppModule {}

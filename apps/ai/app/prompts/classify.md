@@ -66,6 +66,18 @@ Scan the full email thread for personally identifiable information (PII). PII in
 If PII is found, return a list of the specific types detected (e.g., `["SSN", "credit card number"]`).
 If no PII is found, return an empty list.
 
+### Needs Reply
+Decide whether the most recent message calls for a written reply from the recipient.
+
+- Set `needs_reply` to `true` when it asks a question, makes a request, proposes something that needs an answer, or the sender is clearly waiting on a response.
+- Set `needs_reply` to `false` for:
+  - thank-you or acknowledgement-only notes ("Thanks!", "Got it", "Sounds good");
+  - FYI or announcement messages with nothing asked of the recipient;
+  - newsletters, receipts, notifications and automated messages;
+  - out-of-office or other automatic replies;
+  - messages where the recipient is only copied and nothing is asked of them.
+- Set `reply_reason` to a short phrase explaining the decision (e.g. `"asks for pricing"`, `"thank-you only"`).
+
 ---
 
 ## Critical Rules

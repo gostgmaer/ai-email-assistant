@@ -17,16 +17,18 @@ def load_prompt(state: ValidateReplyState) -> ValidateReplyState:
 
 def build_messages(state: ValidateReplyState) -> ValidateReplyState:
     """Build LangChain messages — the thread, then the draft reply to
-    evaluate as a trailing instruction block."""
+    evaluate as a delimited data block (the draft was written by a model
+    that read the emails, so it's untrusted too)."""
 
     state["messages"] = MessageBuilder.email_thread(
         system_prompt=state["system_prompt"],
         subject=state["subject"],
         thread=state["thread"],
         instruction=(
-            "Evaluate the following draft reply. Does it actually address "
-            "the thread above?\n\nDraft reply:\n\n" + state["draft_reply"]
+            "Evaluate the draft reply inside the <draft_reply> tags. Does it "
+            "actually address the email thread?"
         ),
+        draft_reply=state["draft_reply"],
     )
 
     return state

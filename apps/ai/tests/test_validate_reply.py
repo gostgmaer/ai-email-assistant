@@ -17,10 +17,13 @@ def test_build_messages_includes_the_draft_reply_to_evaluate():
 
     result = build_messages(state)
 
-    # System + one thread message + the trailing instruction block.
+    # System + one thread message + the delimited draft block. The draft is
+    # data (a model that read the emails wrote it); the instruction to
+    # evaluate it lives in the system message.
     assert len(result["messages"]) == 3
+    assert result["messages"][-1].content.startswith("<draft_reply>")
     assert "Thursday works for me" in result["messages"][-1].content
-    assert "Evaluate the following draft reply" in result["messages"][-1].content
+    assert "Evaluate the draft reply" in result["messages"][0].content
 
 
 def test_extract_validation_flags_a_draft_that_ignores_the_thread():

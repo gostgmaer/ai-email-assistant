@@ -39,7 +39,12 @@ describe('ContactMemoryService', () => {
       prisma as unknown as PrismaService,
     );
 
-    await service.searchSimilar(userId, [0.1, 0.2, 0.3], 3);
+    await service.searchSimilar(
+      userId,
+      [0.1, 0.2, 0.3],
+      'current-sender@example.com',
+      3,
+    );
 
     expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
     const args = prisma.$queryRaw.mock.calls[0] as unknown[];
@@ -50,5 +55,28 @@ describe('ContactMemoryService', () => {
     // as an unused parameter.
     const sqlText = (args[0] as TemplateStringsArray).join('?');
     expect(sqlText).toContain('"userId" =');
+  });
+
+  it('excludes the current sender and applies a distance threshold, so it never returns the caller their own just-upserted row or unrelated contacts', async () => {
+    const prisma = buildPrismaMock();
+    const service = new ContactMemoryService(
+      prisma as unknown as PrismaService,
+    );
+
+    await service.searchSimilar(
+      userId,
+      [0.1, 0.2, 0.3],
+      'current-sender@example.com',
+      3,
+    );
+
+    const args = prisma.$queryRaw.mock.calls[0] as unknown[];
+    expect(args.slice(1)).toContain('current-sender@example.com');
+    // Default maxDistance.
+    expect(args.slice(1)).toContain(0.5);
+
+    const sqlText = (args[0] as TemplateStringsArray).join('?');
+    expect(sqlText).toContain('"senderEmail" !=');
+    expect(sqlText).toContain('<= ');
   });
 });

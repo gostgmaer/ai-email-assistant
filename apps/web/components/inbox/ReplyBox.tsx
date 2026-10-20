@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import type { EmailMessage } from "@/lib/api/types";
 import { generateReply, rewrite, toAiThreadMessage } from "@/lib/services/ai.service";
 import { replyToMessage } from "@/lib/services/email.service";
+import { textToSafeHtml } from "@/lib/utils/html";
 
 export function ReplyBox({
   threadId,
@@ -21,6 +22,10 @@ export function ReplyBox({
   lastMessage: EmailMessage;
 }) {
   const [body, setBody] = useState("");
+  const [replyAll, setReplyAll] = useState(false);
+  // Reply-all only matters when someone besides the user was on it.
+  const hasOtherRecipients =
+    (lastMessage.to?.length ?? 0) + (lastMessage.cc?.length ?? 0) > 1;
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState<"reply" | "rewrite" | null>(null);
   const queryClient = useQueryClient();
@@ -29,8 +34,9 @@ export function ReplyBox({
     mutationFn: () =>
       replyToMessage({
         messageId: lastMessage.id,
-        bodyHtml: `<p>${body.replace(/\n/g, "<br />")}</p>`,
+        bodyHtml: textToSafeHtml(body),
         bodyText: body,
+        replyAll: hasOtherRecipients && replyAll,
       }),
     onSuccess: () => {
       setBody("");
@@ -104,14 +110,27 @@ export function ReplyBox({
               Rewrite
             </Button>
           </div>
-          <Button
-            onClick={() => replyMutation.mutate()}
-            loading={replyMutation.isPending}
-            disabled={!body.trim()}
-          >
-            <SendIcon className="h-4 w-4" />
-            Send
-          </Button>
+          <div className="flex items-center gap-3">
+            {hasOtherRecipients && (
+              <label className="flex items-center gap-1.5 text-xs text-zinc-600">
+                <input
+                  type="checkbox"
+                  checked={replyAll}
+                  onChange={(event) => setReplyAll(event.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-zinc-300"
+                />
+                Reply all
+              </label>
+            )}
+            <Button
+              onClick={() => replyMutation.mutate()}
+              loading={replyMutation.isPending}
+              disabled={!body.trim()}
+            >
+              <SendIcon className="h-4 w-4" />
+              Send
+            </Button>
+          </div>
         </div>
       </div>
 
