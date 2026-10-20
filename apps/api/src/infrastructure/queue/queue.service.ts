@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 
 import {
   AIJobs,
+  ApprovalJobs,
   DigestJobs,
   DocumentJobs,
   EmailSyncJobs,
@@ -16,6 +17,7 @@ const DOCUMENT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 // 08:00 daily — this codebase's first cron-pattern repeatable job (every
 // other scheduled job so far uses a fixed `every` interval instead).
 const DAILY_DIGEST_CRON = '0 8 * * *';
+const APPROVAL_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 
 /** Everything DocumentsProcessingProcessor needs to call the AI service and
  * update the Document row, without re-querying the DB or re-deriving the
@@ -52,6 +54,8 @@ export class QueueService {
     @InjectQueue(QueueNames.Documents)
     private readonly documentsQueue: Queue,
     @InjectQueue(QueueNames.Digest) private readonly digestQueue: Queue,
+    @InjectQueue(QueueNames.Approvals)
+    private readonly approvalsQueue: Queue,
   ) {}
 
   async enqueueInitialSync(accountId: string): Promise<void> {
@@ -177,6 +181,16 @@ export class QueueService {
     );
   }
 
+  /** Idempotent: registers the recurring approval-chain sweep (reminders
+   * and expiry) if not already scheduled. */
+  async scheduleApprovalSweep(): Promise<void> {
+    await this.approvalsQueue.upsertJobScheduler(
+      'approval-chain-sweep',
+      { every: APPROVAL_SWEEP_INTERVAL_MS },
+      { name: ApprovalJobs.Sweep, data: {} },
+    );
+  }
+
   async enqueueDigestForUser(userId: string): Promise<void> {
     await this.digestQueue.add(
       DigestJobs.SendForUser,
@@ -197,6 +211,8 @@ export class QueueService {
         return this.documentsQueue;
       case QueueNames.Digest:
         return this.digestQueue;
+      case QueueNames.Approvals:
+        return this.approvalsQueue;
     }
   }
 }

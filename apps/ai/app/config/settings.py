@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     app_port: int = 8000
     app_debug: bool = False
 
+    # Shared secret apps/api sends as "Authorization: Bearer <key>" (its
+    # AI_SERVICE_API_KEY). Required when app_env is production; see
+    # app/api/auth.py.
+    ai_service_api_key: str = ""
+
     # ============================================================
     # AI Provider
     # ============================================================

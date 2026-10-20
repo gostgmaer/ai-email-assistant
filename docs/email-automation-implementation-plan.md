@@ -28,7 +28,8 @@ These are solo-developer estimates.
 | 0 | ✅ Done (2026-10-20). Processor spec (17 cases), `AUTO_SEND_ENABLED` and `EmailAccount.autoSendEnabled`. Migration `20261020090000_automation_phase0_auto_send_switch`. |
 | 1 | ✅ Done (2026-10-20). Migration `20261020090100_automation_phase1_safe_sends`. API: 233/233 tests and the typecheck pass. Not yet run against a live mailbox. |
 | 2 | ✅ Done (2026-10-20), except push sync (2b). Migration `20261020090200_automation_phase2_sync_health`. API: 264/264 tests and the typecheck pass. Not yet run against live Gmail, Outlook or IMAP. |
-| 3–6 | Not started |
+| 3 | ✅ Done (2026-10-20). Migration `20261020090300_automation_phase3_security`, which backfills approval-chain snapshots. API: 292/292 tests and the typecheck pass. AI service: 43/43 pytest (up from 18). Not run against a live model or mailbox. |
+| 4–6 | Not started |
 
 **Where Phase 1 differs from the plan below:**
 - **1.3 uses an `AutomationEffect` ledger only, with no `aiStage` column.**
@@ -59,6 +60,25 @@ These are solo-developer estimates.
 - **2.4 race fix.** Concurrency is now 4, which allowed two jobs to race on the auto-send caps. A post-claim re-check makes both racing jobs fall back to drafts.
 - **2.6 aliases.** Aliases are refreshed daily (Gmail `sendAs`, Graph `proxyAddresses`) and exclude the user's own mail from AI processing. Excluding aliases from *reply recipients* is part of 3.1.
 - **One-off repair.** `scripts/recompute-thread-metadata.ts` fixes existing thread dates (G-14). Run it once after deploy.
+
+**Where Phase 3 differs from the plan below:**
+- **3.1 Message-ID lookup.** Gmail replies send the parent's RFC `Message-ID`/`References`. Rows synced before these fields existed get them from a one-off `format=metadata` fetch at send time.
+- **3.1 Graph threading.** Graph's `createReply` threads replies itself, so no headers are needed there.
+- **3.1 reply-all controls.** Reply-all is a checkbox in the reply box and an `AUTO_REPLY` rule option. Auto-sends still reply to the sender or Reply-To only by default.
+- **3.2 trust tiers gate auto-send only.** Grounding isn't stripped from prompts. Drafts still use documents for everyone, because a human reviews them. Two things are blocked from **auto-sending**:
+  - a document-grounded reply to an **unknown** sender, unless the rule sets `allowUnknownSenderGrounding`;
+  - a reply that copies a 120+ character run of a retrieved document to anyone **external**.
+- **3.2 no sensitivity column.** There's no `Document.sensitivity` field. The verbatim check applies to every retrieved document, and only for senders outside the organisation.
+- **3.2 prompt layout.** Every capability now gets the emails inside `<email>` tags and the API's context inside `<context>`. Copies of those tags inside the content are defused, and only the system message carries instructions.
+- **3.2 tests.** The pytest fixtures check the deterministic parts: delimiting, tag breakout, and attribute injection. Whether a given model *obeys* an injection can't be unit-tested.
+- **3.3 guardrails file.** `reply.md` isn't split. A persona prompt now gets `reply_guardrails.md` appended after it, and the default path still uses the full `reply.md`.
+- **3.4 dev mode.** An empty `AI_SERVICE_API_KEY` disables auth with a warning in development. The service refuses to start without one in production, and the dev compose binds port 8000 to `127.0.0.1`.
+- **3.5 approval chains:**
+  - The chain links to its draft with `onDelete: SetNull` and keeps a snapshot (`draftSubject`, `draftRecipients`, `sentMessageId`).
+  - New statuses: `EXPIRED`, and `CANCELLED` when the draft is deleted.
+  - A sweep runs every 15 minutes on a new `approvals` queue. It reminds the approver at the halfway point and expires chains at the deadline, which defaults to 72 h (per rule: `expiresInHours`).
+  - Escalation to the owner isn't done. The owner gets an "expired" notice instead.
+  - Chain expiry has no UI field yet, so it's set through the rule's JSON.
 
 **Conventions for every phase:**
 - One Prisma migration per phase. Name it `NNN_automation_phaseN_<topic>`.

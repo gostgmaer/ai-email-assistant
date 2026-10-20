@@ -129,6 +129,8 @@ export interface ReplyInput {
   messageId: string;
   bodyHtml: string;
   bodyText?: string;
+  /** Also copy everyone else on the message (minus your own addresses). */
+  replyAll?: boolean;
 }
 
 export async function replyToMessage(

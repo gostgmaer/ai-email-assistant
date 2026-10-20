@@ -27,6 +27,7 @@ describe('WorkflowRuleService', () => {
       },
       accountMember: {
         findUnique: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       emailThread: {
         update: jest.fn(),
@@ -348,6 +349,48 @@ describe('WorkflowRuleService', () => {
   });
 
   describe('create', () => {
+    it('refuses approval-chain approvers who are not members of the account', async () => {
+      const { service, prisma } = buildDeps();
+      prisma.accountMember.findMany.mockResolvedValue([{ userId: 'member-1' }]);
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Needs sign-off',
+          conditions: [
+            { field: 'category', operator: 'equals', value: 'Sales' },
+          ],
+          actions: [
+            {
+              type: 'REQUIRE_APPROVAL_CHAIN',
+              approverUserIds: ['member-1', 'outsider-1'],
+            },
+          ],
+        }),
+      ).rejects.toThrow('not a member: outsider-1');
+      expect(prisma.workflowRule.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects an out-of-range approval chain expiry', async () => {
+      const { service, prisma } = buildDeps();
+      prisma.accountMember.findMany.mockResolvedValue([{ userId: 'member-1' }]);
+
+      await expect(
+        service.create(userId, accountId, {
+          name: 'Needs sign-off',
+          conditions: [
+            { field: 'category', operator: 'equals', value: 'Sales' },
+          ],
+          actions: [
+            {
+              type: 'REQUIRE_APPROVAL_CHAIN',
+              approverUserIds: ['member-1'],
+              expiresInHours: 0,
+            },
+          ],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
     it('requires ownership before creating a rule', async () => {
       const { service, emailAccountService, prisma } = buildDeps();
       prisma.workflowRule.create.mockResolvedValue({});

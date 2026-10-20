@@ -7,9 +7,17 @@ from .state import ReplyState
 
 
 def load_prompt(state: ReplyState):
-    state["system_prompt"] = state.get("system_prompt_override") or prompt_loader.load(
-        "reply"
-    )
+    # An agent persona replaces reply.md's tone/style guidance, but never
+    # its safety rules: reply_guardrails.md is appended to every persona, so
+    # a persona saying "promise whatever it takes" can't switch off "don't
+    # invent facts" or "no placeholders".
+    override = state.get("system_prompt_override")
+    if override:
+        state["system_prompt"] = (
+            override.rstrip() + "\n\n" + prompt_loader.load("reply_guardrails")
+        )
+    else:
+        state["system_prompt"] = prompt_loader.load("reply")
     return state
 
 
@@ -18,7 +26,11 @@ def build_messages(state: ReplyState):
         system_prompt=state["system_prompt"],
         subject=state["subject"],
         thread=state["thread"],
-        instruction=state.get("instruction"),
+        # The API's "instruction" field carries reference material
+        # (documents, contact facts, calendar notes), partly derived from
+        # third-party email — so it's passed as delimited, untrusted context,
+        # never as instructions.
+        context=state.get("instruction"),
     )
 
     return state

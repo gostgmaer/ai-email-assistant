@@ -83,6 +83,13 @@ export type WorkflowAction =
    * in order (see ApprovalChainService), and the draft only sends once
    * every step has approved. Always wins over AUTO_REPLY when both
    * appear on the same matched rule — see WorkflowRuleService.executeActions. */
-  | { type: 'REQUIRE_APPROVAL_CHAIN'; approverUserIds: string[] };
+  | {
+      type: 'REQUIRE_APPROVAL_CHAIN';
+      approverUserIds: string[];
+      /** Pending chains expire after this many hours (default
+       * APPROVAL_CHAIN_TTL_HOURS, 72); the current approver is reminded
+       * halfway. See ApprovalChainService.sweep. */
+      expiresInHours?: number;
+    };
 
 export type WorkflowActionType = WorkflowAction['type'];

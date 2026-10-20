@@ -78,7 +78,10 @@ services:
       FILE_SERVICE_URL: https://fms.easydev.in
 
     ports:
-      - "8000:8000"
+      # Loopback only: api/worker reach this over the compose network
+      # (http://ai:8000). Publishing on all interfaces exposed the LLM
+      # endpoints to the whole LAN.
+      - "127.0.0.1:8000:8000"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"

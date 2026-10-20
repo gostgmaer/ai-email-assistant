@@ -210,6 +210,10 @@ function ComposeContent() {
         >
           {approvalChain.status === "REJECTED"
             ? "This draft was rejected by an approval chain — edit it below, then it can be sent directly."
+            : approvalChain.status === "EXPIRED"
+            ? "This draft's approval chain expired before everyone signed off — review it and send it yourself if it's ready."
+            : approvalChain.status === "CANCELLED"
+            ? "This draft's approval chain was cancelled."
             : `Awaiting approval (step ${
                 approvalChain.steps.findIndex((s) => s.status === "PENDING") + 1
               } of ${approvalChain.steps.length}: ${

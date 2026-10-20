@@ -37,6 +37,7 @@ describe('ComposeService', () => {
       },
       approvalChain: {
         findUnique: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
     };
   }
@@ -169,6 +170,20 @@ describe('ComposeService', () => {
       await expect(
         service.sendDraft('user-1', draftMessageId),
       ).resolves.toBeDefined();
+      expect(prisma.emailThread.delete).toHaveBeenCalled();
+    });
+
+    it('cancels a still-pending approval chain when its draft is deleted', async () => {
+      const prisma = buildPrismaMock();
+      prisma.emailMessage.findUnique.mockResolvedValue(buildDraftMock());
+
+      const service = buildDeps(prisma);
+      await service.deleteDraft('user-1', draftMessageId);
+
+      expect(prisma.approvalChain.updateMany).toHaveBeenCalledWith({
+        where: { draftMessageId, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
       expect(prisma.emailThread.delete).toHaveBeenCalled();
     });
 

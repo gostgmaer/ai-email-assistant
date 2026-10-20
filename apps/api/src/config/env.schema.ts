@@ -82,6 +82,9 @@ export const envSchema = z.object({
   // first sync, or an expired change cursor. Everything after that comes
   // from change tracking, not this window.
   INITIAL_SYNC_LIMIT: z.coerce.number().int().positive().default(50),
+  // Default lifetime of a pending approval chain (a REQUIRE_APPROVAL_CHAIN
+  // action's expiresInHours overrides it). The approver is reminded halfway.
+  APPROVAL_CHAIN_TTL_HOURS: z.coerce.number().positive().default(72),
 
   // File Upload Service (@easydev_org/file-upload-sdk) — document uploads go
   // here instead of being held in memory; the AI service downloads directly

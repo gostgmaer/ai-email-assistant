@@ -74,7 +74,16 @@ export interface WorkflowCondition {
 }
 
 export type WorkflowAction =
-  | { type: "AUTO_REPLY"; agentId?: string; calendarAgent?: boolean }
+  | {
+      type: "AUTO_REPLY";
+      agentId?: string;
+      calendarAgent?: boolean;
+      /** Copy everyone else on the original message. */
+      replyAll?: boolean;
+      /** Let replies grounded in your documents auto-send to senders
+       * you've never corresponded with (default: held for review). */
+      allowUnknownSenderGrounding?: boolean;
+    }
   | { type: "ASSIGN_TO"; userId: string }
   | { type: "NOTIFY"; userId: string; message?: string }
   | {
@@ -92,7 +101,12 @@ export type WorkflowAction =
     }
   | { type: "CREATE_HUBSPOT_CONTACT"; integrationId: string }
   | { type: "REQUIRE_APPROVAL" }
-  | { type: "REQUIRE_APPROVAL_CHAIN"; approverUserIds: string[] };
+  | {
+      type: "REQUIRE_APPROVAL_CHAIN";
+      approverUserIds: string[];
+      /** Pending chains expire after this many hours (default 72). */
+      expiresInHours?: number;
+    };
 
 export type WorkflowActionType = WorkflowAction["type"];
 
@@ -333,7 +347,12 @@ export interface TeamsChannel {
   name: string;
 }
 
-export type ApprovalChainStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type ApprovalChainStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "EXPIRED"
+  | "CANCELLED";
 export type ApprovalStepStatus = "WAITING" | "PENDING" | "APPROVED" | "REJECTED";
 
 export interface ApprovalStep {
@@ -349,10 +368,16 @@ export interface ApprovalStep {
 export interface ApprovalChain {
   id: string;
   accountId: string;
-  draftMessageId: string;
+  /** Null once the draft was sent or deleted — the chain itself is kept as
+   * the audit record, with the snapshot fields below. */
+  draftMessageId: string | null;
   status: ApprovalChainStatus;
   createdAt: string;
   updatedAt: string;
+  expiresAt: string | null;
+  draftSubject: string | null;
+  draftRecipients: Participant[] | null;
+  sentMessageId: string | null;
   steps: ApprovalStep[];
   draftMessage: {
     id: string;
@@ -360,7 +385,7 @@ export interface ApprovalChain {
     bodyText: string | null;
     to: Participant[];
     threadId: string;
-  };
+  } | null;
   account: { id: string; email: string };
 }
 

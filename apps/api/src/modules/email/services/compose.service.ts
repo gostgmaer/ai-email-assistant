@@ -397,6 +397,14 @@ export class ComposeService {
 
   async deleteDraft(userId: string, draftMessageId: string): Promise<void> {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
+
+    // The chain row outlives the draft (SetNull, it's the audit record), so
+    // a chain still waiting on approvers must be closed explicitly — or it
+    // would sit in their queue forever, gating nothing.
+    await this.prisma.approvalChain.updateMany({
+      where: { draftMessageId, status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    });
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
   }
 

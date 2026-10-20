@@ -341,7 +341,11 @@ describe('AiProcessingProcessor', () => {
     it('creates an approval chain on the draft for REQUIRE_APPROVAL_CHAIN rules', async () => {
       const deps = buildDeps({
         rule: [
-          { type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: ['approver-1'] },
+          {
+            type: 'REQUIRE_APPROVAL_CHAIN',
+            approverUserIds: ['approver-1'],
+            expiresInHours: 12,
+          },
         ],
       });
 
@@ -352,6 +356,28 @@ describe('AiProcessingProcessor', () => {
         accountId,
         'draft-1',
         ['approver-1'],
+        { expiresInHours: 12 },
+      );
+    });
+
+    it('tells the user when the approval chain could not be started', async () => {
+      const deps = buildDeps({
+        rule: [
+          { type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: ['outsider'] },
+        ],
+      });
+      deps.approvalChainService.create.mockRejectedValue(
+        new Error('Approvers must be members of this account'),
+      );
+
+      await deps.run();
+
+      expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        userId,
+        "Approval chain couldn't be started",
+        expect.stringContaining('Approvers must be members'),
+        expect.objectContaining({ draftId: 'draft-1' }),
       );
     });
 

@@ -444,6 +444,49 @@ export function WorkflowRulesPanel({
                       Calendar-aware replies
                     </label>
                   )}
+                  {action.type === "AUTO_REPLY" && (
+                    <label className="flex items-center gap-1.5 text-xs text-zinc-600">
+                      <input
+                        type="checkbox"
+                        checked={action.replyAll === true}
+                        onChange={(e) =>
+                          setActions(
+                            actions.map((a, j) =>
+                              j === i && a.type === "AUTO_REPLY"
+                                ? { ...a, replyAll: e.target.checked }
+                                : a,
+                            ),
+                          )
+                        }
+                      />
+                      Reply all
+                    </label>
+                  )}
+                  {action.type === "AUTO_REPLY" && (
+                    <label
+                      className="flex items-center gap-1.5 text-xs text-zinc-600"
+                      title="By default, a reply that draws on your uploaded documents is held for review when the sender is someone you've never corresponded with — so a crafted email can't get your documents sent to a stranger. Turn on for inboxes that answer the public from public material, like support."
+                    >
+                      <input
+                        type="checkbox"
+                        checked={action.allowUnknownSenderGrounding === true}
+                        onChange={(e) =>
+                          setActions(
+                            actions.map((a, j) =>
+                              j === i && a.type === "AUTO_REPLY"
+                                ? {
+                                    ...a,
+                                    allowUnknownSenderGrounding:
+                                      e.target.checked,
+                                  }
+                                : a,
+                            ),
+                          )
+                        }
+                      />
+                      Auto-send document answers to new senders
+                    </label>
+                  )}
                   {(action.type === "ASSIGN_TO" || action.type === "NOTIFY") && (
                     <select
                       value={action.userId}

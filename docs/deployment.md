@@ -58,12 +58,13 @@ ACME_EMAIL=you@example.com                    # Let's Encrypt registration conta
 - `DATABASE_URL` / `REDIS_HOST` / `REDIS_PORT` / `AI_SERVICE_URL` are already set correctly by `docker-compose.prod.yml`'s `environment:` block — leave them out of this file, the compose values win
 - `NODE_ENV`, `LOG_LEVEL=info` (drop `debug` in production)
 - `AUTO_SEND_ENABLED` → global kill switch for autonomous replies (`false` holds every would-be auto-send as a draft; there's also a per-account `EmailAccount.autoSendEnabled`). `AI_MAX_MESSAGE_AGE_HOURS` (default `48`) → inbound mail older than this never enters the AI pipeline. See `docs/email-automation-implementation-plan.md`.
-- `AI_REQUEST_TIMEOUT_MS` (default `60000`; reply generation 2×, document processing 10×), `AI_WORKER_CONCURRENCY` (default `4`), `INITIAL_SYNC_LIMIT` (default `50`, newest messages per folder on first sync or when a sync cursor expires).
+- `AI_REQUEST_TIMEOUT_MS` (default `60000`; reply generation 2×, document processing 10×), `AI_WORKER_CONCURRENCY` (default `4`), `INITIAL_SYNC_LIMIT` (default `50`, newest messages per folder on first sync or when a sync cursor expires), `APPROVAL_CHAIN_TTL_HOURS` (default `72`; pending approval chains expire after this, and approvers are reminded halfway).
 - After deploying the `automation_phase2_sync_health` migration, run `npx ts-node scripts/recompute-thread-metadata.ts` (dry run) then `--apply` once, to repair thread dates written by the old sync (G-14).
 
 **`apps/ai/.env`** (copy from `apps/ai/.env.example`):
 - Whichever `LLM_PROVIDER`'s API key you're using (`GOOGLE_API_KEY` etc.)
 - `APP_ENV=production`, `APP_DEBUG=false`
+- `AI_SERVICE_API_KEY` → **required in production** (the AI service refuses to start without it). Generate it with `openssl rand -hex 32` and set the **same value** as `AI_SERVICE_API_KEY` in `apps/api/.env`. Every endpoint except `/health` checks it.
 
 **`apps/web/.env`** — not needed at runtime; `NEXT_PUBLIC_API_URL` is a *build* arg (see root `.env` above), not a container env var, because Next.js inlines `NEXT_PUBLIC_*` values into the client bundle at build time.
 

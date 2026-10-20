@@ -26,6 +26,12 @@ export const DigestJobs = {
   SendForUser: 'send-digest-for-user',
 } as const;
 
+export const ApprovalJobs = {
+  /** Repeatable job: reminds approvers halfway to a pending chain's
+   * deadline and expires chains past it (ApprovalChainService.sweep). */
+  Sweep: 'approval-sweep',
+} as const;
+
 export const DocumentJobs = {
   /** Repeatable job: marks documents stuck at PROCESSING (a crashed or
    * never-finished upload) as FAILED once they're older than the stale

@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
+from app.api.auth import check_api_key_configured, require_api_key
 from app.api.routes.calendar import router as calendar_router
 from app.api.routes.documents import router as documents_router
 from app.api.routes.email import router as email_router
@@ -22,6 +23,7 @@ if settings.sentry_dsn:
 async def lifespan(app: FastAPI):
     # Startup
     print(f"Starting {settings.app_name}")
+    check_api_key_configured()
 
     # TODO:
     # - Initialize LLM Manager
@@ -41,11 +43,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Routers
+# Routers. Everything except the health check requires the shared API key
+# (see app/api/auth.py) — this service exposes LLM calls and the user's
+# document content to whoever can reach it.
+protected = [Depends(require_api_key)]
 app.include_router(health_router)
-app.include_router(email_router)
-app.include_router(documents_router)
-app.include_router(calendar_router)
+app.include_router(email_router, dependencies=protected)
+app.include_router(documents_router, dependencies=protected)
+app.include_router(calendar_router, dependencies=protected)
 
 
 @app.get("/")

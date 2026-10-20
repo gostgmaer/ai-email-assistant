@@ -88,6 +88,7 @@ export class WorkflowRuleService {
     await this.emailAccountService.getOwnedAccountOrThrow(userId, accountId);
     this.validateConditions(data.conditions);
     this.validateActions(data.actions);
+    await this.validateApproverAccess(accountId, data.actions);
 
     return this.prisma.workflowRule.create({
       data: {
@@ -116,7 +117,10 @@ export class WorkflowRuleService {
     await this.emailAccountService.getOwnedAccountOrThrow(userId, accountId);
 
     if (data.conditions) this.validateConditions(data.conditions);
-    if (data.actions) this.validateActions(data.actions);
+    if (data.actions) {
+      this.validateActions(data.actions);
+      await this.validateApproverAccess(accountId, data.actions);
+    }
 
     // updateMany scoped by { id, accountId } avoids a check-then-update
     // race and never throws for a rule on someone else's account — it
@@ -285,6 +289,34 @@ export class WorkflowRuleService {
     });
   }
 
+  /** Approval-chain approvers must be members of the account — they get to
+   * read the drafted reply and the conversation behind it. Checked at save
+   * time (and again when a chain is created, see ApprovalChainService). */
+  private async validateApproverAccess(
+    accountId: string,
+    actions: WorkflowAction[],
+  ): Promise<void> {
+    const approverUserIds = actions.flatMap((action) =>
+      action.type === 'REQUIRE_APPROVAL_CHAIN' ? action.approverUserIds : [],
+    );
+    if (approverUserIds.length === 0) {
+      return;
+    }
+
+    const members = await this.prisma.accountMember.findMany({
+      where: { accountId, userId: { in: approverUserIds } },
+      select: { userId: true },
+    });
+    const memberIds = new Set(members.map((member) => member.userId));
+    const outsiders = approverUserIds.filter((id) => !memberIds.has(id));
+
+    if (outsiders.length > 0) {
+      throw new BadRequestException(
+        `Approvers must be members of this account; not a member: ${outsiders.join(', ')}`,
+      );
+    }
+  }
+
   private validateConditions(
     conditions: unknown,
   ): asserts conditions is WorkflowCondition[] {
@@ -394,6 +426,18 @@ export class WorkflowRuleService {
         ) {
           throw new BadRequestException(
             'action.approverUserIds must be a non-empty array of user IDs for REQUIRE_APPROVAL_CHAIN',
+          );
+        }
+        const expiresInHours = (a as { expiresInHours?: unknown })
+          .expiresInHours;
+        if (
+          expiresInHours !== undefined &&
+          (typeof expiresInHours !== 'number' ||
+            !(expiresInHours > 0) ||
+            expiresInHours > 720)
+        ) {
+          throw new BadRequestException(
+            'action.expiresInHours must be a number of hours between 0 and 720',
           );
         }
       }

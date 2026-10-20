@@ -659,12 +659,30 @@ export class AiProcessingProcessor
       // draft itself is already safely saved either way, so a chain-
       // creation failure must never turn into a stuck/retried job.
       if (approvalChainApproverUserIds) {
+        const chainAction = matchedActions?.find(
+          (action) => action.type === 'REQUIRE_APPROVAL_CHAIN',
+        );
         await this.approvalChainService
-          .create(account.id, draft.id, approvalChainApproverUserIds)
-          .catch((error: unknown) => {
+          .create(account.id, draft.id, approvalChainApproverUserIds, {
+            expiresInHours:
+              chainAction?.type === 'REQUIRE_APPROVAL_CHAIN'
+                ? chainAction.expiresInHours
+                : undefined,
+          })
+          .catch(async (error: unknown) => {
             this.logger.warn(
-              `Failed to create approval chain for draft ${draft.id}: ${String(error)}`,
+              `Failed to create approval chain for draft ${draft.id}: ${describeError(error)}`,
             );
+            // The draft is still held (nothing auto-sends), but nobody
+            // was asked to approve it — say so instead of failing silently.
+            await this.notificationService
+              .create(
+                account.userId,
+                "Approval chain couldn't be started",
+                `A reply to "${subject}" is waiting in Drafts, but its approval chain couldn't be created: ${describeError(error)}`,
+                { threadId: message.threadId, messageId, draftId: draft.id },
+              )
+              .catch(() => undefined);
           });
       }
 
