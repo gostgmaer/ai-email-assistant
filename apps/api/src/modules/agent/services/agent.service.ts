@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
+import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNamespace';
+import { AGENT_TEMPLATES, findAgentTemplate } from '../agent-templates';
 // Leaf-file import — see documents.controller.ts's comment for why
 // (avoids a Jest-only circular require).
 import { EmailAccountService } from '../../email-account/services/email-account.service';
@@ -22,6 +24,59 @@ export class AgentService {
     private readonly prisma: PrismaService,
     private readonly emailAccountService: EmailAccountService,
   ) {}
+
+  listTemplates() {
+    return AGENT_TEMPLATES;
+  }
+
+  /**
+   * "Create from template": an ordinary, editable Agent with the
+   * template's persona, plus its suggested rules — created DISABLED, so
+   * nothing replies until the owner reviews and turns them on.
+   */
+  async createFromTemplate(
+    userId: string,
+    accountId: string,
+    templateId: string,
+  ) {
+    await this.emailAccountService.getOwnedAccountOrThrow(userId, accountId);
+    const template = findAgentTemplate(templateId);
+    if (!template) {
+      throw new NotFoundException('Agent template not found');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const agent = await tx.agent.create({
+        data: {
+          accountId,
+          name: template.name,
+          systemPrompt: template.systemPrompt,
+          enabled: true,
+        },
+      });
+
+      const rules = await Promise.all(
+        template.suggestedRules.map((rule, index) =>
+          tx.workflowRule.create({
+            data: {
+              accountId,
+              name: rule.name,
+              enabled: false,
+              order: 500 + index,
+              conditions: rule.conditions as unknown as InputJsonValue,
+              actions: rule.actions.map((action) =>
+                action.type === 'AUTO_REPLY' && action.agentId === '{{agentId}}'
+                  ? { ...action, agentId: agent.id }
+                  : action,
+              ),
+            },
+          }),
+        ),
+      );
+
+      return { agent, rules };
+    });
+  }
 
   async listForAccount(userId: string, accountId: string) {
     await this.emailAccountService.getOwnedAccountOrThrow(userId, accountId);

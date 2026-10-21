@@ -25,7 +25,11 @@ export type WorkflowTextField =
  * withinBusinessHours: the account's business hours, in the owner's
  * timezone. */
 export type WorkflowBooleanField =
-  'containsPii' | 'isFirstMessage' | 'isKnownContact' | 'withinBusinessHours';
+  | 'containsPii'
+  | 'hasAttachment'
+  | 'isFirstMessage'
+  | 'isKnownContact'
+  | 'withinBusinessHours';
 
 export type WorkflowConditionField = WorkflowTextField | WorkflowBooleanField;
 

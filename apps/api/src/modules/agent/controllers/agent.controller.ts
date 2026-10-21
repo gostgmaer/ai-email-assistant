@@ -44,6 +44,35 @@ export class AgentController {
     return this.agentService.listForAccount(user.sub, accountId);
   }
 
+  @Get('templates')
+  @ApiOperation({
+    summary:
+      'Ready-made personas (Customer Support, Sales, HR, Finance, Executive Assistant)',
+  })
+  @ApiResponse({ status: 200, description: 'The templates' })
+  templates() {
+    return this.agentService.listTemplates();
+  }
+
+  @Post('from-template/:templateId')
+  @ApiOperation({
+    summary:
+      'Create an agent from a template, with its suggested rules (disabled) — owner only',
+  })
+  @ApiResponse({ status: 201, description: 'The agent and its rules' })
+  @ApiResponse({ status: 404, description: 'Template not found' })
+  async createFromTemplate(
+    @CurrentUser() user: JwtPayload,
+    @Param('accountId') accountId: string,
+    @Param('templateId') templateId: string,
+  ) {
+    return this.agentService.createFromTemplate(
+      user.sub,
+      accountId,
+      templateId,
+    );
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create an AI agent persona (owner only)' })
   @ApiResponse({ status: 201, description: 'The created agent' })

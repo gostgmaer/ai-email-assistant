@@ -19,6 +19,8 @@ export interface User {
   companyName: string | null;
   /** IANA zone; quiet hours and business hours are read in it. */
   timezone: string;
+  /** Local hour (0-23) the daily digest is sent. */
+  digestHour: number;
   emailVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -98,6 +100,7 @@ export type WorkflowTextField =
 
 export type WorkflowBooleanField =
   | "containsPii"
+  | "hasAttachment"
   | "isFirstMessage"
   | "isKnownContact"
   | "withinBusinessHours";
@@ -260,6 +263,9 @@ export interface EmailMessage {
   receivedAt: string;
   isRead: boolean;
   createdAt: string;
+  /** Files on the message (inline images excluded). Only metadata is
+   * stored; the file is fetched from the mailbox on download. */
+  attachments?: AttachmentSummary[];
   /** Set only on AI-generated replies (drafted or auto-sent) — null for
    * synced/manually-composed messages. */
   generationMetadata: GenerationMetadata | null;
@@ -294,6 +300,71 @@ export interface PendingDraftReply {
    * hours, a rule's delay). It can be cancelled until then. */
   scheduledSendAt: string | null;
   approvalChain: { status: "PENDING" | "APPROVED" | "REJECTED" } | null;
+}
+
+export interface AttachmentSummary {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+}
+
+/** A file to send, base64-encoded (3 MB total per message). */
+export interface AttachmentInput {
+  filename: string;
+  contentType: string;
+  contentBase64: string;
+}
+
+export type NotificationEvent =
+  | "URGENT_MAIL"
+  | "APPROVAL_REQUESTED"
+  | "DRAFT_READY"
+  | "SYNC_FAILED"
+  | "DIGEST"
+  | "FOLLOW_UP"
+  | "SNOOZE_WAKE"
+  | "AUTOMATION";
+
+export type NotificationChannel = "IN_APP" | "EMAIL" | "SLACK";
+
+export interface NotificationChannelPreference {
+  channel: NotificationChannel;
+  enabled: boolean;
+  slackIntegrationId: string | null;
+  slackChannelId: string | null;
+}
+
+export interface NotificationEventPreferences {
+  event: NotificationEvent;
+  label: string;
+  channels: NotificationChannelPreference[];
+}
+
+export interface AgentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+  suggestedRules: { name: string }[];
+}
+
+export interface DraftQualityMetrics {
+  reviewed: number;
+  sent: number;
+  discarded: number;
+  autoSent: number;
+  acceptanceRate: number | null;
+  editRate: number | null;
+  averageEditDistance: number | null;
+  medianTimeToSendMs: number | null;
+  rejectionRate: number | null;
+}
+
+export interface AutomationMetrics {
+  days: number;
+  overall: DraftQualityMetrics;
+  byAgent: (DraftQualityMetrics & { agentId: string; agentName: string })[];
 }
 
 export interface MailFolderSummary {

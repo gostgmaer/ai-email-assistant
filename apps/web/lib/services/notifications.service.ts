@@ -1,5 +1,10 @@
 import { apiFetch } from "../api/client";
-import type { NotificationsPage } from "../api/types";
+import type {
+  NotificationChannel,
+  NotificationEvent,
+  NotificationEventPreferences,
+  NotificationsPage,
+} from "../api/types";
 
 export async function listNotifications(
   params: { page?: number; limit?: number; unreadOnly?: boolean } = {},
@@ -10,6 +15,27 @@ export async function listNotifications(
   if (params.unreadOnly) query.set("unreadOnly", "true");
   const qs = query.toString();
   return apiFetch<NotificationsPage>(`/notifications${qs ? `?${qs}` : ""}`);
+}
+
+export async function getNotificationPreferences(): Promise<
+  NotificationEventPreferences[]
+> {
+  return apiFetch("/notifications/preferences");
+}
+
+export async function updateNotificationPreferences(
+  preferences: {
+    event: NotificationEvent;
+    channel: NotificationChannel;
+    enabled: boolean;
+    slackIntegrationId?: string | null;
+    slackChannelId?: string | null;
+  }[],
+): Promise<NotificationEventPreferences[]> {
+  return apiFetch("/notifications/preferences", {
+    method: "PUT",
+    body: { preferences },
+  });
 }
 
 export async function unreadCount(): Promise<{ count: number }> {

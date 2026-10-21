@@ -190,6 +190,109 @@ export class AutomationService {
     );
   }
 
+  /**
+   * A snoozed thread's time is up: it's unsnoozed (back in the inbox) and
+   * whoever owns it — the assignee, else the account owner — is told.
+   * `until` is what the job was scheduled for; a thread that was re-snoozed
+   * or unsnoozed since then doesn't match and is left alone.
+   */
+  async wakeSnoozedThread(threadId: string, until: string): Promise<void> {
+    const thread = await this.prisma.emailThread.findUnique({
+      where: { id: threadId },
+      select: {
+        subject: true,
+        snoozedUntil: true,
+        assignedToUserId: true,
+        account: { select: { userId: true } },
+      },
+    });
+    if (
+      !thread?.snoozedUntil ||
+      thread.snoozedUntil.getTime() !== new Date(until).getTime()
+    ) {
+      return;
+    }
+
+    const { count } = await this.prisma.emailThread.updateMany({
+      where: { id: threadId, snoozedUntil: thread.snoozedUntil },
+      data: { snoozedUntil: null },
+    });
+    if (count === 0) {
+      return;
+    }
+
+    await this.notificationService
+      .create(
+        thread.assignedToUserId ?? thread.account.userId,
+        'A snoozed conversation is back',
+        `"${thread.subject ?? '(no subject)'}" is back in your inbox.`,
+        { threadId },
+        'SNOOZE_WAKE',
+      )
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Failed to notify about woken thread ${threadId}: ${
+            error instanceof Error ? error.message : JSON.stringify(error)
+          }`,
+        );
+      });
+  }
+
+  /**
+   * "Remind me if nobody replies": every thread whose followUpAt has
+   * passed is claimed (followUpAt cleared in one conditional update, so two
+   * scans can't both act), and if the last message is still the user's own
+   * it becomes a FOLLOW_UP task plus a notification. A reply that arrived
+   * in the meantime just clears the reminder.
+   */
+  async runFollowUpScan(now = new Date()): Promise<number> {
+    const due = await this.prisma.emailThread.findMany({
+      where: { followUpAt: { lte: now } },
+      take: 200,
+      select: {
+        id: true,
+        subject: true,
+        followUpAt: true,
+        lastMessageFromSelf: true,
+        assignedToUserId: true,
+        account: { select: { userId: true } },
+      },
+    });
+
+    let reminded = 0;
+    for (const thread of due) {
+      const { count } = await this.prisma.emailThread.updateMany({
+        where: { id: thread.id, followUpAt: thread.followUpAt },
+        data: { followUpAt: null },
+      });
+      if (count === 0 || !thread.lastMessageFromSelf) {
+        continue;
+      }
+
+      const userId = thread.assignedToUserId ?? thread.account.userId;
+      const subject = thread.subject ?? '(no subject)';
+      await this.prisma.task.create({
+        data: {
+          userId,
+          threadId: thread.id,
+          type: 'FOLLOW_UP',
+          description: `No reply yet: ${subject}`,
+        },
+      });
+      await this.notificationService
+        .create(
+          userId,
+          'No reply yet',
+          `Nobody has answered "${subject}". A follow-up task was added.`,
+          { threadId: thread.id },
+          'FOLLOW_UP',
+        )
+        .catch(() => undefined);
+      reminded++;
+    }
+    return reminded;
+  }
+
   /** Deletes RuleExecution rows older than the retention window. */
   async cleanupRuleExecutions(): Promise<number> {
     const { count } = await this.prisma.ruleExecution.deleteMany({

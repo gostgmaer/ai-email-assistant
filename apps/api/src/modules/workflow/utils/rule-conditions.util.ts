@@ -26,6 +26,7 @@ export interface RuleMessageContext {
   subject: string;
   body: string;
   containsPii: boolean;
+  hasAttachment: boolean;
   isFirstMessage: boolean;
   isKnownContact: boolean;
   withinBusinessHours: boolean;
@@ -45,6 +46,7 @@ const TEXT_FIELDS: WorkflowTextField[] = [
 ];
 const BOOLEAN_FIELDS: WorkflowBooleanField[] = [
   'containsPii',
+  'hasAttachment',
   'isFirstMessage',
   'isKnownContact',
   'withinBusinessHours',

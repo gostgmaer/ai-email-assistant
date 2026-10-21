@@ -16,7 +16,10 @@ export const AIJobs = {
 } as const;
 
 export const NotificationJobs = {
+  /** Despite the name: creates a notification (in-app + chosen channels). */
   SendEmail: 'send-email',
+  /** Sends one notification out on email/Slack (NotificationDeliveryService). */
+  Deliver: 'deliver-notification',
 } as const;
 
 export const DigestJobs = {
@@ -38,6 +41,11 @@ export const AutomationJobs = {
   SendScheduledReply: 'send-scheduled-reply',
   /** Repeatable job: deletes RuleExecution rows past retention. */
   CleanupRuleExecutions: 'cleanup-rule-executions',
+  /** Delayed job at a thread's snoozedUntil: notifies and unsnoozes. */
+  SnoozeWake: 'snooze-wake',
+  /** Repeatable job (hourly): turns due "remind me if no reply" threads
+   * into FOLLOW_UP tasks. */
+  FollowUpScan: 'follow-up-scan',
 } as const;
 
 export const DocumentJobs = {

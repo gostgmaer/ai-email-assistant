@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -174,6 +175,24 @@ export class EmailController {
   @ApiResponse({ status: 409, description: 'Already processed' })
   async retryAi(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     await this.inboxService.retryAiProcessing(user.sub, id);
+  }
+
+  @Get('attachments/:id')
+  @ApiOperation({
+    summary: 'Download an attachment (fetched from the provider)',
+  })
+  @ApiResponse({ status: 200, description: 'The file' })
+  async downloadAttachment(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ): Promise<StreamableFile> {
+    const file = await this.inboxService.getAttachmentContent(user.sub, id);
+    // Always a download, never rendered inline: the file is untrusted.
+    return new StreamableFile(file.content, {
+      type: file.mimeType,
+      disposition: `attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
+      length: file.content.length,
+    });
   }
 
   @Post('messages/:id/read')

@@ -187,6 +187,7 @@ export class EmailSyncService {
         'Reconnect your mailbox',
         `${account.email} stopped syncing because its sign-in is no longer valid. Reconnect it in Settings to resume.`,
         { accountId: account.id },
+        'SYNC_FAILED',
       );
     } else if (!authFailure && failures === SYNC_FAILURE_NOTIFY_THRESHOLD) {
       await this.queueService.enqueueNotification(
@@ -194,6 +195,7 @@ export class EmailSyncService {
         'Sync failing',
         `We couldn't sync ${account.email} ${failures} times in a row and will keep retrying less often: ${message}`,
         { accountId: account.id },
+        'SYNC_FAILED',
       );
     }
   }
@@ -647,6 +649,18 @@ export class EmailSyncService {
           : undefined,
         messageIdHeader: message.messageIdHeader,
         references: message.references ?? [],
+        attachments: message.attachments?.length
+          ? {
+              create: message.attachments.map((attachment) => ({
+                filename: attachment.filename.slice(0, 255),
+                mimeType: attachment.mimeType,
+                size: attachment.size,
+                providerAttachmentId: attachment.providerAttachmentId,
+                contentId: attachment.contentId,
+                isInline: attachment.isInline,
+              })),
+            }
+          : undefined,
       },
       update: {
         isRead: message.isRead,

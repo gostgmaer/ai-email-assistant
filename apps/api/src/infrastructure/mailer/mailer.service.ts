@@ -60,6 +60,26 @@ export class MailerService {
     );
   }
 
+  /** A notification delivered by email (NotificationPreference EMAIL).
+   * Title and body can contain text from incoming mail (subjects, sender
+   * names), so they're escaped, never used as HTML. */
+  async sendNotificationEmail(
+    to: string,
+    title: string,
+    body: string,
+  ): Promise<void> {
+    const appUrl = this.configService.get<string>('FRONTEND_URL') ?? '';
+    await this.send(
+      to,
+      title,
+      `<p><strong>${escapeHtml(title)}</strong></p>
+       <p>${escapeHtml(body)}</p>
+       ${appUrl ? `<p><a href="${escapeHtml(appUrl)}">Open AI Email Assistant</a></p>` : ''}
+       <p style="color:#71717a;font-size:12px">You can change which notifications are emailed to you in your profile settings.</p>`,
+      `${title}\n\n${body}${appUrl ? `\n\n${appUrl}` : ''}`,
+    );
+  }
+
   private async send(
     to: string,
     subject: string,
@@ -81,4 +101,13 @@ export class MailerService {
       text,
     });
   }
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }

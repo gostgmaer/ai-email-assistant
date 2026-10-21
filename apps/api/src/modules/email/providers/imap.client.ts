@@ -143,6 +143,40 @@ export class ImapClient implements MailProviderClient {
     });
   }
 
+  /** IMAP has no attachment ids: the message is re-fetched and parsed, and
+   * the attachment picked by its position. */
+  async getAttachment(
+    providerMessageId: string,
+    providerAttachmentId: string,
+    folderProviderId?: string,
+  ): Promise<Buffer> {
+    if (!folderProviderId) {
+      throw new BadRequestException(
+        'folderProviderId is required to fetch an IMAP attachment',
+      );
+    }
+
+    return this.withClient(async (client) => {
+      await client.mailboxOpen(folderProviderId, { readOnly: true });
+      const uid = await this.resolveUid(client, providerMessageId);
+      const message = await client.fetchOne(
+        uid,
+        { uid: true, source: true },
+        { uid: true },
+      );
+      if (!message || !message.source) {
+        throw new NotFoundException('Message not found');
+      }
+
+      const parsed = await simpleParser(message.source);
+      const attachment = parsed.attachments[Number(providerAttachmentId)];
+      if (!attachment) {
+        throw new NotFoundException('Attachment not found');
+      }
+      return attachment.content;
+    });
+  }
+
   async markAsRead(
     providerMessageId: string,
     folderProviderId?: string,
@@ -253,6 +287,11 @@ export class ImapClient implements MailProviderClient {
         inReplyTo: input.inReplyToHeader ?? input.inReplyToProviderMessageId,
         references: input.referencesHeader ?? input.inReplyToProviderMessageId,
         headers: input.headers,
+        attachments: input.attachments?.map((attachment) => ({
+          filename: attachment.filename,
+          contentType: attachment.contentType,
+          content: attachment.content,
+        })),
       });
 
       const messageId = info.messageId;
@@ -325,6 +364,15 @@ export class ImapClient implements MailProviderClient {
       ),
       messageIdHeader: message.envelope?.messageId,
       references: parseMessageIdList(parsed?.references),
+      attachments: (parsed?.attachments ?? []).map((attachment, index) => ({
+        providerAttachmentId: String(index),
+        filename: attachment.filename ?? `attachment-${index + 1}`,
+        mimeType: attachment.contentType,
+        size: attachment.size,
+        contentId: attachment.cid,
+        isInline:
+          attachment.contentDisposition === 'inline' || attachment.related,
+      })),
       bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('list-unsubscribe'),

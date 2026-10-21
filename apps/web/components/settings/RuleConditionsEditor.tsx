@@ -19,6 +19,7 @@ export const CONDITION_FIELDS: { value: WorkflowConditionField; label: string }[
   { value: "subject", label: "Subject" },
   { value: "body", label: "Message text" },
   { value: "containsPii", label: "Contains personal data" },
+  { value: "hasAttachment", label: "Has attachments" },
   { value: "isFirstMessage", label: "First message in thread" },
   { value: "isKnownContact", label: "Sender is a known contact" },
   { value: "withinBusinessHours", label: "Received in business hours" },
@@ -26,6 +27,7 @@ export const CONDITION_FIELDS: { value: WorkflowConditionField; label: string }[
 
 const BOOLEAN_FIELDS = new Set<WorkflowConditionField>([
   "containsPii",
+  "hasAttachment",
   "isFirstMessage",
   "isKnownContact",
   "withinBusinessHours",

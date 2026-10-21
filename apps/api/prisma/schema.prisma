@@ -74,6 +74,9 @@ model User {
   // user's accounts are read in this zone. Defaults to UTC.
   timezone String @default("UTC")
 
+  // Local hour (0-23, in `timezone`) the daily digest goes out.
+  digestHour Int @default(8)
+
   // Null for OAuth-only users (Google/Microsoft) who never set a password.
   passwordHash    String?
   emailVerifiedAt DateTime?
@@ -85,18 +88,19 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  emailAccounts      EmailAccount[]
-  calendarAccounts   CalendarAccount[]
-  refreshTokens      RefreshToken[]
-  notifications      Notification[]
-  verificationTokens VerificationToken[]
-  contactMemories    ContactMemory[]
-  documents          Document[]
-  tasks              Task[]
-  accountMemberships AccountMember[]
-  assignedThreads    EmailThread[]       @relation("ThreadAssignee")
-  threadNotes        ThreadNote[]
-  approvalSteps      ApprovalStep[]
+  emailAccounts           EmailAccount[]
+  calendarAccounts        CalendarAccount[]
+  refreshTokens           RefreshToken[]
+  notifications           Notification[]
+  verificationTokens      VerificationToken[]
+  contactMemories         ContactMemory[]
+  documents               Document[]
+  tasks                   Task[]
+  accountMemberships      AccountMember[]
+  assignedThreads         EmailThread[]            @relation("ThreadAssignee")
+  threadNotes             ThreadNote[]
+  approvalSteps           ApprovalStep[]
+  notificationPreferences NotificationPreference[]
 
   @@index([createdAt])
 }
@@ -134,11 +138,58 @@ model Notification {
   body     String
   metadata Json?
 
+  // What kind of event this is — decides which channels it goes out on
+  // (NotificationPreference). Null for rows written before channels existed.
+  event NotificationEvent?
+
   isRead Boolean @default(false)
 
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+enum NotificationEvent {
+  URGENT_MAIL
+  APPROVAL_REQUESTED
+  DRAFT_READY
+  SYNC_FAILED
+  DIGEST
+  FOLLOW_UP
+  SNOOZE_WAKE
+  // Auto-sends, scheduled sends, send limits — the automation itself.
+  AUTOMATION
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SLACK
+}
+
+/**
+ * Per-user channel choice per event (docs/email-automation-implementation-
+ * plan.md §6.2). A missing row means the default: in-app on, email and
+ * Slack off. SLACK rows name the Slack integration and channel to post to
+ * (integrations are account-scoped; the user picks one they can access).
+ */
+model NotificationPreference {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  event   NotificationEvent
+  channel NotificationChannel
+  enabled Boolean             @default(true)
+
+  slackIntegrationId String?
+  slackChannelId     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, event, channel])
 }
 
 model RefreshToken {
@@ -738,6 +789,11 @@ model EmailThread {
   // excluded once this timestamp passes. Null means not snoozed.
   snoozedUntil DateTime?
 
+  // "Remind me if nobody replies by then" — set from compose. The hourly
+  // follow-up scan turns it into a FOLLOW_UP task + notification if the
+  // last message is still the user's own, then clears it.
+  followUpAt DateTime?
+
   // Shared Inbox (v2.0): who on the account is responsible for this
   // conversation. Must be an AccountMember of this thread's account —
   // enforced in InboxService, not at the schema level (Prisma can't
@@ -763,6 +819,7 @@ model EmailThread {
   @@unique([accountId, providerThreadId])
   @@index([folderId])
   @@index([snoozedUntil])
+  @@index([followUpAt])
   @@index([assignedToUserId])
   @@index([lastMessageFromSelf, lastMessageAt])
 }
@@ -854,6 +911,7 @@ model EmailMessage {
 
   automationEffects AutomationEffect[]
   ruleExecutions    RuleExecution[]
+  attachments       EmailAttachment[]
 
   // Set on an AI draft whose auto-send is scheduled (undo window, quiet
   // hours, DELAY_SEND) — when it will send unless cancelled. Cleared when
@@ -973,6 +1031,71 @@ model AutomationEffect {
 enum TaskType {
   ACTION_ITEM
   MEETING_REQUEST
+  // A sent message nobody answered by the thread's followUpAt.
+  FOLLOW_UP
+}
+
+/**
+ * Attachment metadata (docs/email-automation-implementation-plan.md §6.1).
+ * Only metadata is synced; the bytes are fetched from the provider on
+ * download (GET /email/attachments/:id). providerAttachmentId is the
+ * provider's own id (Gmail attachmentId, Graph attachment id) or, for IMAP,
+ * the attachment's position in the parsed message.
+ */
+model EmailAttachment {
+  id String @id @default(uuid())
+
+  messageId String
+  message   EmailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  filename             String
+  mimeType             String
+  size                 Int
+  providerAttachmentId String
+  contentId            String?
+  // Inline images (signatures, logos) — not shown as attachments and not
+  // counted by the hasAttachment rule condition.
+  isInline             Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
+}
+
+enum AiDraftOutcomeKind {
+  // A human sent the AI draft (edited or not).
+  SENT
+  // A human deleted it instead.
+  DISCARDED
+  // It went out without review (auto-send, scheduled send).
+  AUTO_SENT
+}
+
+/**
+ * One row per AI reply that reached an outcome — what the quality metrics
+ * (GET /analytics/automation) are computed from. Kept separately because
+ * the draft row itself is deleted when it's sent or discarded.
+ */
+model AiDraftOutcome {
+  id String @id @default(uuid())
+
+  accountId String
+  // The agent persona that wrote it, when a rule used one. Not a relation:
+  // the history outlives a deleted agent.
+  agentId   String?
+
+  outcome      AiDraftOutcomeKind
+  // SENT only: whether the text was changed, how much (normalized
+  // Levenshtein distance, 0 = untouched, 1 = rewritten) and how long the
+  // draft waited.
+  edited       Boolean?
+  editDistance Float?
+  timeToSendMs Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([agentId, createdAt])
 }
 
 enum TaskStatus {

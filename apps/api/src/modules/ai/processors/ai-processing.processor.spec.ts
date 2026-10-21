@@ -157,6 +157,7 @@ describe('AiProcessingProcessor', () => {
       emailThread: { update: jest.fn().mockResolvedValue({}) },
       automationEffect: ledger,
       notification: { count: jest.fn().mockResolvedValue(0) },
+      aiDraftOutcome: { create: jest.fn().mockResolvedValue({}) },
     };
 
     const aiClientService = {
@@ -274,6 +275,10 @@ describe('AiProcessingProcessor', () => {
       processor,
       documentsService,
       contactService,
+      contactMemoryService,
+      calendarContextService,
+      meetingSchedulingService,
+      agentService,
       ledger,
       prisma,
       aiClientService,
@@ -917,6 +922,7 @@ describe('AiProcessingProcessor', () => {
       expect(deps.composeService.deleteDraft).toHaveBeenCalledWith(
         userId,
         'stale-draft',
+        { recordOutcome: false },
       );
       expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
     });
@@ -1151,6 +1157,213 @@ describe('AiProcessingProcessor', () => {
       expect(sent.bodyText).toBe(
         'Hi Casey,\n\nIt ships <b>today</b>.\n\nAlex Kim\n555-0100',
       );
+    });
+  });
+
+  describe('attachments (phase 6)', () => {
+    it('tells the model which files are attached (never their content) and feeds hasAttachment to rules', async () => {
+      const row = {
+        id: messageId,
+        from: [{ address: senderAddress, name: 'Casey Customer' }],
+        to: [{ address: 'support@company.com' }],
+        cc: [],
+        bodyText: 'Invoice attached.',
+        receivedAt: RECEIVED_AT,
+        isAutoReply: false,
+        attachments: [
+          { filename: 'invoice.pdf', mimeType: 'application/pdf', size: 2048 },
+        ],
+      };
+      const deps = buildDeps({
+        message: buildMessage({ thread: { messages: [row] } }),
+      });
+      let ruleContext: Record<string, unknown> | undefined;
+      deps.workflowRuleService.evaluate.mockImplementation(
+        async (_accountId, resolveContext) => {
+          ruleContext = (await resolveContext(false)) as Record<
+            string,
+            unknown
+          >;
+          return [];
+        },
+      );
+
+      await deps.run();
+
+      const [, thread] = deps.aiClientService.classify.mock.calls[0] as [
+        string,
+        { content: string }[],
+      ];
+      expect(thread[0].content).toBe(
+        '[Attachments: invoice.pdf (application/pdf, 2 KB)]\n\nInvoice attached.',
+      );
+      expect(ruleContext).toMatchObject({ hasAttachment: true });
+    });
+  });
+
+  describe('notification events (phase 6)', () => {
+    it('flags urgent mail to the owner', async () => {
+      const deps = buildDeps({ priority: 'Urgent' });
+
+      await deps.run();
+
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        userId,
+        'Urgent email from Casey Customer',
+        expect.any(String),
+        expect.objectContaining({ messageId }),
+        'URGENT_MAIL',
+      );
+    });
+
+    it('tells the owner a draft is ready, but not when an approval chain handles it', async () => {
+      const deps = buildDeps();
+      await deps.run();
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        userId,
+        'AI draft ready for review',
+        expect.any(String),
+        expect.objectContaining({ draftId: 'draft-1' }),
+        'DRAFT_READY',
+      );
+
+      const chained = buildDeps({
+        rule: [{ type: 'REQUIRE_APPROVAL_CHAIN', approverUserIds: ['a-1'] }],
+      });
+      await chained.run();
+      expect(chained.notificationService.create).not.toHaveBeenCalledWith(
+        userId,
+        'AI draft ready for review',
+        expect.anything(),
+        expect.anything(),
+        'DRAFT_READY',
+      );
+    });
+  });
+
+  describe('early exits and reply context', () => {
+    it('skips a message with no usable sender, before any AI call', async () => {
+      const deps = buildDeps({ message: buildMessage({ from: [] }) });
+
+      await deps.run();
+
+      expect(deps.aiClientService.classify).not.toHaveBeenCalled();
+    });
+
+    it('skips mail from a no-reply address, before any AI call', async () => {
+      const deps = buildDeps({
+        message: buildMessage({
+          from: [{ address: 'no-reply@shop.example.com' }],
+        }),
+      });
+
+      await deps.run();
+
+      expect(deps.aiClientService.classify).not.toHaveBeenCalled();
+    });
+
+    it('grounds the reply in contact memory, related contacts, CRM, documents, calendar and the agent persona', async () => {
+      const deps = buildDeps({
+        rule: [{ type: 'AUTO_REPLY', agentId: 'agent-1' }],
+      });
+      deps.aiClientService.classify.mockResolvedValue({
+        classification: {
+          category: 'Meeting',
+          priority: 'Normal',
+          sentiment: 'Neutral',
+          spam: false,
+          language: 'en',
+          containsPii: false,
+          piiTypes: [],
+          needsReply: true,
+          replyReason: '',
+        },
+      });
+      deps.aiClientService.contactMemory.mockResolvedValue({
+        facts: {
+          role: 'CTO',
+          company: 'Initech',
+          summary: 'Evaluating our product',
+          commitments: ['Send pricing'],
+        },
+        embedding: [0.1],
+      });
+      deps.contactMemoryService.searchSimilar.mockResolvedValue([
+        {
+          senderEmail: 'other@example.com',
+          senderName: null,
+          facts: { summary: 'Asked about SSO' },
+        },
+      ]);
+      deps.contactService.findByEmail.mockResolvedValue({
+        name: 'Casey',
+        status: 'Lead',
+        company: 'Initech',
+        notes: 'Met at expo',
+        lastContactedAt: new Date('2026-10-01T00:00:00Z'),
+      });
+      deps.documentsService.search.mockResolvedValue([
+        {
+          id: 'chunk-1',
+          documentId: 'doc-1',
+          filename: 'pricing.pdf',
+          content: 'Plans start at 10 per seat.',
+          distance: 0.1,
+        },
+      ]);
+      deps.calendarContextService.buildAvailabilityContext.mockResolvedValue(
+        'The user is generally free on Thursday afternoons.',
+      );
+      deps.agentService.getEnabledSystemPrompt.mockResolvedValue(
+        'You are a sales agent.',
+      );
+
+      await deps.run();
+
+      const [, , instruction, persona] = deps.aiClientService.generateReply.mock
+        .calls[0] as [string, unknown, string, string];
+      expect(persona).toBe('You are a sales agent.');
+      for (const expected of [
+        'Role: CTO',
+        'Commitments: Send pricing',
+        '- other@example.com: Asked about SSO',
+        'known CRM contact (Casey)',
+        'Notes: Met at expo',
+        '(from "pricing.pdf"): Plans start at 10 per seat.',
+        'free on Thursday afternoons',
+      ]) {
+        expect(instruction).toContain(expected);
+      }
+    });
+
+    it('auto-schedules extracted meeting requests when the account opted in', async () => {
+      const deps = buildDeps({
+        message: buildMessage({ account: { autoScheduleMeetings: true } }),
+      });
+      deps.tasksService.createFromExtraction.mockResolvedValue([
+        { id: 'task-1', type: 'MEETING_REQUEST' },
+        { id: 'task-2', type: 'ACTION_ITEM' },
+      ]);
+
+      await deps.run();
+
+      expect(deps.meetingSchedulingService.autoSchedule).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(deps.meetingSchedulingService.autoSchedule).toHaveBeenCalledWith(
+        userId,
+        'task-1',
+      );
+    });
+
+    it('sets the worker concurrency from AI_WORKER_CONCURRENCY', () => {
+      const deps = buildDeps({ env: { AI_WORKER_CONCURRENCY: '7' } });
+      const worker = { concurrency: 1 };
+      Object.defineProperty(deps.processor, 'worker', { get: () => worker });
+
+      deps.processor.onApplicationBootstrap();
+
+      expect(worker.concurrency).toBe(7);
     });
   });
 });

@@ -39,6 +39,8 @@ export function buildRuleMessageContext(input: {
   /** Receive times of the other messages in the thread. */
   threadReceivedAt: Date[];
   threadSubject: string | null;
+  /** Whether the message has a non-inline attachment. */
+  hasAttachment: boolean;
   account: RuleAccountSource;
   timezone: string;
   isKnownContact: boolean;
@@ -56,6 +58,7 @@ export function buildRuleMessageContext(input: {
     subject: input.threadSubject ?? message.subject ?? '',
     body: stripQuotedHistory(message.bodyText ?? ''),
     containsPii: message.containsPii,
+    hasAttachment: input.hasAttachment,
     isFirstMessage: !input.threadReceivedAt.some(
       (at) => at < message.receivedAt,
     ),

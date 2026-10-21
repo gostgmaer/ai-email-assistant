@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { ApiError } from "@/lib/api/client";
+import { NotificationPreferencesSection } from "@/components/settings/NotificationPreferencesSection";
 import { Button } from "@/components/ui/Button";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -301,6 +302,8 @@ function ProfileContent() {
           </form>
         )}
       </section>
+
+      <NotificationPreferencesSection />
 
       <section className="space-y-3 rounded-lg border border-red-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-red-700">Danger zone</h2>

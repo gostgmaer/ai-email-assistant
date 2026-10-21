@@ -8,6 +8,7 @@ export interface PublicUser {
   jobTitle: string | null;
   companyName: string | null;
   timezone: string;
+  digestHour: number;
   emailVerifiedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -23,6 +24,7 @@ export function toPublicUser(user: UserModel): PublicUser {
     jobTitle: user.jobTitle,
     companyName: user.companyName,
     timezone: user.timezone,
+    digestHour: user.digestHour,
     emailVerifiedAt: user.emailVerifiedAt,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

@@ -1,5 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+
+import { AttachmentInputDto } from './attachment-input.dto';
 
 export class ReplyEmailDto {
   @ApiProperty({
@@ -24,4 +38,25 @@ export class ReplyEmailDto {
   @IsOptional()
   @IsBoolean()
   replyAll?: boolean;
+
+  @ApiPropertyOptional({
+    type: [AttachmentInputDto],
+    description: 'Files to attach (base64), at most 3 MB in total',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => AttachmentInputDto)
+  attachments?: AttachmentInputDto[];
+
+  @ApiPropertyOptional({
+    description:
+      'Remind me (a follow-up task + notification) if nobody replies within this many days',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(60)
+  remindIfNoReplyDays?: number;
 }

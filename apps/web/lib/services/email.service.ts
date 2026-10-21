@@ -1,5 +1,6 @@
-import { apiFetch } from "../api/client";
+import { apiFetch, apiFetchBlob } from "../api/client";
 import type {
+  AttachmentInput,
   EmailMessage,
   EmailThreadDetail,
   MailFolderSummary,
@@ -120,6 +121,9 @@ export interface ComposeInput {
   subject: string;
   bodyHtml: string;
   bodyText?: string;
+  attachments?: AttachmentInput[];
+  /** Follow-up task + notification if nobody replies within N days. */
+  remindIfNoReplyDays?: number;
 }
 
 export async function sendEmail(data: ComposeInput): Promise<EmailMessage> {
@@ -132,6 +136,8 @@ export interface ReplyInput {
   bodyText?: string;
   /** Also copy everyone else on the message (minus your own addresses). */
   replyAll?: boolean;
+  attachments?: AttachmentInput[];
+  remindIfNoReplyDays?: number;
 }
 
 export async function replyToMessage(
@@ -176,6 +182,21 @@ export async function sendDraft(id: string): Promise<EmailMessage> {
   return apiFetch<EmailMessage>(`/email/drafts/${id}/send`, {
     method: "POST",
   });
+}
+
+/** Downloads an attachment (fetched from the mailbox by the API) and
+ * hands it to the browser as a file. */
+export async function downloadAttachment(
+  id: string,
+  filename: string,
+): Promise<void> {
+  const blob = await apiFetchBlob(`/email/attachments/${id}`);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 /** Stops a scheduled auto-reply from sending; it stays as a draft. */

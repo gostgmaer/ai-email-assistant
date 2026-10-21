@@ -7,6 +7,7 @@ import {
   ListMessagesOptions,
   ListMessagesResult,
   MailProviderClient,
+  NormalizedAttachment,
   NormalizedFolder,
   NormalizedMessage,
   NormalizedParticipant,
@@ -89,8 +90,9 @@ interface GmailHeader {
 
 interface GmailMessagePart {
   mimeType: string;
+  filename?: string;
   headers?: GmailHeader[];
-  body?: { data?: string; size?: number };
+  body?: { data?: string; size?: number; attachmentId?: string };
   parts?: GmailMessagePart[];
 }
 
@@ -293,6 +295,16 @@ export class GmailClient implements MailProviderClient {
     return main?.signature?.trim() || null;
   }
 
+  async getAttachment(
+    providerMessageId: string,
+    providerAttachmentId: string,
+  ): Promise<Buffer> {
+    const { data } = await this.request<{ data: string }>(
+      `/messages/${providerMessageId}/attachments/${providerAttachmentId}`,
+    );
+    return Buffer.from(data, 'base64url');
+  }
+
   async getMessage(providerMessageId: string): Promise<NormalizedMessage> {
     const message = await this.request<GmailMessage>(
       `/messages/${providerMessageId}?format=full`,
@@ -412,6 +424,7 @@ export class GmailClient implements MailProviderClient {
       replyTo: this.parseAddressList(header('Reply-To')),
       messageIdHeader: header('Message-ID')?.trim(),
       references: parseMessageIdList(header('References')),
+      attachments: this.collectAttachments(message.payload),
       bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('List-Unsubscribe'),
@@ -439,6 +452,11 @@ export class GmailClient implements MailProviderClient {
       return {};
     }
 
+    // A text file attached to the mail is an attachment, not the body.
+    if (part.filename) {
+      return {};
+    }
+
     if (part.mimeType === 'text/plain' && part.body?.data) {
       return { text: this.decodeBase64Url(part.body.data) };
     }
@@ -457,6 +475,37 @@ export class GmailClient implements MailProviderClient {
     }
 
     return { text, html };
+  }
+
+  private collectAttachments(
+    part: GmailMessagePart | undefined,
+    found: NormalizedAttachment[] = [],
+  ): NormalizedAttachment[] {
+    if (!part) {
+      return found;
+    }
+
+    if (part.filename && part.body?.attachmentId) {
+      const header = (name: string) =>
+        part.headers?.find((h) => h.name.toLowerCase() === name)?.value;
+      const disposition = header('content-disposition')?.toLowerCase() ?? '';
+      const contentId = header('content-id')?.replace(/^<|>$/g, '');
+      found.push({
+        providerAttachmentId: part.body.attachmentId,
+        filename: part.filename,
+        mimeType: part.mimeType,
+        size: part.body.size ?? 0,
+        contentId,
+        isInline:
+          disposition.startsWith('inline') ||
+          (!!contentId && !disposition.startsWith('attachment')),
+      });
+    }
+
+    for (const child of part.parts ?? []) {
+      this.collectAttachments(child, found);
+    }
+    return found;
   }
 
   private decodeBase64Url(data: string): string {
@@ -493,6 +542,11 @@ export class GmailClient implements MailProviderClient {
       inReplyTo: input.inReplyToHeader,
       references: input.referencesHeader,
       headers: input.headers,
+      attachments: input.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+        content: attachment.content,
+      })),
     });
 
     const buffer = await composer.compile().build();

@@ -94,6 +94,7 @@ describe('EmailSyncService', () => {
       getMessage: jest.fn(),
       sendMessage: jest.fn(),
       markAsRead: jest.fn(),
+      getAttachment: jest.fn(),
     };
   }
 

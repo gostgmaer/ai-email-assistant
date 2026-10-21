@@ -8,7 +8,9 @@ import { Suspense, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { AttachmentPicker, RemindSelect } from "@/components/inbox/AttachmentPicker";
 import { Button } from "@/components/ui/Button";
+import type { AttachmentInput } from "@/lib/api/types";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { getApprovalChainForDraft } from "@/lib/services/approval-chains.service";
 import { listEmailAccounts } from "@/lib/services/email-accounts.service";
@@ -42,6 +44,8 @@ function ComposeContent() {
   const queryClient = useQueryClient();
   const [rewriteError, setRewriteError] = useState<string | null>(null);
   const [rewriteLoading, setRewriteLoading] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentInput[]>([]);
+  const [remindDays, setRemindDays] = useState<number | undefined>();
 
   const { data: accounts, isLoading: accountsLoading } = useQuery({
     queryKey: ["email-accounts"],
@@ -124,6 +128,8 @@ function ComposeContent() {
         subject: values.subject,
         bodyHtml,
         bodyText: values.body,
+        attachments: attachments.length > 0 ? attachments : undefined,
+        remindIfNoReplyDays: remindDays,
       });
     },
     onSuccess: () => {
@@ -339,6 +345,15 @@ function ComposeContent() {
             <p className="mt-1 text-xs text-red-600">{rewriteError}</p>
           )}
         </div>
+
+        {/* Saved drafts can't hold files yet, so attachments and the
+            reminder are only offered when sending a new message. */}
+        {!draftId && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <AttachmentPicker value={attachments} onChange={setAttachments} />
+            <RemindSelect value={remindDays} onChange={setRemindDays} />
+          </div>
+        )}
 
         {sendMutation.isError && (
           <p className="text-sm text-red-600">

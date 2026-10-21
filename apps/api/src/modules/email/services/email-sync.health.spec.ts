@@ -321,6 +321,7 @@ describe('EmailSyncService — change tracking and sync health', () => {
         'Reconnect your mailbox',
         expect.any(String),
         { accountId },
+        'SYNC_FAILED',
       );
     });
 

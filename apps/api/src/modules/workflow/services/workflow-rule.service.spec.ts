@@ -80,6 +80,7 @@ describe('WorkflowRuleService', () => {
       createClient: jest.fn().mockResolvedValue(mailClient),
     };
     const composeService = { send: jest.fn() };
+    const queueService = { enqueueSnoozeWake: jest.fn() };
 
     const service = new WorkflowRuleService(
       prisma as never,
@@ -88,6 +89,7 @@ describe('WorkflowRuleService', () => {
       integrationService,
       mailProviderFactory as never,
       composeService as never,
+      queueService as never,
     );
 
     return {
@@ -130,6 +132,7 @@ describe('WorkflowRuleService', () => {
       subject: 'Order question',
       body: 'Where is my order?',
       containsPii: false,
+      hasAttachment: false,
       isFirstMessage: true,
       isKnownContact: false,
       withinBusinessHours: true,
@@ -257,6 +260,13 @@ describe('WorkflowRuleService', () => {
       bodyText: 'Where is my order?',
       bodyHtml: null,
       receivedAt: new Date('2026-10-20T09:00:00Z'),
+      attachments: [] as {
+        filename: string;
+        mimeType: string;
+        size: number;
+        providerAttachmentId: string;
+        isInline: boolean;
+      }[],
       thread: {
         folder: { providerFolderId: 'INBOX' },
         account: { id: accountId, provider: 'GOOGLE' },
@@ -473,6 +483,49 @@ describe('WorkflowRuleService', () => {
       expect(options).toEqual({
         headers: { 'Auto-Submitted': 'auto-generated' },
       });
+    });
+
+    it('forwards the original attachments, but not inline images', async () => {
+      const { service, prisma, composeService, mailClient } = buildDeps();
+      prisma.emailMessage.findUniqueOrThrow.mockResolvedValue({
+        ...storedMessage,
+        attachments: [
+          {
+            filename: 'invoice.pdf',
+            mimeType: 'application/pdf',
+            size: 3,
+            providerAttachmentId: 'att-1',
+            isInline: false,
+          },
+          {
+            filename: 'logo.png',
+            mimeType: 'image/png',
+            size: 3,
+            providerAttachmentId: 'att-2',
+            isInline: true,
+          },
+        ],
+      });
+      Object.assign(mailClient, {
+        getAttachment: jest.fn().mockResolvedValue(Buffer.from('pdf')),
+      });
+
+      await service.executeActions(
+        [matched([{ type: 'FORWARD', to: 'team@example.com' }])],
+        actionContext,
+      );
+
+      const [, dto] = composeService.send.mock.calls[0] as [
+        string,
+        { attachments: unknown },
+      ];
+      expect(dto.attachments).toEqual([
+        {
+          filename: 'invoice.pdf',
+          contentType: 'application/pdf',
+          contentBase64: Buffer.from('pdf').toString('base64'),
+        },
+      ]);
     });
 
     it('never forwards an automatic reply (no forwarding loops)', async () => {
@@ -735,6 +788,7 @@ describe('WorkflowRuleService', () => {
         language: 'en',
         containsPii: false,
         thread: { subject: 'Invoice', messages: [] },
+        attachments: [],
       });
       prisma.emailMessage.findMany.mockResolvedValue([
         stored('m1', 'Billing'),

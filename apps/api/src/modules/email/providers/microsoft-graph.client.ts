@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import {
+  ComposeAttachment,
   ComposeInput,
   FolderChangeSet,
   ListMessagesOptions,
@@ -48,6 +49,11 @@ const MESSAGE_SELECT_FIELDS = [
   'replyTo',
 ].join(',');
 
+// Attachment metadata only — without the $select Graph would inline every
+// file's contentBytes into the message listing.
+const ATTACHMENT_EXPAND =
+  'attachments($select=id,name,contentType,size,isInline)';
+
 const WELL_KNOWN_FOLDER_TYPE: Record<string, NormalizedFolder['type']> = {
   inbox: 'INBOX',
   'sent items': 'SENT',
@@ -81,6 +87,13 @@ interface GraphMessage {
   internetMessageHeaders?: { name: string; value: string }[];
   internetMessageId?: string;
   replyTo?: GraphRecipient[];
+  attachments?: {
+    id: string;
+    name?: string;
+    contentType?: string;
+    size?: number;
+    isInline?: boolean;
+  }[];
 }
 
 interface GraphListResponse<T> {
@@ -118,6 +131,7 @@ export class MicrosoftGraphClient implements MailProviderClient {
       $top: String(options.limit ?? 25),
       $orderby: 'receivedDateTime desc',
       $select: MESSAGE_SELECT_FIELDS,
+      $expand: ATTACHMENT_EXPAND,
     });
 
     if (options.pageToken) {
@@ -230,10 +244,53 @@ export class MicrosoftGraphClient implements MailProviderClient {
 
   async getMessage(providerMessageId: string): Promise<NormalizedMessage> {
     const message = await this.request<GraphMessage>(
-      `/messages/${providerMessageId}?$select=${MESSAGE_SELECT_FIELDS}`,
+      `/messages/${providerMessageId}?$select=${MESSAGE_SELECT_FIELDS}&$expand=${ATTACHMENT_EXPAND}`,
     );
 
     return this.normalizeMessage(message);
+  }
+
+  async getAttachment(
+    providerMessageId: string,
+    providerAttachmentId: string,
+  ): Promise<Buffer> {
+    const response = await fetch(
+      `${API_BASE}/messages/${providerMessageId}/attachments/${providerAttachmentId}/$value`,
+      { headers: { Authorization: `Bearer ${this.accessToken}` } },
+    );
+    if (response.status === 401) {
+      throw new MailAuthError(
+        'Microsoft Graph rejected the access token (401)',
+      );
+    }
+    if (response.status === 404) {
+      throw new NotFoundException('Attachment not found');
+    }
+    if (!response.ok) {
+      throw new BadRequestException(
+        `Microsoft Graph API error (${response.status}) fetching an attachment`,
+      );
+    }
+    return Buffer.from(await response.arrayBuffer());
+  }
+
+  /** Graph can't take attachments in createReply / POST /messages bodies
+   * reliably, so they're added to the draft one by one before it's sent. */
+  private async addAttachments(
+    draftId: string,
+    attachments: ComposeAttachment[] | undefined,
+  ): Promise<void> {
+    for (const attachment of attachments ?? []) {
+      await this.request(`/messages/${draftId}/attachments`, {
+        method: 'POST',
+        body: JSON.stringify({
+          '@odata.type': '#microsoft.graph.fileAttachment',
+          name: attachment.filename,
+          contentType: attachment.contentType,
+          contentBytes: attachment.content.toString('base64'),
+        }),
+      });
+    }
   }
 
   async sendMessage(input: ComposeInput): Promise<SendResult> {
@@ -251,6 +308,7 @@ export class MicrosoftGraphClient implements MailProviderClient {
         { method: 'POST', body: JSON.stringify({ message }) },
       );
 
+      await this.addAttachments(draft.id, input.attachments);
       await this.request(`/messages/${draft.id}/send`, { method: 'POST' });
 
       return {
@@ -282,6 +340,7 @@ export class MicrosoftGraphClient implements MailProviderClient {
       },
     );
 
+    await this.addAttachments(draft.id, input.attachments);
     await this.request(`/messages/${draft.id}/send`, { method: 'POST' });
 
     return {
@@ -361,6 +420,13 @@ export class MicrosoftGraphClient implements MailProviderClient {
       replyTo: (message.replyTo ?? []).map((r) => this.fromGraphRecipient(r)),
       messageIdHeader: message.internetMessageId,
       references: parseMessageIdList(header('References')),
+      attachments: (message.attachments ?? []).map((attachment) => ({
+        providerAttachmentId: attachment.id,
+        filename: attachment.name ?? 'attachment',
+        mimeType: attachment.contentType ?? 'application/octet-stream',
+        size: attachment.size ?? 0,
+        isInline: attachment.isInline ?? false,
+      })),
       bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('List-Unsubscribe'),

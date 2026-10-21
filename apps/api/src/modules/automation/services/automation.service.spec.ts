@@ -221,4 +221,102 @@ describe('AutomationService', () => {
       ['SEND', 'DONE'],
     ]);
   });
+
+  describe('snooze wake-up', () => {
+    const until = '2026-10-21T09:00:00.000Z';
+
+    function withThread(snoozedUntil: Date | null) {
+      const deps = buildDeps();
+      Object.assign(deps.prisma, {
+        emailThread: {
+          findUnique: jest.fn().mockResolvedValue({
+            subject: 'Contract',
+            snoozedUntil,
+            assignedToUserId: 'assignee-1',
+            account: { userId },
+          }),
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
+      });
+      return deps as typeof deps & {
+        prisma: { emailThread: { updateMany: jest.Mock } };
+      };
+    }
+
+    it('unsnoozes the thread and tells the assignee', async () => {
+      const deps = withThread(new Date(until));
+
+      await deps.service.wakeSnoozedThread('thread-1', until);
+
+      expect(deps.prisma.emailThread.updateMany).toHaveBeenCalledWith({
+        where: { id: 'thread-1', snoozedUntil: new Date(until) },
+        data: { snoozedUntil: null },
+      });
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        'assignee-1',
+        'A snoozed conversation is back',
+        expect.any(String),
+        { threadId: 'thread-1' },
+        'SNOOZE_WAKE',
+      );
+    });
+
+    it('ignores a stale job after the thread was re-snoozed', async () => {
+      const deps = withThread(new Date('2026-10-25T09:00:00Z'));
+
+      await deps.service.wakeSnoozedThread('thread-1', until);
+
+      expect(deps.prisma.emailThread.updateMany).not.toHaveBeenCalled();
+      expect(deps.notificationService.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('follow-up reminders', () => {
+    it('creates a FOLLOW_UP task only where the last message is still the user’s own', async () => {
+      const deps = buildDeps();
+      const due = new Date('2026-10-20T00:00:00Z');
+      const thread = (id: string, lastMessageFromSelf: boolean) => ({
+        id,
+        subject: `Subject ${id}`,
+        followUpAt: due,
+        lastMessageFromSelf,
+        assignedToUserId: null,
+        account: { userId },
+      });
+      const taskCreate = jest.fn();
+      const updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      Object.assign(deps.prisma, {
+        emailThread: {
+          findMany: jest
+            .fn()
+            .mockResolvedValue([
+              thread('waiting', true),
+              thread('answered', false),
+            ]),
+          updateMany,
+        },
+        task: { create: taskCreate },
+      });
+
+      const reminded = await deps.service.runFollowUpScan(new Date());
+
+      expect(reminded).toBe(1);
+      expect(updateMany).toHaveBeenCalledTimes(2);
+      expect(taskCreate).toHaveBeenCalledWith({
+        data: {
+          userId,
+          threadId: 'waiting',
+          type: 'FOLLOW_UP',
+          description: 'No reply yet: Subject waiting',
+        },
+      });
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        userId,
+        'No reply yet',
+        expect.any(String),
+        { threadId: 'waiting' },
+        'FOLLOW_UP',
+      );
+    });
+  });
 });

@@ -130,6 +130,8 @@ export class InboxService {
     if (count === 0) {
       throw new NotFoundException('Thread not found');
     }
+
+    await this.queueService.enqueueSnoozeWake(threadId, until);
   }
 
   async unsnooze(userId: string, threadId: string): Promise<void> {
@@ -141,6 +143,8 @@ export class InboxService {
     if (count === 0) {
       throw new NotFoundException('Thread not found');
     }
+
+    await this.queueService.cancelSnoozeWake(threadId);
   }
 
   /**
@@ -303,6 +307,10 @@ export class InboxService {
           // Drafts thread; surfacing them on the message they answer is
           // what lets a reviewer see the draft next to the conversation.
           include: {
+            attachments: {
+              where: { isInline: false },
+              select: { id: true, filename: true, mimeType: true, size: true },
+            },
             draftReplies: {
               where: { thread: { folder: { type: 'DRAFTS' } } },
               orderBy: { createdAt: 'desc' },
@@ -389,6 +397,47 @@ export class InboxService {
       data: { aiFailedAt: null, aiError: null },
     });
     await this.queueService.enqueueAiProcessing(messageId, { retry: true });
+  }
+
+  /** An attachment's bytes, fetched from the provider (only metadata is
+   * synced). Anyone with access to the account can download. */
+  async getAttachmentContent(userId: string, attachmentId: string) {
+    const attachment = await this.prisma.emailAttachment.findUnique({
+      where: { id: attachmentId },
+      include: {
+        message: {
+          select: {
+            providerMessageId: true,
+            thread: {
+              select: {
+                accountId: true,
+                folder: { select: { providerFolderId: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!attachment) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    const account = await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      attachment.message.thread.accountId,
+    );
+    const client = await this.mailProviderFactory.createClient(account);
+    const content = await client.getAttachment(
+      attachment.message.providerMessageId,
+      attachment.providerAttachmentId,
+      attachment.message.thread.folder.providerFolderId ?? undefined,
+    );
+
+    return {
+      filename: attachment.filename,
+      mimeType: attachment.mimeType,
+      content,
+    };
   }
 
   /** The account's synced folders — what a MOVE_TO_FOLDER rule can

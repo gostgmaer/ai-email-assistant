@@ -1,10 +1,12 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -20,7 +22,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
-import { ListNotificationsDto } from '../dto';
+import { ListNotificationsDto, UpdateNotificationPreferencesDto } from '../dto';
 import { NotificationService } from '../services/notification.service';
 
 @ApiTags('notifications')
@@ -38,6 +40,28 @@ export class NotificationController {
     @Query() query: ListNotificationsDto,
   ) {
     return this.notificationService.listForUser(user.sub, query);
+  }
+
+  @Get('preferences')
+  @ApiOperation({
+    summary: 'Which channels (in-app, email, Slack) each event goes out on',
+  })
+  @ApiResponse({ status: 200, description: 'Every event with its channels' })
+  async preferences(@CurrentUser() user: JwtPayload) {
+    return this.notificationService.getPreferences(user.sub);
+  }
+
+  @Put('preferences')
+  @ApiOperation({ summary: 'Change notification channels per event' })
+  @ApiResponse({ status: 200, description: 'The updated preferences' })
+  async updatePreferences(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateNotificationPreferencesDto,
+  ) {
+    return this.notificationService.updatePreferences(
+      user.sub,
+      dto.preferences,
+    );
   }
 
   @Get('unread-count')

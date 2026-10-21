@@ -3,6 +3,7 @@ import { getAccessToken } from "../auth/token-storage";
 import type {
   AccountMember,
   AutomationLogEntry,
+  AutomationMetrics,
   EmailAccount,
 } from "../api/types";
 
@@ -90,6 +91,16 @@ export async function getAutomationLog(
   const query = before ? `?before=${encodeURIComponent(before)}` : "";
   return apiFetch<AutomationLogEntry[]>(
     `/email-accounts/${accountId}/automation-log${query}`,
+  );
+}
+
+/** AI draft quality over the last `days` days, overall and per agent. */
+export async function getAutomationMetrics(
+  accountId: string,
+  days = 30,
+): Promise<AutomationMetrics> {
+  return apiFetch<AutomationMetrics>(
+    `/analytics/automation?accountId=${encodeURIComponent(accountId)}&days=${days}`,
   );
 }
 

@@ -44,6 +44,7 @@ export class UsersService {
         jobTitle: dto.jobTitle,
         companyName: dto.companyName,
         timezone: dto.timezone,
+        digestHour: dto.digestHour,
       },
     });
   }
