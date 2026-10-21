@@ -11,6 +11,7 @@ export async function updateMe(data: {
   jobTitle?: string;
   companyName?: string;
   timezone?: string;
+  digestHour?: number;
 }): Promise<User> {
   return apiFetch<User>("/users/me", { method: "PATCH", body: data });
 }

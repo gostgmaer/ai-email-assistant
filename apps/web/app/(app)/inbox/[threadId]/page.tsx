@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ChevronLeftIcon, ClockIcon, SparklesIcon } from "@/components/icons";
+import { MessageAttachments } from "@/components/inbox/MessageAttachments";
 import { PendingDraftCard } from "@/components/inbox/PendingDraftCard";
 import { ReplyBox } from "@/components/inbox/ReplyBox";
 import { Avatar } from "@/components/ui/Avatar";
@@ -375,6 +376,9 @@ export default function ThreadPage() {
               </div>
               <div className="pl-12">
                 <MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} />
+                {message.attachments && (
+                  <MessageAttachments attachments={message.attachments} />
+                )}
               </div>
               {message.aiFailedAt && (
                 <div className="mt-3 ml-12 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2">

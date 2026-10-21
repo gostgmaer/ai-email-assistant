@@ -31,7 +31,7 @@ These are solo-developer estimates.
 | 3 | ✅ Done (2026-10-20). Migration `20261020090300_automation_phase3_security`, which backfills approval-chain snapshots. API: 292/292 tests and the typecheck pass. AI service: 43/43 pytest (up from 18). Not run against a live model or mailbox. |
 | 4 | ✅ Done (2026-10-20). Migration `20261020090400_automation_phase4_quality` backfills `lastMessageFromSelf`. API: 325/325 tests and the typecheck pass. AI service: 46/46 pytest. Not run against a live model or mailbox. |
 | 5 | ✅ Done (2026-10-20). Migration `20261020090500_automation_phase5_features` converts stored rule conditions to v2. API: 438/438 tests and the typecheck pass. AI service: 51/51 pytest. Not run against a live model, mailbox or webhook receiver. |
-| 6 | Not started |
+| 6 | ✅ Done (2026-10-21), except web push and AI follow-up drafts (see below). Migration `20261021090000_automation_phase6_reach`. API: 479/479 tests and the typecheck pass; processor branch coverage 82%. AI service: 51/51 pytest. Not run against a live mailbox, SMTP server or Slack. |
 
 **Where Phase 1 differs from the plan below:**
 - **1.3 uses an `AutomationEffect` ledger only, with no `aiStage` column.**
@@ -127,6 +127,28 @@ These are solo-developer estimates.
   - `User.displayName` already existed.
   - Signatures are imported only from Gmail, because Graph has no signature API. The import happens only while the account has never had one set; `""` means none, on purpose.
   - The signature is appended after the PII, policy, and grounding checks, so its phone number can't block a send. The model is told a signature will be added.
+
+**Where Phase 6 differs from the plan below:**
+- **6.1 attachments.**
+  - Metadata is synced for all three providers. Graph uses `$expand` with `$select`, so file contents are never pulled into listings; IMAP attachments are identified by their position in the parsed message. Inline images are stored but hidden, and don't count for `hasAttachment`.
+  - Downloads go through `GET /email/attachments/:id`, always as `Content-Disposition: attachment`.
+  - The AI sees attachment names, types and sizes only — no text extraction from PDF/DOCX yet.
+  - Sending: compose and reply accept base64 attachments, **3 MB in total per message** (Graph's single-request limit; larger files would need upload sessions). The JSON body limit was raised to 5 MB for this. Saved drafts can't hold attachments yet, and the local Sent copy doesn't list them.
+  - FORWARD carries the original non-inline files when they fit in 3 MB, and says so in its result when they don't.
+- **6.2 notifications.**
+  - Channels are IN_APP, EMAIL and SLACK. **Web push is not built** — it needs VAPID keys, a service worker and a subscription store.
+  - Missing preference rows mean in-app on, email and Slack off. Muting in-app means no notification row is written.
+  - Slack is one destination (workspace + channel) chosen per user, and access to it is checked when saving and again when sending.
+  - Events: URGENT_MAIL, APPROVAL_REQUESTED, DRAFT_READY, SYNC_FAILED, DIGEST, FOLLOW_UP, SNOOZE_WAKE, and AUTOMATION for everything else.
+  - The digest runs hourly and goes to users whose local time is their `digestHour` (default 08:00).
+- **6.3 follow-ups and snooze.**
+  - Snoozing schedules a delayed wake-up job; re-snoozing replaces it, and a stale job checks `snoozedUntil` and does nothing. "Bumping" a thread means unsnoozing it and notifying its assignee, or the owner.
+  - Reminders are opt-in per message ("Remind me if no reply in N days" on compose and reply). The planned daily job that makes tasks for *every* unanswered thread was left out as too noisy; the follow-ups list still shows those. An hourly scan turns due reminders into FOLLOW_UP tasks.
+  - **AI-drafted follow-up replies are not built.**
+- **6.4 templates, metrics, tests.**
+  - Templates live in code, not an `AgentTemplate` table. The web app's existing persona prompts moved to the API as the single source, with Personal Assistant added as a sixth. "Add" creates the agent plus its suggested rules, switched off.
+  - Metrics come from a new `AiDraftOutcome` row per sent / discarded / auto-sent AI draft. A draft the pipeline replaces itself isn't counted as discarded. They're served by `GET /analytics/automation` and shown as a card in the Activity panel.
+  - Coverage: the processor is at 82% of branches. Provider specs mock `fetch` with recorded response shapes instead of adding `nock`.
 
 **Conventions for every phase:**
 - One Prisma migration per phase. Name it `NNN_automation_phaseN_<topic>`.
@@ -530,7 +552,7 @@ Use a BullMQ dedupe key `ai-thread-${threadId}` with a short delay of about 30 s
 | 3 | `EmailMessage.replyTo`, `messageIdHeader`, `references`; `Document.sensitivity`; `ApprovalChain.expiresAt`, snapshot fields, relation `SetNull` |
 | 4 | `EmailMessage.needsReply`, `replyReason`; optional `EmailThread.lastDirection` |
 | 5 | (as built) new `RuleExecution`; `User.timezone`, `jobTitle`, `companyName`; `EmailAccount` auto-send caps, confidence threshold, quiet/business hours, `undoSendSeconds`, `signatureHtml/Text`; `EmailMessage.scheduledSendAt`; `AutomationEffect.details` and statuses `SCHEDULED`/`CANCELLED`; stored rule conditions converted to v2 |
-| 6 | new `EmailAttachment`, `NotificationPreference`, `AgentTemplate` |
+| 6 | (as built) new `EmailAttachment`, `NotificationPreference`, `AiDraftOutcome`; `Notification.event`; `User.digestHour`; `EmailThread.followUpAt`; `TaskType.FOLLOW_UP` |
 
 ## New env vars
 

@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({ description: 'Display name shown in the UI' })
@@ -37,4 +45,13 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(64)
   timezone?: string;
+
+  @ApiPropertyOptional({
+    description: 'Local hour (0-23) the daily digest is sent',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(23)
+  digestHour?: number;
 }

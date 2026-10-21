@@ -12,14 +12,19 @@ import {
   NotificationJobs,
 } from './constants/job.constants';
 import { QueueNames } from './constants/queue.constants';
+import {
+  NotificationChannel,
+  NotificationEvent,
+} from '../../generated/prisma/enums';
 
 const BACKGROUND_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const DOCUMENT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
-// 08:00 daily — this codebase's first cron-pattern repeatable job (every
-// other scheduled job so far uses a fixed `every` interval instead).
-const DAILY_DIGEST_CRON = '0 8 * * *';
+// Top of every hour: the digest job sends to the users whose own local
+// time is their chosen digest hour (User.timezone / digestHour).
+const DAILY_DIGEST_CRON = '0 * * * *';
 const APPROVAL_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 const RULE_EXECUTION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const FOLLOW_UP_SCAN_INTERVAL_MS = 60 * 60 * 1000;
 
 /** Everything DocumentsProcessingProcessor needs to call the AI service and
  * update the Document row, without re-querying the DB or re-deriving the
@@ -44,6 +49,15 @@ export interface DocumentProcessingJobPayload {
   language?: string;
   metadata?: Record<string, unknown>;
   priority?: number;
+}
+
+export interface NotificationDeliveryJobData {
+  userId: string;
+  title: string;
+  body: string;
+  metadata?: Record<string, unknown>;
+  event: NotificationEvent;
+  channels: NotificationChannel[];
 }
 
 @Injectable()
@@ -169,12 +183,22 @@ export class QueueService {
     title: string,
     body: string,
     metadata?: Record<string, unknown>,
+    event?: NotificationEvent,
   ): Promise<void> {
     await this.notificationQueue.add(NotificationJobs.SendEmail, {
       userId,
       title,
       body,
       metadata,
+      event,
+    });
+  }
+
+  async enqueueNotificationDelivery(
+    data: NotificationDeliveryJobData,
+  ): Promise<void> {
+    await this.notificationQueue.add(NotificationJobs.Deliver, data, {
+      attempts: 2,
     });
   }
 
@@ -213,6 +237,43 @@ export class QueueService {
         jobId: `${AutomationJobs.SendScheduledReply}-${draftMessageId}`,
         delay: Math.max(0, sendAt.getTime() - Date.now()),
       },
+    );
+  }
+
+  /**
+   * Wakes a snoozed thread at `until`. One job per thread: re-snoozing
+   * replaces the earlier job. The job also re-checks snoozedUntil when it
+   * fires, so a job that couldn't be removed (already running) is harmless.
+   */
+  async enqueueSnoozeWake(threadId: string, until: Date): Promise<void> {
+    await this.cancelSnoozeWake(threadId);
+    await this.automationQueue.add(
+      AutomationJobs.SnoozeWake,
+      { threadId, until: until.toISOString() },
+      {
+        jobId: `${AutomationJobs.SnoozeWake}-${threadId}`,
+        delay: Math.max(0, until.getTime() - Date.now()),
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
+  }
+
+  async cancelSnoozeWake(threadId: string): Promise<void> {
+    const existing = await this.automationQueue.getJob(
+      `${AutomationJobs.SnoozeWake}-${threadId}`,
+    );
+    if (existing && (await existing.getState()) !== 'active') {
+      await existing.remove();
+    }
+  }
+
+  /** Idempotent: registers the hourly follow-up reminder scan. */
+  async scheduleFollowUpScan(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'follow-up-scan',
+      { every: FOLLOW_UP_SCAN_INTERVAL_MS },
+      { name: AutomationJobs.FollowUpScan, data: {} },
     );
   }
 

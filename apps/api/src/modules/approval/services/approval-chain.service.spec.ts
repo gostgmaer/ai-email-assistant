@@ -162,6 +162,7 @@ describe('ApprovalChainService', () => {
         expect.any(String),
         expect.any(String),
         expect.anything(),
+        'APPROVAL_REQUESTED',
       );
     });
 
@@ -222,6 +223,7 @@ describe('ApprovalChainService', () => {
         expect.any(String),
         expect.any(String),
         expect.anything(),
+        'APPROVAL_REQUESTED',
       );
     });
 
@@ -365,6 +367,7 @@ describe('ApprovalChainService', () => {
         'Reminder: your approval is needed',
         expect.any(String),
         expect.anything(),
+        'APPROVAL_REQUESTED',
       );
     });
 

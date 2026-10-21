@@ -27,6 +27,23 @@ export class AutomationProcessor extends WorkerHost {
         );
         return;
 
+      case AutomationJobs.SnoozeWake: {
+        const { threadId, until } = job.data as {
+          threadId: string;
+          until: string;
+        };
+        await this.automationService.wakeSnoozedThread(threadId, until);
+        return;
+      }
+
+      case AutomationJobs.FollowUpScan: {
+        const reminded = await this.automationService.runFollowUpScan();
+        if (reminded > 0) {
+          this.logger.log(`Created ${reminded} follow-up reminder(s).`);
+        }
+        return;
+      }
+
       case AutomationJobs.CleanupRuleExecutions: {
         const deleted = await this.automationService.cleanupRuleExecutions();
         if (deleted > 0) {

@@ -355,6 +355,7 @@ export class ApprovalChainService {
               'Reminder: your approval is needed',
               `"${chain.draftSubject ?? '(no subject)'}" is still waiting for your sign-off and expires ${expiresAt.toISOString()}.`,
               { draftMessageId: chain.draftMessageId },
+              'APPROVAL_REQUESTED',
             )
             .catch((error: unknown) => {
               this.logger.warn(
@@ -392,6 +393,7 @@ export class ApprovalChainService {
         'Your approval is needed',
         `"${params.draftSubject ?? '(no subject)'}" needs your sign-off (step ${params.stepOrder + 1} of ${params.totalSteps}).`,
         { draftMessageId: params.draftMessageId },
+        'APPROVAL_REQUESTED',
       );
     } catch (error) {
       this.logger.warn(

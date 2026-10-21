@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 
+import { localDayAndMinutes } from '../../../common/utils/local-time.util';
 import { PrismaService } from '../../../database';
 import {
   DigestJobs,
@@ -53,15 +54,22 @@ export class DigestProcessor extends WorkerHost {
     return job.data.userId;
   }
 
-  private async buildAll(): Promise<void> {
-    const accounts = await this.prisma.emailAccount.findMany({
-      where: { deletedAt: null },
-      select: { userId: true },
-      distinct: ['userId'],
+  /** Runs hourly: sends the digest to every user (with a mailbox) whose
+   * local time — in their own timezone — is their chosen digest hour. */
+  private async buildAll(now = new Date()): Promise<void> {
+    const users = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        emailAccounts: { some: { deletedAt: null } },
+      },
+      select: { id: true, timezone: true, digestHour: true },
     });
 
-    for (const account of accounts) {
-      await this.queueService.enqueueDigestForUser(account.userId);
+    for (const user of users) {
+      const { minutes } = localDayAndMinutes(now, user.timezone);
+      if (Math.floor(minutes / 60) === user.digestHour) {
+        await this.queueService.enqueueDigestForUser(user.id);
+      }
     }
   }
 
@@ -105,6 +113,7 @@ export class DigestProcessor extends WorkerHost {
       'Your daily digest',
       parts.join(' · '),
       { type: 'daily-digest', unreadCount, priorityCount, pendingTaskCount },
+      'DIGEST',
     );
   }
 }

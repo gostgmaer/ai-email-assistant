@@ -6,12 +6,14 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
+import { QueueService } from '../../../infrastructure/queue';
 import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNamespace';
 // Leaf-file imports — see documents.controller.ts's comment for why
 // (avoids a Jest-only circular require).
 import { EmailAccountService } from '../../email-account/services/email-account.service';
 import { MailProviderFactory } from '../../email/providers/mail-provider.factory';
 import { ComposeService } from '../../email/services/compose.service';
+import { MAX_ATTACHMENT_BYTES } from '../../email/utils/attachments.util';
 import { textToSafeHtml } from '../../email/utils/text-to-html.util';
 import { IntegrationService } from '../../integration/services/integration.service';
 import { NotificationService } from '../../notification/services/notification.service';
@@ -121,6 +123,7 @@ export class WorkflowRuleService {
     private readonly integrationService: IntegrationService,
     private readonly mailProviderFactory: MailProviderFactory,
     private readonly composeService: ComposeService,
+    private readonly queueService: QueueService,
   ) {}
 
   /** Rules are account configuration — owner-only, same tier as filters/
@@ -328,6 +331,7 @@ export class WorkflowRuleService {
             messages: { select: { id: true, receivedAt: true } },
           },
         },
+        attachments: { where: { isInline: false }, select: { id: true } },
       },
     });
 
@@ -341,6 +345,7 @@ export class WorkflowRuleService {
           .filter((other) => other.id !== message.id)
           .map((other) => other.receivedAt),
         threadSubject: message.thread.subject,
+        hasAttachment: message.attachments.length > 0,
         account,
         timezone: account.user.timezone,
         isKnownContact: false,
@@ -539,6 +544,7 @@ export class WorkflowRuleService {
           where: { id: context.threadId },
           data: { snoozedUntil: until },
         });
+        await this.queueService.enqueueSnoozeWake(context.threadId, until);
         return done(`until ${until.toISOString()}`);
       }
 
@@ -585,8 +591,8 @@ export class WorkflowRuleService {
         if (context.isAutoReply) {
           return skipped('the message is an automatic reply');
         }
-        await this.forward(action, context, await loadMessage());
-        return done(`to ${action.to}`);
+        const note = await this.forward(action, context, await loadMessage());
+        return done(`to ${action.to}${note}`);
       }
 
       case 'MARK_READ': {
@@ -633,7 +639,35 @@ export class WorkflowRuleService {
     action: Extract<WorkflowAction, { type: 'FORWARD' }>,
     context: WorkflowActionContext,
     message: ActionMessage,
-  ): Promise<void> {
+  ): Promise<string> {
+    // The original files go along, up to the per-message attachment limit.
+    let attachments:
+      | { filename: string; contentType: string; contentBase64: string }[]
+      | undefined;
+    let left = '';
+    const files = message.attachments.filter((a) => !a.isInline);
+    const total = files.reduce((sum, a) => sum + a.size, 0);
+    if (files.length > 0 && total <= MAX_ATTACHMENT_BYTES) {
+      const client = await this.mailProviderFactory.createClient(
+        message.thread.account,
+      );
+      attachments = [];
+      for (const file of files) {
+        const content = await client.getAttachment(
+          message.providerMessageId,
+          file.providerAttachmentId,
+          message.thread.folder.providerFolderId ?? undefined,
+        );
+        attachments.push({
+          filename: file.filename,
+          contentType: file.mimeType,
+          contentBase64: content.toString('base64'),
+        });
+      }
+    } else if (files.length > 0) {
+      left = ' (attachments left out: over 3 MB)';
+    }
+
     const header = [
       '---------- Forwarded message ---------',
       `From: ${formatParticipants(message.from)}`,
@@ -659,9 +693,11 @@ export class WorkflowRuleService {
         ]
           .filter(Boolean)
           .join('<br><br>'),
+        attachments,
       },
       { headers: FORWARD_HEADERS },
     );
+    return left;
   }
 
   /** MOVE_TO_FOLDER / ARCHIVE: moves the message at the provider, then
@@ -747,7 +783,10 @@ export class WorkflowRuleService {
   private loadActionMessage(messageId: string) {
     return this.prisma.emailMessage.findUniqueOrThrow({
       where: { id: messageId },
-      include: { thread: { include: { folder: true, account: true } } },
+      include: {
+        thread: { include: { folder: true, account: true } },
+        attachments: true,
+      },
     });
   }
 

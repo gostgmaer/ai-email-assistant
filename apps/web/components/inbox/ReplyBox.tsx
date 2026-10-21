@@ -5,10 +5,12 @@ import { useState } from "react";
 
 import { SendIcon, SparklesIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
-import type { EmailMessage } from "@/lib/api/types";
+import type { AttachmentInput, EmailMessage } from "@/lib/api/types";
 import { generateReply, rewrite, toAiThreadMessage } from "@/lib/services/ai.service";
 import { replyToMessage } from "@/lib/services/email.service";
 import { textToSafeHtml } from "@/lib/utils/html";
+
+import { AttachmentPicker, RemindSelect } from "./AttachmentPicker";
 
 export function ReplyBox({
   threadId,
@@ -23,6 +25,8 @@ export function ReplyBox({
 }) {
   const [body, setBody] = useState("");
   const [replyAll, setReplyAll] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentInput[]>([]);
+  const [remindDays, setRemindDays] = useState<number | undefined>();
   // Reply-all only matters when someone besides the user was on it.
   const hasOtherRecipients =
     (lastMessage.to?.length ?? 0) + (lastMessage.cc?.length ?? 0) > 1;
@@ -37,9 +41,13 @@ export function ReplyBox({
         bodyHtml: textToSafeHtml(body),
         bodyText: body,
         replyAll: hasOtherRecipients && replyAll,
+        attachments: attachments.length > 0 ? attachments : undefined,
+        remindIfNoReplyDays: remindDays,
       }),
     onSuccess: () => {
       setBody("");
+      setAttachments([]);
+      setRemindDays(undefined);
       void queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
       void queryClient.invalidateQueries({ queryKey: ["threads"] });
     },
@@ -86,6 +94,11 @@ export function ReplyBox({
           aria-label="Reply body"
           className="w-full resize-none rounded-t-xl p-3 text-sm focus:outline-none"
         />
+
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-2">
+          <AttachmentPicker value={attachments} onChange={setAttachments} />
+          <RemindSelect value={remindDays} onChange={setRemindDays} />
+        </div>
 
         <div className="flex items-center justify-between border-t border-zinc-100 px-3 py-2">
           <div className="flex gap-2">

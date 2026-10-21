@@ -1,10 +1,13 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { clsx } from "clsx";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
-import type { AutomationLogEntry } from "@/lib/api/types";
-import { getAutomationLog } from "@/lib/services/email-accounts.service";
+import type { AutomationLogEntry, DraftQualityMetrics } from "@/lib/api/types";
+import {
+  getAutomationLog,
+  getAutomationMetrics,
+} from "@/lib/services/email-accounts.service";
 import { formatDateTime } from "@/lib/utils/format";
 
 const PAGE_SIZE = 50;
@@ -41,6 +44,8 @@ export function AutomationLogPanel({ accountId }: { accountId: string }) {
 
   return (
     <div className="mt-4 border-t border-zinc-100 pt-3">
+      <QualityCard accountId={accountId} />
+
       <p className="mb-2 text-xs text-zinc-500">
         Replies sent without review and rule runs, newest first. Rule history
         is kept for 90 days.
@@ -65,6 +70,88 @@ export function AutomationLogPanel({ accountId }: { accountId: string }) {
           Load older
         </Button>
       )}
+    </div>
+  );
+}
+
+const percent = (value: number | null) =>
+  value === null ? "—" : `${Math.round(value * 100)}%`;
+
+function formatDuration(ms: number | null): string {
+  if (ms === null) return "—";
+  const minutes = Math.round(ms / 60_000);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  return hours < 48 ? `${hours} h` : `${Math.round(hours / 24)} d`;
+}
+
+function QualityRow({ label, metrics }: { label: string; metrics: DraftQualityMetrics }) {
+  return (
+    <tr className="border-t border-zinc-100">
+      <td className="py-1 pr-3 text-zinc-700">{label}</td>
+      <td className="px-2 py-1">{metrics.reviewed}</td>
+      <td className="px-2 py-1">{percent(metrics.acceptanceRate)}</td>
+      <td className="px-2 py-1">{percent(metrics.editRate)}</td>
+      <td className="px-2 py-1">{percent(metrics.rejectionRate)}</td>
+      <td className="px-2 py-1">{formatDuration(metrics.medianTimeToSendMs)}</td>
+      <td className="px-2 py-1">{metrics.autoSent}</td>
+    </tr>
+  );
+}
+
+/** AI draft quality over the last 30 days: how often drafts go out as
+ * written, get edited, or get thrown away. */
+function QualityCard({ accountId }: { accountId: string }) {
+  const { data: metrics } = useQuery({
+    queryKey: ["automation-metrics", accountId],
+    queryFn: () => getAutomationMetrics(accountId),
+  });
+
+  if (!metrics) return null;
+  if (metrics.overall.reviewed === 0 && metrics.overall.autoSent === 0) {
+    return (
+      <p className="mb-3 text-xs text-zinc-400">
+        No AI drafts were sent or discarded in the last {metrics.days} days.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mb-4 overflow-x-auto rounded-md bg-zinc-50 p-2">
+      <p className="mb-1 text-xs font-medium text-zinc-700">
+        AI draft quality, last {metrics.days} days
+      </p>
+      <table className="text-xs text-zinc-600">
+        <thead>
+          <tr className="text-left text-zinc-500">
+            <th className="pr-3 font-medium" />
+            <th className="px-2 font-medium" title="Sent or discarded by a person">
+              Reviewed
+            </th>
+            <th className="px-2 font-medium" title="Sent without any change">
+              Sent as is
+            </th>
+            <th className="px-2 font-medium" title="Edited before sending, of those sent">
+              Edited
+            </th>
+            <th className="px-2 font-medium" title="Discarded instead of sent">
+              Discarded
+            </th>
+            <th className="px-2 font-medium" title="Median time from draft to send">
+              Time to send
+            </th>
+            <th className="px-2 font-medium" title="Sent without review">
+              Auto-sent
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <QualityRow label="All" metrics={metrics.overall} />
+          {metrics.byAgent.map((agent) => (
+            <QualityRow key={agent.agentId} label={agent.agentName} metrics={agent} />
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

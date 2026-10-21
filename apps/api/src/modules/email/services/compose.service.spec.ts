@@ -39,6 +39,7 @@ describe('ComposeService', () => {
         findUnique: jest.fn().mockResolvedValue(null),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
+      aiDraftOutcome: { create: jest.fn().mockResolvedValue({}) },
     };
   }
 
@@ -46,6 +47,7 @@ describe('ComposeService', () => {
     return {
       id: draftMessageId,
       threadId: 'draft-thread-1',
+      createdAt: new Date(Date.now() - 60_000),
       subject: 'Re: hello',
       bodyHtml: '<p>hi</p>',
       bodyText: 'hi',
@@ -73,6 +75,7 @@ describe('ComposeService', () => {
         providerThreadId,
       }),
       markAsRead: jest.fn(),
+      getAttachment: jest.fn(),
     };
 
     const emailAccountService = {
@@ -134,6 +137,7 @@ describe('ComposeService', () => {
             .fn()
             .mockResolvedValue({ providerMessageId: 'sent-1', providerThreadId }),
           markAsRead: jest.fn(),
+          getAttachment: jest.fn(),
         } satisfies MailProviderClient),
       } as unknown as MailProviderFactory;
 
@@ -226,6 +230,7 @@ describe('ComposeService', () => {
           getMessage: jest.fn(),
           sendMessage,
           markAsRead: jest.fn(),
+          getAttachment: jest.fn(),
         } satisfies MailProviderClient),
       } as unknown as MailProviderFactory;
 
@@ -329,6 +334,32 @@ describe('ComposeService', () => {
 
       expect(prisma.emailMessage.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ aiEdited: true }) as unknown,
+      });
+      // The quality metrics get the outcome, how much changed, and when.
+      const [[outcome]] = prisma.aiDraftOutcome.create.mock.calls as [
+        [{ data: { outcome: string; edited: boolean; editDistance: number } }],
+      ];
+      expect(outcome.data).toMatchObject({ outcome: 'SENT', edited: true });
+      expect(outcome.data.editDistance).toBeGreaterThan(0);
+    });
+
+    it('records a discarded AI draft, but not one the pipeline replaced itself', async () => {
+      const prisma = buildPrismaMock();
+      prisma.emailMessage.findUnique.mockResolvedValue({
+        ...buildDraftMock(),
+        scheduledSendAt: null,
+        generationMetadata: aiMetadata,
+      });
+      const { service } = buildDeps(prisma);
+
+      await service.deleteDraft('user-1', draftMessageId, {
+        recordOutcome: false,
+      });
+      expect(prisma.aiDraftOutcome.create).not.toHaveBeenCalled();
+
+      await service.deleteDraft('user-1', draftMessageId);
+      expect(prisma.aiDraftOutcome.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ outcome: 'DISCARDED' }) as unknown,
       });
     });
 
@@ -506,6 +537,61 @@ describe('ComposeService', () => {
         expect.objectContaining({
           headers: { 'Auto-Submitted': 'auto-replied' },
         }),
+      );
+    });
+  });
+
+  describe('attachments and follow-up reminders on send', () => {
+    function buildSendDeps() {
+      const prisma = buildPrismaMock();
+      const sendMessage = jest
+        .fn()
+        .mockResolvedValue({ providerMessageId: 'sent-1', providerThreadId });
+      const service = new ComposeService(
+        prisma as unknown as PrismaService,
+        {
+          getAccessibleAccountOrThrow: jest
+            .fn()
+            .mockResolvedValue({ id: accountId, email: 'me@example.com' }),
+        } as unknown as EmailAccountService,
+        {
+          createClient: jest.fn().mockResolvedValue({ sendMessage }),
+        } as unknown as MailProviderFactory,
+        {} as unknown as InboxService,
+      );
+      return { service, prisma, sendMessage };
+    }
+
+    it('sends decoded attachments and sets the thread to remind after N days', async () => {
+      const { service, prisma, sendMessage } = buildSendDeps();
+      const before = Date.now();
+
+      await service.send('user-1', {
+        accountId,
+        to: [{ address: 'them@example.com' }],
+        subject: 'Proposal',
+        bodyHtml: '<p>Attached.</p>',
+        attachments: [
+          {
+            filename: 'proposal.pdf',
+            contentType: 'application/pdf',
+            contentBase64: Buffer.from('%PDF').toString('base64'),
+          },
+        ],
+        remindIfNoReplyDays: 3,
+      });
+
+      const [input] = sendMessage.mock.calls[0] as [
+        { attachments: { filename: string; content: Buffer }[] },
+      ];
+      expect(input.attachments[0].filename).toBe('proposal.pdf');
+      expect(input.attachments[0].content.toString()).toBe('%PDF');
+
+      const [[upsert]] = prisma.emailThread.upsert.mock.calls as [
+        [{ create: { followUpAt: Date } }],
+      ];
+      expect(upsert.create.followUpAt.getTime()).toBeGreaterThanOrEqual(
+        before + 3 * 24 * 60 * 60 * 1000,
       );
     });
   });

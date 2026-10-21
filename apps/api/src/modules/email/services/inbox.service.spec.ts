@@ -5,7 +5,10 @@ import { InboxService } from './inbox.service';
 describe('InboxService', () => {
   function buildDeps() {
     const prisma = {
-      emailThread: { findMany: jest.fn().mockResolvedValue([]) },
+      emailThread: {
+        findMany: jest.fn().mockResolvedValue([]),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
       emailMessage: {
         findUnique: jest.fn(),
         update: jest.fn(),
@@ -14,7 +17,11 @@ describe('InboxService', () => {
     const emailAccountService = {
       getAccessibleAccountOrThrow: jest.fn().mockResolvedValue({}),
     };
-    const queueService = { enqueueAiProcessing: jest.fn() };
+    const queueService = {
+      enqueueAiProcessing: jest.fn(),
+      enqueueSnoozeWake: jest.fn(),
+      cancelSnoozeWake: jest.fn(),
+    };
 
     const service = new InboxService(
       prisma as never,
@@ -32,10 +39,9 @@ describe('InboxService', () => {
 
       await service.getFollowUpCandidates('user-1', 3);
 
-      const args = prisma.emailThread.findMany.mock.calls[0][0] as {
-        where: Record<string, unknown>;
-        orderBy: unknown;
-      };
+      const [[args]] = prisma.emailThread.findMany.mock.calls as [
+        [{ where: Record<string, unknown>; orderBy: unknown }],
+      ];
       expect(args.where).toMatchObject({
         lastMessageFromSelf: true,
         folder: { type: { not: 'DRAFTS' } },
@@ -62,6 +68,22 @@ describe('InboxService', () => {
         threadId: 'thread-1',
         daysSinceLastMessage: 5,
       });
+    });
+  });
+
+  describe('snooze', () => {
+    it('schedules a wake-up for the snooze time, and cancels it on unsnooze', async () => {
+      const { service, queueService } = buildDeps();
+      const until = new Date('2026-10-22T09:00:00Z');
+
+      await service.snooze('user-1', 'thread-1', until);
+      expect(queueService.enqueueSnoozeWake).toHaveBeenCalledWith(
+        'thread-1',
+        until,
+      );
+
+      await service.unsnooze('user-1', 'thread-1');
+      expect(queueService.cancelSnoozeWake).toHaveBeenCalledWith('thread-1');
     });
   });
 

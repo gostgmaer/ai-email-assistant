@@ -22,6 +22,7 @@ const context = (
   subject: 'Invoice #4411 overdue',
   body: 'Please resend the invoice.',
   containsPii: false,
+  hasAttachment: false,
   isFirstMessage: true,
   isKnownContact: true,
   withinBusinessHours: false,

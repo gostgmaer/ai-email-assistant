@@ -8,8 +8,10 @@ import { AuthModule } from '../auth/auth.module';
 import { EmailAccountModule } from '../email-account';
 import { EmailModule } from '../email/email.module';
 import { NotificationModule } from '../notification';
+import { AnalyticsController } from './controllers/analytics.controller';
 import { AutomationController } from './controllers/automation.controller';
 import { AutomationProcessor } from './processors/automation.processor';
+import { AutomationMetricsService } from './services/automation-metrics.service';
 import { AutomationService } from './services/automation.service';
 
 @Module({
@@ -21,9 +23,9 @@ import { AutomationService } from './services/automation.service';
     forwardRef(() => AuthModule),
   ],
 
-  controllers: [AutomationController],
+  controllers: [AutomationController, AnalyticsController],
 
-  providers: [AutomationService, AutomationProcessor],
+  providers: [AutomationService, AutomationMetricsService, AutomationProcessor],
 
   exports: [AutomationService],
 })
@@ -32,5 +34,6 @@ export class AutomationModule implements OnApplicationBootstrap {
 
   async onApplicationBootstrap(): Promise<void> {
     await this.queueService.scheduleRuleExecutionCleanup();
+    await this.queueService.scheduleFollowUpScan();
   }
 }

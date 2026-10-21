@@ -63,6 +63,29 @@ export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
+  const response = await apiRequest(path, options);
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return (await response.json()) as T;
+}
+
+/** Same auth/refresh handling as apiFetch, for a binary response (file
+ * downloads). */
+export async function apiFetchBlob(
+  path: string,
+  options: RequestOptions = {},
+): Promise<Blob> {
+  const response = await apiRequest(path, options);
+  return response.blob();
+}
+
+async function apiRequest(
+  path: string,
+  options: RequestOptions,
+): Promise<Response> {
   const { body, skipAuth, headers, ...rest } = options;
 
   const isFormData = body instanceof FormData;
@@ -115,11 +138,7 @@ export async function apiFetch<T>(
     throw new ApiError(response.status, message, details);
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return (await response.json()) as T;
+  return response;
 }
 
 export function apiUrl(path: string): string {

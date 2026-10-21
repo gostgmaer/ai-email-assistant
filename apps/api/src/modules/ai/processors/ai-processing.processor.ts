@@ -40,6 +40,7 @@ import {
 } from '../../documents/services/documents.service';
 import { isAutomatedAddress } from '../../email/providers/bulk-mail.util';
 import { NormalizedParticipant } from '../../email/interfaces';
+import { describeAttachments } from '../../email/utils/attachments.util';
 import {
   AUTO_REPLY_HEADERS,
   ComposeService,
@@ -166,7 +167,15 @@ export class AiProcessingProcessor
                 },
               },
             },
-            messages: { orderBy: { receivedAt: 'asc' } },
+            messages: {
+              orderBy: { receivedAt: 'asc' },
+              include: {
+                attachments: {
+                  where: { isInline: false },
+                  select: { filename: true, mimeType: true, size: true },
+                },
+              },
+            },
           },
         },
       },
@@ -235,6 +244,22 @@ export class AiProcessingProcessor
       this.logger.log(`Message ${messageId} classified as spam, skipping.`);
       await this.markProcessed(messageId);
       return;
+    }
+
+    if (classification.priority.toLowerCase() === 'urgent') {
+      await this.notificationService
+        .create(
+          account.userId,
+          `Urgent email from ${sender.name ?? sender.address}`,
+          `"${subject}" was classified as urgent.`,
+          { threadId: message.threadId, messageId },
+          'URGENT_MAIL',
+        )
+        .catch((error: unknown) => {
+          this.logger.warn(
+            `Failed to create urgent-mail notification for message ${messageId}: ${describeError(error)}`,
+          );
+        });
     }
 
     const effectContext: EffectContext = {
@@ -311,6 +336,9 @@ export class AiProcessingProcessor
             .filter((other) => other.id !== message.id)
             .map((other) => other.receivedAt),
           threadSubject: message.thread.subject,
+          hasAttachment:
+            (message.thread.messages.find((other) => other.id === message.id)
+              ?.attachments?.length ?? 0) > 0,
           account,
           timezone: account.user.timezone,
           isKnownContact: needsKnownContact
@@ -487,6 +515,7 @@ export class AiProcessingProcessor
     );
 
     const generationMetadata: GenerationMetadata = {
+      agentId: agentSystemPrompt ? autoReplyAction?.agentId : undefined,
       ragUsed: documentMatches.length > 0,
       contactMemoryUsed,
       crmContactUsed,
@@ -801,6 +830,15 @@ export class AiProcessingProcessor
         where: { messageId_kind: { messageId, kind: 'SEND' } },
         data: { status: 'DONE', providerMessageId: sent.providerMessageId },
       });
+      await this.prisma.aiDraftOutcome
+        .create({
+          data: {
+            accountId: account.id,
+            agentId: generationMetadata.agentId,
+            outcome: 'AUTO_SENT',
+          },
+        })
+        .catch(() => undefined);
 
       this.logger.log(
         `Auto-sent a reply to message ${messageId} (category: ${classification.category}, ragUsed: ${generationMetadata.ragUsed}).`,
@@ -864,6 +902,24 @@ export class AiProcessingProcessor
       }
 
       await this.claimEffect(effectContext, 'DRAFT', { status: 'DONE' });
+
+      // Approvers of a chain are notified by the chain itself, and the
+      // unknown-outcome case below has its own warning.
+      if (!approvalChainApproverUserIds && !sendOutcomeUnknown) {
+        await this.notificationService
+          .create(
+            account.userId,
+            'AI draft ready for review',
+            `A reply to "${subject}" is waiting in Drafts.`,
+            { threadId: message.threadId, messageId, draftId: draft.id },
+            'DRAFT_READY',
+          )
+          .catch((error: unknown) => {
+            this.logger.warn(
+              `Failed to create draft-ready notification for message ${messageId}: ${describeError(error)}`,
+            );
+          });
+      }
 
       if (sendOutcomeUnknown) {
         await this.notificationService
@@ -1283,7 +1339,9 @@ export class AiProcessingProcessor
         return 'an earlier draft in this thread is already being worked on';
       }
 
-      await this.composeService.deleteDraft(ownerUserId, draft.id);
+      await this.composeService.deleteDraft(ownerUserId, draft.id, {
+        recordOutcome: false,
+      });
       this.logger.log(
         `Discarded superseded AI draft ${draft.id} (thread moved on to message ${message.id}).`,
       );
@@ -1475,13 +1533,20 @@ function firstParticipant(from: unknown): NormalizedParticipant | undefined {
 function toEmailMessageDto(message: {
   from: unknown;
   bodyText: string | null;
+  attachments?: { filename: string; mimeType: string; size: number }[];
 }): EmailMessageDto {
   const from = firstParticipant(message.from);
+  // The AI sees attachment names, types and sizes — never their content.
+  // First, so quote stripping (which cuts from "On ... wrote:" down) can't
+  // drop it.
+  const attachments = message.attachments?.length
+    ? `[Attachments: ${describeAttachments(message.attachments)}]\n\n`
+    : '';
 
   return {
     name: from?.name ?? from?.address ?? 'Unknown',
     email: from?.address ?? 'unknown@example.com',
-    content: message.bodyText ?? '',
+    content: attachments + (message.bodyText ?? ''),
   };
 }
 

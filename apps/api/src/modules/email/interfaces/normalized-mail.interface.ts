@@ -12,6 +12,27 @@ export interface NormalizedFolder {
   type: MailFolderType;
 }
 
+/** Attachment metadata as the provider reports it — the bytes are
+ * fetched separately (MailProviderClient.getAttachment). */
+export interface NormalizedAttachment {
+  /** Gmail attachmentId, Graph attachment id, or (IMAP) the attachment's
+   * position in the parsed message. */
+  providerAttachmentId: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  contentId?: string;
+  /** Inline images (logos, signatures) rather than real attachments. */
+  isInline: boolean;
+}
+
+/** A file to attach when sending. */
+export interface ComposeAttachment {
+  filename: string;
+  contentType: string;
+  content: Buffer;
+}
+
 export interface NormalizedMessage {
   providerMessageId: string;
   providerThreadId: string;
@@ -41,6 +62,7 @@ export interface NormalizedMessage {
   messageIdHeader?: string;
   /** RFC 5322 References, oldest first. */
   references?: string[];
+  attachments?: NormalizedAttachment[];
 }
 
 export interface ListMessagesOptions {
@@ -76,6 +98,7 @@ export interface ComposeInput {
    * Microsoft Graph only accepts custom headers named X-*, so other names
    * are dropped there (see MicrosoftGraphClient.sendMessage). */
   headers?: Record<string, string>;
+  attachments?: ComposeAttachment[];
 }
 
 export interface SendResult {
@@ -110,6 +133,12 @@ export interface MailProviderClient {
   ): Promise<FolderChangeSet>;
   /** The mailbox's other send-as addresses, lowercased. Optional. */
   listAliases?(): Promise<string[]>;
+  /** An attachment's bytes, fetched from the provider on demand. */
+  getAttachment(
+    providerMessageId: string,
+    providerAttachmentId: string,
+    folderProviderId?: string,
+  ): Promise<Buffer>;
   /** The default send-as signature (HTML), if the provider exposes one
    * (Gmail). Null when none is set. Optional. */
   getSignature?(): Promise<string | null>;

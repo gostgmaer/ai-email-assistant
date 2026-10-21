@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import * as Sentry from '@sentry/node';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
@@ -18,9 +19,13 @@ if (process.env.SENTRY_DSN) {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });
+
+  // Compose sends attachments as base64 JSON (up to 3 MB of files, about
+  // 4 MB encoded — see MAX_ATTACHMENT_BYTES); the default limit is 100 KB.
+  app.useBodyParser('json', { limit: '5mb' });
 
   app.useLogger(app.get(Logger));
 

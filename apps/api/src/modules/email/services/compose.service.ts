@@ -22,6 +22,8 @@ import {
   buildReplyRecipients,
   buildThreadingHeaders,
 } from '../utils/reply-recipients.util';
+import { decodeAttachments } from '../utils/attachments.util';
+import { normalizedEditDistance } from '../utils/edit-distance.util';
 import { textToSafeHtml } from '../utils/text-to-html.util';
 import { InboxService } from './inbox.service';
 
@@ -44,6 +46,9 @@ export interface GenerationMetadata {
   /** Set only on held drafts: the AI's text exactly as generated, so
    * sendDraft() can tell whether a human edited it before sending. */
   draftText?: string;
+  /** The agent persona that wrote it, if a rule used one — for the
+   * per-agent quality metrics. */
+  agentId?: string;
 }
 
 /** Headers set on every autonomous (unreviewed) reply — RFC 3834 asks
@@ -83,6 +88,7 @@ export class ComposeService {
       bodyHtml: dto.bodyHtml,
       bodyText: dto.bodyText,
       headers: options.headers,
+      attachments: decodeAttachments(dto.attachments),
     });
 
     return this.persistSentMessage(
@@ -92,6 +98,9 @@ export class ComposeService {
       dto.to,
       dto.cc,
       dto.bcc,
+      undefined,
+      undefined,
+      followUpAt(dto.remindIfNoReplyDays),
     );
   }
 
@@ -136,6 +145,7 @@ export class ComposeService {
       providerThreadId: original.thread.providerThreadId,
       ...buildThreadingHeaders(original),
       headers: options.headers,
+      attachments: decodeAttachments(dto.attachments),
     });
 
     return this.persistSentMessage(
@@ -150,6 +160,8 @@ export class ComposeService {
       cc,
       undefined,
       generationMetadata,
+      undefined,
+      followUpAt(dto.remindIfNoReplyDays),
     );
   }
 
@@ -363,8 +375,54 @@ export class ComposeService {
       : await this.send(userId, content, { headers: options.headers });
 
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
+    await this.recordDraftOutcome(
+      account.id,
+      draft,
+      options.fromSchedule ? 'AUTO_SENT' : 'SENT',
+    );
 
     return sent;
+  }
+
+  /**
+   * Quality metrics (docs/email-automation-implementation-plan.md §6.4):
+   * what happened to an AI draft — sent (and how much a human changed it,
+   * and after how long), discarded, or sent automatically. No-op for drafts
+   * the AI didn't write. Best-effort: metrics never fail a send or delete.
+   */
+  private async recordDraftOutcome(
+    accountId: string,
+    draft: {
+      bodyText: string | null;
+      createdAt: Date;
+      generationMetadata: unknown;
+    },
+    outcome: 'SENT' | 'DISCARDED' | 'AUTO_SENT',
+  ): Promise<void> {
+    const metadata = draft.generationMetadata as GenerationMetadata | null;
+    if (metadata?.draftText === undefined) {
+      return;
+    }
+
+    const sentByHuman = outcome === 'SENT';
+    const editDistance = sentByHuman
+      ? normalizedEditDistance(metadata.draftText, draft.bodyText ?? '')
+      : undefined;
+
+    await this.prisma.aiDraftOutcome
+      .create({
+        data: {
+          accountId,
+          agentId: metadata.agentId,
+          outcome,
+          edited: sentByHuman ? editDistance !== 0 : undefined,
+          editDistance,
+          timeToSendMs: sentByHuman
+            ? Date.now() - draft.createdAt.getTime()
+            : undefined,
+        },
+      })
+      .catch(() => undefined);
   }
 
   private async sendDraftAsReply(
@@ -423,7 +481,13 @@ export class ComposeService {
     );
   }
 
-  async deleteDraft(userId: string, draftMessageId: string): Promise<void> {
+  /** recordOutcome: false when the AI pipeline itself replaces a stale
+   * draft — that isn't a human rejecting it. */
+  async deleteDraft(
+    userId: string,
+    draftMessageId: string,
+    options: { recordOutcome?: boolean } = {},
+  ): Promise<void> {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
     await this.cancelScheduleOrThrow(draft);
 
@@ -435,6 +499,13 @@ export class ComposeService {
       data: { status: 'CANCELLED' },
     });
     await this.prisma.emailThread.delete({ where: { id: draft.threadId } });
+    if (options.recordOutcome !== false) {
+      await this.recordDraftOutcome(
+        draft.thread.folder.account.id,
+        draft,
+        'DISCARDED',
+      );
+    }
   }
 
   /** "Cancel send" on a scheduled auto-reply: it stays in Drafts for
@@ -543,6 +614,7 @@ export class ComposeService {
     bcc?: NormalizedParticipant[],
     generationMetadata?: GenerationMetadata,
     aiEdited?: boolean,
+    remindAt?: Date,
   ) {
     const account = await this.prisma.emailAccount.findUniqueOrThrow({
       where: { id: accountId },
@@ -569,12 +641,14 @@ export class ComposeService {
         snippet: content.bodyText?.slice(0, 200),
         lastMessageAt: new Date(),
         lastMessageFromSelf: true,
+        followUpAt: remindAt,
       },
       update: {
         subject: content.subject,
         snippet: content.bodyText?.slice(0, 200),
         lastMessageAt: new Date(),
         lastMessageFromSelf: true,
+        followUpAt: remindAt,
       },
     });
 
@@ -596,6 +670,10 @@ export class ComposeService {
       },
     });
   }
+}
+
+function followUpAt(days: number | undefined): Date | undefined {
+  return days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : undefined;
 }
 
 function normalizeForComparison(text: string): string {

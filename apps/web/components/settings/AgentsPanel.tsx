@@ -3,11 +3,12 @@ import { clsx } from "clsx";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { AGENT_TEMPLATES } from "@/lib/agent-templates";
 import type { Agent } from "@/lib/api/types";
 import {
   createAgent,
+  createAgentFromTemplate,
   deleteAgent,
+  listAgentTemplates,
   listAgents,
   updateAgent,
 } from "@/lib/services/agents.service";
@@ -30,9 +31,26 @@ export function AgentsPanel({
     queryFn: () => listAgents(accountId),
   });
 
+  const { data: templates } = useQuery({
+    queryKey: ["agent-templates", accountId],
+    queryFn: () => listAgentTemplates(accountId),
+    enabled: isOwner,
+  });
+
   function invalidate() {
     return queryClient.invalidateQueries({ queryKey: ["agents", accountId] });
   }
+
+  const fromTemplateMutation = useMutation({
+    mutationFn: (templateId: string) =>
+      createAgentFromTemplate(accountId, templateId),
+    onSuccess: () => {
+      void invalidate();
+      void queryClient.invalidateQueries({
+        queryKey: ["workflow-rules", accountId],
+      });
+    },
+  });
 
   function resetForm() {
     setEditingId(null);
@@ -143,6 +161,49 @@ export function AgentsPanel({
         </Button>
       )}
 
+      {isOwner && !showForm && templates && templates.length > 0 && (
+        <div className="mt-3 rounded-md bg-zinc-50 p-3">
+          <p className="mb-2 text-xs text-zinc-500">
+            Or add a ready-made agent with its suggested workflow rules. The
+            rules are created switched off — review them under Workflows
+            before turning them on.
+          </p>
+          <ul className="space-y-1.5">
+            {templates
+              .filter((template) => template.suggestedRules.length > 0)
+              .map((template) => (
+                <li
+                  key={template.id}
+                  className="flex items-start justify-between gap-3 text-xs"
+                >
+                  <div>
+                    <p className="font-medium text-zinc-800">{template.name}</p>
+                    <p className="text-zinc-500">{template.description}</p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => fromTemplateMutation.mutate(template.id)}
+                    loading={
+                      fromTemplateMutation.isPending &&
+                      fromTemplateMutation.variables === template.id
+                    }
+                  >
+                    Add
+                  </Button>
+                </li>
+              ))}
+          </ul>
+          {fromTemplateMutation.isError && (
+            <p className="mt-1 text-xs text-red-600">
+              {fromTemplateMutation.error instanceof Error
+                ? fromTemplateMutation.error.message
+                : "Could not add the agent"}
+            </p>
+          )}
+        </div>
+      )}
+
       {isOwner && showForm && (
         <form
           className="space-y-3 rounded-md border border-zinc-200 p-3"
@@ -158,9 +219,9 @@ export function AgentsPanel({
                 Start from a template (optional):
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {AGENT_TEMPLATES.map((template) => (
+                {templates?.map((template) => (
                   <button
-                    key={template.name}
+                    key={template.id}
                     type="button"
                     onClick={() => {
                       setName(template.name);
