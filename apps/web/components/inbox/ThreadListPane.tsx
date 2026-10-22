@@ -43,10 +43,17 @@ export function ThreadListPane() {
 
   const q = searchParams.get("q") ?? "";
   const folderTypeParam = searchParams.get("folderType");
-  const folderType = isFolderType(folderTypeParam) ? folderTypeParam : "INBOX";
+  const snoozedParam = searchParams.get("snoozed") === "true";
+  // The Snoozed view lists snoozed threads from every folder, so it carries
+  // no folder of its own (see InboxService.listThreads).
+  const folderType = isFolderType(folderTypeParam)
+    ? folderTypeParam
+    : snoozedParam
+      ? undefined
+      : "INBOX";
   const accountId = searchParams.get("accountId") ?? undefined;
   const priority = searchParams.get("priority") ?? undefined;
-  const snoozed = searchParams.get("snoozed") === "true";
+  const snoozed = snoozedParam;
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
 
   // The active thread, if any — highlighted in the list and used to keep
@@ -123,7 +130,11 @@ export function ThreadListPane() {
           <button
             type="button"
             onClick={() =>
-              updateParams({ snoozed: snoozed ? undefined : "true", page: undefined })
+              updateParams({
+                snoozed: snoozed ? undefined : "true",
+                folderType: undefined,
+                page: undefined,
+              })
             }
             className={clsx(
               "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
@@ -192,8 +203,10 @@ export function ThreadListPane() {
           title="No emails here"
           description={
             q
-              ? `No results for "${q}" in ${folderType.toLowerCase()}.`
-              : `Nothing in ${folderType.toLowerCase()} yet.`
+              ? `No results for "${q}" in ${(folderType ?? "snoozed").toLowerCase()}.`
+              : folderType
+                ? `Nothing in ${folderType.toLowerCase()} yet.`
+                : "Nothing is snoozed right now."
           }
         />
       )}

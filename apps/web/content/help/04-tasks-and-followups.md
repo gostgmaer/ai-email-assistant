@@ -59,3 +59,5 @@ Each row shows: how many days it's been waiting, the account it's on, the subjec
 **Example:** *"26 days waiting — Re: Agentic AI Development Training with LangGraph learning program"* tells you at a glance which outreach has gone cold and might need a nudge.
 
 **What happens when you click a row:** takes you straight into the [Inbox](/help/02-inbox) thread view so you can reply, snooze, or use AI Reply directly.
+
+**Reminders:** when you send with **Remind me if no reply in N days** ([Compose](/help/03-compose)), and nobody has replied by then, a **Follow up** task *"No reply yet: <subject>"* appears on the Tasks tab and you get a notification. A reply that arrives first cancels the reminder.

@@ -73,9 +73,15 @@ export class InboxService {
         members: { some: { userId } },
         deletedAt: null,
       },
-      folder: {
-        type: query.folderType ?? 'INBOX',
-      },
+      // The snoozed view spans every folder unless one is asked for:
+      // snoozing doesn't move a thread, so a snoozed Sent or custom-folder
+      // thread would otherwise be unreachable. Local drafts are never
+      // snoozed conversations.
+      folder: query.folderType
+        ? { type: query.folderType }
+        : query.snoozed
+          ? { type: { not: 'DRAFTS' } }
+          : { type: 'INBOX' },
       AND: conditions,
     };
 

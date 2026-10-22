@@ -13,14 +13,14 @@ This is a plain-language guide to every feature and setting in the app: what it'
 ## Contents
 
 1. [Getting started — connecting an inbox](/help/01-getting-started)
-2. [Inbox](/help/02-inbox) — reading mail, AI replies, notes, snooze, summarize
-3. [Compose](/help/03-compose) — writing new mail, drafts, AI rewrite
-4. [Tasks & Follow-ups](/help/04-tasks-and-followups) — auto-extracted action items, meeting scheduling
+2. [Inbox](/help/02-inbox) — reading mail, attachments, AI replies, notes, snooze, Cancel send
+3. [Compose](/help/03-compose) — writing new mail, attachments, reminders, drafts, AI rewrite
+4. [Tasks & Follow-ups](/help/04-tasks-and-followups) — auto-extracted action items, meeting scheduling, follow-up reminders
 5. [Documents](/help/05-documents) — upload, search, RAG grounding
-6. [Notifications](/help/06-notifications)
-7. [Settings → Accounts](/help/07-settings-accounts) — the biggest page: sync filters, Policy, auto-schedule meetings, Shared Inbox members, CRM contacts, Integrations (Slack/Teams/HubSpot), Workflow rules, Calendar-aware replies, True multi-step Approval Chains, AI Agents (personas)
+6. [Notifications](/help/06-notifications) — in app, email and Slack; daily digest time
+7. [Settings → Accounts](/help/07-settings-accounts) — the biggest page: sync filters, Policy, auto-schedule meetings, Shared Inbox members, CRM contacts, Integrations (Slack/Teams/HubSpot), Workflow rules (with Test rule), Automation settings (auto-send limits, undo window, quiet hours, signature), Activity, Calendar-aware replies, Approval Chains, AI Agents and ready-made agents
 8. [Settings → Calendars](/help/08-settings-calendars)
-9. [Settings → Profile](/help/09-settings-profile)
+9. [Settings → Profile](/help/09-settings-profile) — name, job title, company, timezone, notifications
 10. [Settings → Security](/help/10-settings-security)
 11. [Approvals](/help/11-approvals) — your queue of drafts waiting on your sign-off
 

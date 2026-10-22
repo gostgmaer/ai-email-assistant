@@ -7,8 +7,10 @@ describe('InboxService', () => {
     const prisma = {
       emailThread: {
         findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
       emailMessage: {
         findUnique: jest.fn(),
         update: jest.fn(),
@@ -68,6 +70,36 @@ describe('InboxService', () => {
         threadId: 'thread-1',
         daysSinceLastMessage: 5,
       });
+    });
+  });
+
+  describe('listThreads folder filter', () => {
+    const folderOf = (prisma: ReturnType<typeof buildDeps>['prisma']) =>
+      (
+        prisma.emailThread.findMany.mock.calls[0] as [
+          { where: { folder: unknown } },
+        ]
+      )[0].where.folder;
+
+    it('defaults to the inbox', async () => {
+      const { service, prisma } = buildDeps();
+      await service.listThreads('user-1', {});
+      expect(folderOf(prisma)).toEqual({ type: 'INBOX' });
+    });
+
+    it('lists snoozed threads from every folder when no folder is chosen', async () => {
+      const { service, prisma } = buildDeps();
+      await service.listThreads('user-1', { snoozed: true });
+      expect(folderOf(prisma)).toEqual({ type: { not: 'DRAFTS' } });
+    });
+
+    it('keeps an explicitly chosen folder', async () => {
+      const { service, prisma } = buildDeps();
+      await service.listThreads('user-1', {
+        snoozed: true,
+        folderType: 'SENT',
+      });
+      expect(folderOf(prisma)).toEqual({ type: 'SENT' });
     });
   });
 

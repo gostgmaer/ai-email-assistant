@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Avatar } from "@/components/ui/Avatar";
@@ -12,12 +12,6 @@ export function Topbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [search, setSearch] = useState("");
-
-  function handleSearchSubmit(event: FormEvent) {
-    event.preventDefault();
-    router.push(`/inbox?q=${encodeURIComponent(search)}`);
-  }
 
   async function handleLogout() {
     await logout();
@@ -28,19 +22,9 @@ export function Topbar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-zinc-200 bg-white px-4">
-      <form onSubmit={handleSearchSubmit} className="max-w-lg flex-1">
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search email…"
-            aria-label="Search email"
-            className="w-full rounded-full border border-transparent bg-zinc-100 py-2 pr-3 pl-9 text-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-        </div>
-      </form>
+      <Suspense fallback={<div className="max-w-lg flex-1" />}>
+        <SearchBox />
+      </Suspense>
 
       <div className="flex items-center gap-3">
         <NotificationBell />
@@ -82,5 +66,38 @@ export function Topbar() {
         </div>
       </div>
     </header>
+  );
+}
+
+/**
+ * The search box shows the search the inbox is actually filtered by (the
+ * URL's ?q=): it clears when the list stops being a search result, instead
+ * of keeping stale text over an unfiltered list.
+ */
+function SearchBox() {
+  const router = useRouter();
+  const q = useSearchParams().get("q") ?? "";
+
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = String(new FormData(event.currentTarget).get("q") ?? "").trim();
+    router.push(value ? `/inbox?q=${encodeURIComponent(value)}` : "/inbox");
+  }
+
+  return (
+    // Keyed by the URL's query so the field resets whenever it changes.
+    <form key={q} onSubmit={handleSearchSubmit} className="max-w-lg flex-1">
+      <div className="relative">
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+        <input
+          type="search"
+          name="q"
+          defaultValue={q}
+          placeholder="Search email…"
+          aria-label="Search email"
+          className="w-full rounded-full border border-transparent bg-zinc-100 py-2 pr-3 pl-9 text-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        />
+      </div>
+    </form>
   );
 }

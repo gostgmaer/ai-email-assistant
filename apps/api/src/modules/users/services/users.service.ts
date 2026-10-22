@@ -39,10 +39,10 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: {
-        displayName: dto.displayName,
+        displayName: blankToNull(dto.displayName),
         avatar: dto.avatar,
-        jobTitle: dto.jobTitle,
-        companyName: dto.companyName,
+        jobTitle: blankToNull(dto.jobTitle),
+        companyName: blankToNull(dto.companyName),
         timezone: dto.timezone,
         digestHour: dto.digestHour,
       },
@@ -148,4 +148,13 @@ export class UsersService {
       }),
     ]);
   }
+}
+
+/** A cleared text field means "not set": stored as null, not "" (forms
+ * submit empty inputs as empty strings). Undefined = leave unchanged. */
+function blankToNull(value: string | undefined): string | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return value.trim() === '' ? null : value.trim();
 }

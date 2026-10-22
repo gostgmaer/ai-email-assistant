@@ -4,7 +4,7 @@
 
 ## What it is
 
-Your personal account details: display name, email address, and account deletion.
+Your personal details — display name, job title, company, timezone — plus your email address, notification preferences, and account deletion.
 
 ## Where to find it
 
@@ -15,6 +15,16 @@ Your personal account details: display name, email address, and account deletion
 **How:** type into the **Display name** field under the **Name** section, click **Save**. A "Saved" confirmation appears next to the button.
 
 **Example:** changing it from blank to `Kishor Sarkar` updates how your name appears throughout the app (e.g. as the sender name on outgoing mail where applicable).
+
+## Job title, company and timezone
+
+**How:** fill in **Job title** and **Company**, and set **Timezone** — type an IANA name such as `Europe/Berlin`, or click **Use this device's**. Click **Save**.
+
+**What happens:** AI replies are written as you, using your name, job title and company. Your timezone decides when quiet hours and business hours apply on your mailboxes ([Automation settings](/help/07-settings-accounts#automation-settings)) and when your daily digest arrives. An unknown timezone is refused with a message. Clearing a field and saving removes it.
+
+## Notifications
+
+The **Notifications** section chooses which events reach you in the app, by email or in Slack, and the hour of your daily digest — see [Notifications](/help/06-notifications#choosing-where-notifications-go).
 
 ## Verifying your email
 

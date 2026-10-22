@@ -26,7 +26,11 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 
 **How:** click any row in the thread list.
 
-**What happens:** the right-hand pane loads every message in that thread in chronological order, each showing sender, recipient, timestamp, and body. If a reply was AI-generated using one of your uploaded [Documents](/help/05-documents), you'll see a **"Grounded in your documents"** badge on that message — hover it to see which files it drew from. If it was drafted for a meeting/scheduling request, you may also see a **"Calendar-aware"** badge — see [Calendar-aware replies](/help/07-settings-accounts#calendar-aware-replies).
+**What happens:** the right-hand pane loads every message in that thread in chronological order, each showing sender, recipient, timestamp, and body. Opening a thread marks it read, in the app and in your real mailbox.
+
+**Attachments** appear as chips under a message (📎 name and size). Click one to download it — the file is fetched from your mailbox at that moment.
+
+**"No reply needed"** — a grey badge on a message the AI decided needs no answer (a thank-you, or mail you were only Cc'd on), with the reason. No AI draft is made for it; you can still reply yourself. If a reply was AI-generated using one of your uploaded [Documents](/help/05-documents), you'll see a **"Grounded in your documents"** badge on that message — hover it to see which files it drew from. If it was drafted for a meeting/scheduling request, you may also see a **"Calendar-aware"** badge — see [Calendar-aware replies](/help/07-settings-accounts#calendar-aware-replies).
 
 ---
 
@@ -90,6 +94,10 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 
 **How:** pick one of the presets — **Later today (+3h)**, **Tomorrow morning**, or **Next week**. The thread immediately disappears from Inbox and you're returned to the thread list. To find it again before it resurfaces, check the **Snoozed** folder tab, where an **"Snoozed — unsnooze"** button lets you bring it back early.
 
+**When the time comes:** the thread returns to the Inbox by itself and you get a *"A snoozed conversation is back"* notification (the assignee gets it on a shared inbox).
+
+**The Snoozed tab** lists snoozed threads from every folder, whatever folder you had open.
+
 **Example:** snoozing a "let me check my calendar and get back to you" thread until **Tomorrow morning** so it doesn't clutter today's inbox but isn't lost either.
 
 ---
@@ -103,3 +111,16 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 **How:** open the dropdown, pick a teammate's name (or "Unassigned" to clear it).
 
 **What happens:** the thread's `assignedTo` field updates immediately; anyone with access to the shared account can see who owns it.
+
+---
+
+## AI drafts that send by themselves (Cancel send)
+
+**What it is:** when a rule auto-sends a reply but there's a wait first — an [undo window](/help/07-settings-accounts#automation-settings), quiet hours, or a rule's **Delay the auto-reply** — the reply waits as a draft under the message it answers.
+
+**Where:** the draft card under the message reads **"AI reply — sending automatically"** and *"Sends at <time> unless you cancel."*
+
+**How:** click **Cancel send** to keep it as an ordinary draft for review. Editing the draft, sending it yourself, or discarding it also cancels the automatic send — it can never go out twice.
+
+**What happens:** if you do nothing, it sends at the time shown. If auto-sending is switched off for the account before then, it isn't sent and you get a notification instead.
+

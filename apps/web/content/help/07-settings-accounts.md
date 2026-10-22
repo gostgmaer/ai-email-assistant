@@ -21,6 +21,8 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 | Members | everyone | Opens the [Shared Inbox members](#shared-inbox-members) panel |
 | Contacts | everyone | Opens the [CRM contacts](#crm-contacts) panel |
 | Workflows | owner only | Opens [Workflow rules](#workflow-rules) |
+| Automation | owner only | Opens [Automation settings](#automation-settings) — auto-send limits, undo window, quiet hours, business hours, signature |
+| Activity | owner only | Opens [Activity](#activity) — the automation log and AI draft quality |
 | Agents | owner only | Opens [AI Agents (personas)](#ai-agents-personas) |
 | Integrations | owner only | Opens [Integrations](#integrations-slack-teams-hubspot) — connect Slack, Teams, or HubSpot for this account |
 | Sync filters (N) | owner only | Opens [Sync filters](#sync-filters) — N = how many are currently active |
@@ -115,38 +117,98 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 
 ## Workflow rules
 
-**What it is:** the actual automation engine — the rules that decide, for every new message on this account, whether the AI auto-sends a reply, holds it for review, assigns it to a teammate, posts to a chat app, syncs a CRM contact, or requires multi-person sign-off before sending.
+**What it is:** the automation engine — the rules that decide, for every new message on this account, what happens to it: label, file or forward it, create a task, notify someone, call a webhook, and how the AI reply goes out (auto-send, hold for review, or multi-person sign-off).
 
-**How rules run:** in order, top to bottom, after AI classification of the message. **The first rule whose conditions all match wins** — only its actions run. If no rule matches, the AI reply is held as a draft for you to review (safe default).
+**How rules run:** in order, top to bottom, after AI classification of the message.
 
-Every new account starts with one starter rule: *"Auto-reply — all messages"* → matches everything, action = auto-send using the default reply prompt.
+- **Every rule that matches runs its actions**, so you can combine rules — for example "label all invoices" *and* "auto-reply to VIPs".
+- A rule with a **Stop (skip lower rules)** action ends the list: rules below it are not checked for that message.
+- **How the reply goes out** (Auto-send / Hold as draft / Require multi-step approval) is decided by the **first** matching rule that has one of those actions; reply actions on later rules are ignored. Within that rule, holding always wins: Hold as draft or an approval chain beats Auto-send.
+- No rule with a reply action matches → the AI reply is held as a draft for you to review (safe default).
+- A message that needs no reply (a "thanks!", or mail you're only Cc'd on) gets no AI reply at all, whatever the rules say — but its other actions (label, notify…) still run.
+
+Every new account starts with one **starter rule**, *"Auto-reply — all messages"*, which is created **switched off**. Turn it on only if you really want every message auto-answered.
 
 **How to create a rule:**
-1. Click **Workflows** on the account card.
-2. Click **+ Add rule**.
-3. Give it a **name**.
-4. Add one or more **conditions** ("When all of these match"):
-   - Field: **Category**, **Priority**, or **Sender address**.
-   - Operator: **equals** or **contains**.
-   - Value: free text, e.g. `billing`, `urgent`, or `@bigclient.com`.
-   - Click **+ Add condition** for more (all conditions must match — it's an AND, not an OR).
-5. Add an **action** ("Then do this"):
-   - **Auto-send the AI reply** — optionally pick a specific [AI Agent persona](#ai-agents-personas) to use instead of the default prompt. Has its own **Calendar-aware replies** checkbox (on by default) — see [Calendar-aware replies](#calendar-aware-replies) below.
-   - **Assign to teammate** — requires 2+ [Members](#shared-inbox-members).
-   - **Notify teammate** — sends an in-app [notification](/help/06-notifications) without touching the reply.
-   - **Post to Slack channel** — requires a connected [Slack integration](#integrations-slack-teams-hubspot); pick the workspace, then the channel.
-   - **Post to Teams channel** — requires a connected [Teams integration](#integrations-slack-teams-hubspot); pick the tenant, then the team, then the channel.
-   - **Sync sender to HubSpot** — requires a connected [HubSpot integration](#integrations-slack-teams-hubspot); creates or updates a HubSpot contact for whoever sent the matching message (email, and name if available) — no picker needed beyond selecting which portal.
-   - **Hold as draft (no auto-reply)** — always draft, never auto-send, regardless of confidence.
-   - **Require multi-step approval** — see [True multi-step Approval Chains](#true-multi-step-approval-chains) below.
-   - Click **+ Add action** for more than one action per rule.
-6. Click **Save rule**.
+1. Click **Workflows** on the account card, then **+ Add rule**.
+2. Give it a **name**.
+3. Choose **When all / any of these match** — *all* = every condition must be true (AND), *any* = at least one (OR).
+4. Add one or more **conditions**. Each is a field, an operator and a value:
+
+   | Field | What it checks |
+   |---|---|
+   | Category, Priority, Sentiment, Language | What the AI classified the message as |
+   | Sender address, Sender domain | Who sent it (`client@acme.com`, `acme.com`) |
+   | To, Cc | Any recipient address on the message |
+   | Subject, Message text | The words in the subject or the message itself (quoted earlier mail is ignored) |
+   | Contains personal data | The AI found personal data such as account numbers |
+   | Has attachments | The message has files attached (inline logos don't count) |
+   | First message in thread | It starts a new conversation |
+   | Sender is a known contact | A CRM contact, or someone this account has emailed before |
+   | Received in business hours | Inside the business hours set under [Automation](#automation-settings) |
+
+   Operators for text fields: **is**, **is not**, **contains**, **doesn't contain**, **starts with**, **ends with**, **is one of** / **is none of** (a comma-separated list), and **matches regex**. Yes/no fields just take **yes** or **no**.
+5. A rule with no conditions is refused unless you tick **Match every message** — the form then warns you that the rule runs on every new message.
+6. Add one or more **actions** ("Then do this"):
+   - **Auto-send the AI reply** — optionally with an [AI Agent persona](#ai-agents-personas), **Calendar-aware replies** (on by default), **Reply all**, and **Auto-send document answers to new senders**.
+   - **Hold as draft (no auto-reply)** · **Require multi-step approval** — see [Approval Chains](#true-multi-step-approval-chains).
+   - **Assign to teammate** · **Notify teammate** · **Post to Slack channel** · **Post to Teams channel** · **Sync sender to HubSpot**.
+   - **Forward to address** — forwards the message, with its attachments up to 3 MB, and an optional note on top.
+   - **Add label** — a Gmail label, an Outlook category or an IMAP keyword, created if needed.
+   - **Move to folder** · **Archive** · **Mark as read** — change the message in your real mailbox.
+   - **Snooze thread** — for a number of hours.
+   - **Create a task** — a follow-up task for you, with an optional description and due date.
+   - **Call a webhook** — posts a short summary of the message (no body) to an HTTPS address. A signing secret is generated when you save; it appears on the rule so your receiver can verify the `X-Signature` header. Private or internal addresses are refused.
+   - **Delay the auto-reply** — waits that many minutes before an auto-reply sends (it can be cancelled meanwhile).
+   - **Stop (skip lower rules)**.
+7. Click **Test rule** before saving: it shows which of your last 50 classified messages the rule would match. **Nothing is run** — no labels, no replies, no notifications.
+8. Click **Save rule**. A saved rule starts **Enabled**; click the badge to switch it off.
+
+**Testing a saved rule:** the **Test** button on a rule card runs the same check for that rule.
 
 **How to delete a rule:** click **Delete** next to it in the list.
 
-**Example:** a rule named "Escalate VIP billing" with condition `Sender address contains @bigclient.com` and action `Assign to teammate` + `Notify teammate` ensures anything from that domain skips auto-reply entirely and gets a human's attention immediately — as long as it's placed *above* the catch-all starter rule (since the first match wins).
+**Example:** a rule named "Invoices" with **any** of `Subject contains invoice` / `Has attachments: yes`, and actions **Add label** `Invoices` + **Create a task**. **Test rule** shows *"Would match 4 of your last 50 classified messages. Nothing was run."* with those messages listed. Because every matching rule runs, a separate "Auto-reply to VIPs" rule further down still answers a VIP's invoice email.
 
-**What happens:** every incoming message is evaluated against your rule list top-to-bottom; whichever rule matches first determines the action. Reordering matters — put more specific rules above general ones.
+**What happens:** each time a rule matches, what each of its actions did is recorded in the account's [Activity](#activity) log for 90 days.
+
+---
+
+## Automation settings
+
+**What it is:** the limits on replies the AI sends without review, plus your business hours and the signature added to AI replies. One set per account.
+
+**Where to find it:** **Automation** button on the account card (owner only). The button reads **Automation (auto-send off)** when auto-sending is switched off.
+
+| Setting | Default | What it does |
+|---|---|---|
+| Allow rules to send AI replies without review | on | Off = every reply a rule would auto-send is held as a draft instead |
+| At most N per hour / N per day | 10 / 50 | Over a limit, replies are held as drafts and you get one notification |
+| Minimum confidence | 70 | The AI's own check must score at least this (0–100) for a reply to auto-send |
+| Undo window | 0 seconds | Up to 300: an auto-reply waits this long in Drafts with a **Cancel send** button before it goes out |
+| Quiet hours | none | e.g. 22:00 to 07:00 — an auto-reply due in that window waits until it ends. **clear** removes them |
+| Business hours | 09:00–17:00, Mon–Fri | What the *Received in business hours* rule condition checks |
+| Signature | none, or imported from Gmail | Added to the end of every AI reply; the AI is told not to sign itself. Plain text, and optionally HTML |
+
+Times are in your timezone, set under [Profile](/help/09-settings-profile).
+
+**How to use it:** change the values and click **Save automation settings**; "Saved" appears next to the button.
+
+**Example:** with an undo window of 30 seconds and quiet hours 22:00–07:00, an auto-reply approved at 21:59:50 would be due at 22:00:20 — inside quiet hours — so it waits in Drafts until 07:00, and you can cancel it any time before then.
+
+---
+
+## Activity
+
+**What it is:** what the automation did on this account, newest first, plus how good the AI's drafts have been.
+
+**Where to find it:** **Activity** button on the account card (owner only).
+
+**What you see:**
+- **AI draft quality, last 30 days** — for all drafts and per agent: how many people reviewed, how many were sent as is, edited, or discarded, the median time from draft to send, and how many went out without review.
+- **The log** — every reply sent without review (to whom, which rule allowed it, the AI's confidence, which documents it drew on, or when a scheduled one will send) and every rule run, with what each action did (done, skipped or failed, and why). **Load older** pages back.
+
+**Example:** *"Rule failed · Invoices · Re: March invoice — ADD_LABEL done · WEBHOOK failed (Webhook responded 500)"* tells you the label was added but your webhook receiver rejected the call.
 
 ---
 
@@ -176,7 +238,7 @@ Every new account starts with one starter rule: *"Auto-reply — all messages"* 
 
 **Example:** a rule matching `Category equals Sales` with **Require multi-step approval** set to `[Sales Manager, VP of Sales]` means every AI-drafted sales reply needs both people to sign off, in that order, before it goes out — the VP never even sees it unless the Sales Manager already approved.
 
-**What happens:** this always wins over **Auto-send the AI reply** if both are somehow on the same rule — a chain can never be silently skipped. While a chain is pending, the draft cannot be sent manually from the Compose/Drafts screen either; the **Send** button stays disabled with an explanation until every step approves.
+**What happens:** this always wins over **Auto-send the AI reply** if both are on the same rule — a chain can never be silently skipped. **Pending chains expire** after 72 hours by default, and the current approver gets a reminder halfway. While a chain is pending, the draft cannot be sent manually from the Compose/Drafts screen either; the **Send** button stays disabled with an explanation until every step approves.
 
 ---
 
@@ -199,4 +261,6 @@ Every new account starts with one starter rule: *"Auto-reply — all messages"* 
 
 Creating a second persona, **"Support Tier 1,"** with a prompt focused on troubleshooting steps and escalation language, and attaching it to a Workflow rule that matches `Category equals support`, gives support emails a distinctly different (and more procedural) auto-reply voice than personal correspondence.
 
-**What happens:** a persona only takes effect when a Workflow rule's action explicitly selects it. Without an attached rule, creating a persona has no effect on live mail — it's just saved for later use.
+**Ready-made agents with rules:** below **+ Add agent**, the list of ready-made agents (Customer Support, Sales, HR, Finance, Executive Assistant) has an **Add** button on each. It creates the agent **and** its suggested workflow rules — for example Finance Agent adds *"Finance mail — draft for review"* and *"Invoices with attachments — label"*. The rules are created **switched off**: review them under **Workflows** before turning them on.
+
+**What happens:** a persona only takes effect when a Workflow rule's action explicitly selects it. Without an attached rule, creating a persona has no effect on live mail — it's just saved for later use. AI replies are also written as you: your name, job title and company from [Profile](/help/09-settings-profile).
