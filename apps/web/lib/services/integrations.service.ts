@@ -1,5 +1,5 @@
-import { apiFetch, apiUrl } from "../api/client";
-import { getAccessToken } from "../auth/token-storage";
+import { apiFetch } from "../api/client";
+import { connectLink } from "../connect";
 import type { Integration, IntegrationChannel, TeamsChannel } from "../api/types";
 
 export async function listIntegrations(
@@ -11,19 +11,12 @@ export async function listIntegrations(
 }
 
 /**
- * Connect is a full-page redirect to the provider's own consent screen, so
- * it can't carry an Authorization header — the access token and target
- * account ride along as query params instead (the API's JwtStrategy
- * accepts a `token` query param; the connect route reads `accountId` the
- * same way).
+ * Connect is a full-page redirect to the provider's own consent screen,
+ * started through /connect (see lib/connect.ts): a short-lived ticket and
+ * the target account ride along as query params.
  */
 function connectUrl(provider: "slack" | "teams" | "hubspot", accountId: string): string {
-  const token = getAccessToken();
-  const params = new URLSearchParams({
-    accountId,
-    token: token ?? "",
-  });
-  return `${apiUrl(`/integrations/connect/${provider}`)}?${params.toString()}`;
+  return connectLink(`/integrations/connect/${provider}`, { accountId });
 }
 
 export function connectSlackUrl(accountId: string): string {

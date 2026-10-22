@@ -79,6 +79,21 @@ export function PendingDraftCard({
         </p>
       )}
 
+      {draft.generationMetadata?.unsupportedClaims &&
+        draft.generationMetadata.unsupportedClaims.length > 0 && (
+          <div className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800 ring-1 ring-amber-200 ring-inset">
+            <p className="font-medium">
+              Check before sending — this may state things the conversation
+              doesn&apos;t support:
+            </p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              {draft.generationMetadata.unsupportedClaims.map((claim) => (
+                <li key={claim}>{claim}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
       {draft.scheduledSendAt && (
         <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-white px-2 py-1.5 text-xs text-indigo-700 ring-1 ring-indigo-200 ring-inset">
           <span>

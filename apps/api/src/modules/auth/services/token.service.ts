@@ -39,6 +39,20 @@ export class TokenService {
     return { accessToken, refreshToken };
   }
 
+  /**
+   * A short-lived token for the one place a token must travel in a URL: a
+   * full-page "Connect Gmail/Outlook/Slack…" redirect, which can't send an
+   * Authorization header. Expires in 60 seconds and only works on connect
+   * routes (JwtStrategy), so a copy left in browser history or a log is
+   * useless — unlike the access token that used to ride in that URL.
+   */
+  async issueConnectTicket(payload: JwtPayload): Promise<string> {
+    return this.nestJwtService.signAsync(
+      { sub: payload.sub, email: payload.email, purpose: 'connect' },
+      { expiresIn: '60s' },
+    );
+  }
+
   async rotateRefreshToken(
     refreshToken: string,
     device?: DeviceMetadata,

@@ -21,11 +21,44 @@ _MAX_ATTEMPTS_PER_PROVIDER = 2
 _BACKOFF_BASE_SECONDS = 1.5
 
 
+class StructuredResult:
+    """A structured call's parsed model plus the raw message's token usage.
+
+    Behaves like the parsed model (attribute access, model_dump) so nodes
+    use it unchanged, and exposes usage_metadata like an AIMessage so
+    ResponseParser.usage works on it — with_structured_output alone drops
+    the raw message, which is why structured calls reported 0 tokens.
+    """
+
+    def __init__(self, parsed: BaseModel, raw: Any):
+        self.parsed = parsed
+        self.usage_metadata = getattr(raw, "usage_metadata", None) or {}
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict:
+        return self.parsed.model_dump(*args, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.parsed, name)
+
+
 def _build_llm(provider: str, *, schema: type[BaseModel] | None = None):
     llm = llm_manager.get_model(provider)
     if schema is not None:
-        llm = llm.with_structured_output(schema)
+        llm = llm.with_structured_output(schema, include_raw=True)
     return llm
+
+
+def _unwrap(result: Any, schema: type[BaseModel] | None) -> Any:
+    """include_raw=True answers {raw, parsed, parsing_error}. A reply that
+    didn't parse raises, so it is retried / failed over like any error."""
+    if schema is None:
+        return result
+    parsed = result.get("parsed")
+    if parsed is None:
+        raise ValueError(
+            f"Structured output did not parse: {result.get('parsing_error')}"
+        )
+    return StructuredResult(parsed, result.get("raw"))
 
 
 def _invoke_with_fallback(
@@ -47,7 +80,7 @@ def _invoke_with_fallback(
 
         for attempt in range(1, _MAX_ATTEMPTS_PER_PROVIDER + 1):
             try:
-                return llm.invoke(messages)
+                return _unwrap(llm.invoke(messages), schema)
             except Exception as exc:  # noqa: BLE001 - see docstring
                 last_error = exc
                 logger.warning(
@@ -78,7 +111,7 @@ async def _ainvoke_with_fallback(
 
         for attempt in range(1, _MAX_ATTEMPTS_PER_PROVIDER + 1):
             try:
-                return await llm.ainvoke(messages)
+                return _unwrap(await llm.ainvoke(messages), schema)
             except Exception as exc:  # noqa: BLE001 - see docstring
                 last_error = exc
                 logger.warning(

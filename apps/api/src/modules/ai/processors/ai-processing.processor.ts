@@ -547,6 +547,9 @@ export class AiProcessingProcessor
     // falls through to the existing default: draft for review.
     let isSafeToAutoSend = false;
     let replyConfidence: number | undefined;
+    // Set whenever validate_reply ran: claims the model made that the
+    // thread and context don't support. Shown on a held draft's card.
+    let unsupportedClaims: string[] | undefined;
     const approvalChainApproverUserIds =
       replyDirectives?.approvalChainApproverUserIds;
     const confidenceThreshold = account.autoSendConfidenceThreshold;
@@ -635,6 +638,7 @@ export class AiProcessingProcessor
         }
 
         replyConfidence = validation.confidence;
+        unsupportedClaims = validation.unsupportedClaims;
         passesValidationRail =
           validation.addressesThread &&
           validation.unsupportedClaims.length === 0 &&
@@ -863,6 +867,22 @@ export class AiProcessingProcessor
           );
         });
     } else {
+      // A held draft still gets the invented-facts check (if the auto-send
+      // path didn't already run it): a reviewer skimming a fluent draft is
+      // exactly who misses a made-up date or status. Best-effort — the
+      // draft is saved either way.
+      if (unsupportedClaims === undefined) {
+        unsupportedClaims = await this.aiClientService
+          .validateReply(subject, thread, reply.reply)
+          .then(({ validation }) => validation.unsupportedClaims)
+          .catch((error: unknown) => {
+            this.logger.warn(
+              `Draft check failed for message ${messageId}: ${describeError(error)}`,
+            );
+            return undefined;
+          });
+      }
+
       const draft = await this.composeService.saveDraftReply(
         account.userId,
         messageId,
@@ -871,7 +891,9 @@ export class AiProcessingProcessor
           bodyText: signed.text,
           bodyHtml: signed.html,
         },
-        generationMetadata,
+        unsupportedClaims?.length
+          ? { ...generationMetadata, unsupportedClaims }
+          : generationMetadata,
         { replyAll: autoReplyAction?.replyAll === true },
       );
 

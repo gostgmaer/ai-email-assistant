@@ -247,6 +247,9 @@ export interface GenerationMetadata {
     filename: string;
     distance: number;
   }>;
+  /** Held AI drafts only: statements the AI's own check found unsupported
+   * by the conversation (possible invented facts). */
+  unsupportedClaims?: string[];
 }
 
 export interface EmailMessage {

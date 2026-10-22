@@ -1,5 +1,5 @@
-import { apiFetch, apiUrl } from "../api/client";
-import { getAccessToken } from "../auth/token-storage";
+import { apiFetch } from "../api/client";
+import { connectLink } from "../connect";
 import type {
   AccountMember,
   AutomationLogEntry,
@@ -11,19 +11,15 @@ export async function listEmailAccounts(): Promise<EmailAccount[]> {
   return apiFetch<EmailAccount[]>("/email-accounts");
 }
 
-/**
- * Gmail/Outlook connect is a full-page redirect (to Google/Microsoft), so it
- * can't carry an Authorization header — the access token rides along as a
- * query param instead (the API's JwtStrategy accepts both).
- */
+/** Gmail/Outlook connect is a full-page redirect to Google/Microsoft,
+ * started through /connect so a short-lived ticket — not the access
+ * token — goes in the URL. */
 export function connectGoogleUrl(): string {
-  const token = getAccessToken();
-  return `${apiUrl("/email-accounts/connect/google")}?token=${encodeURIComponent(token ?? "")}`;
+  return connectLink("/email-accounts/connect/google");
 }
 
 export function connectMicrosoftUrl(): string {
-  const token = getAccessToken();
-  return `${apiUrl("/email-accounts/connect/microsoft")}?token=${encodeURIComponent(token ?? "")}`;
+  return connectLink("/email-accounts/connect/microsoft");
 }
 
 export interface ConnectImapInput {

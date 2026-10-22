@@ -450,7 +450,9 @@ describe('AiProcessingProcessor', () => {
       await deps.run();
 
       expect(deps.composeService.reply).not.toHaveBeenCalled();
-      expect(deps.aiClientService.validateReply).not.toHaveBeenCalled();
+      // Called once only: the held draft's invented-facts check, not an
+      // auto-send decision.
+      expect(deps.aiClientService.validateReply).toHaveBeenCalledTimes(1);
       expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
     });
 
@@ -691,7 +693,9 @@ describe('AiProcessingProcessor', () => {
       await deps.run();
 
       expect(deps.composeService.reply).not.toHaveBeenCalled();
-      expect(deps.aiClientService.validateReply).not.toHaveBeenCalled();
+      // Called once only: the held draft's invented-facts check, not an
+      // auto-send decision.
+      expect(deps.aiClientService.validateReply).toHaveBeenCalledTimes(1);
       expect(deps.composeService.saveDraftReply).toHaveBeenCalledTimes(1);
     });
 
@@ -1364,6 +1368,42 @@ describe('AiProcessingProcessor', () => {
       deps.processor.onApplicationBootstrap();
 
       expect(worker.concurrency).toBe(7);
+    });
+  });
+
+  describe('invented-facts check on held drafts', () => {
+    it('saves the claims the check flagged with the draft, for the reviewer', async () => {
+      const deps = buildDeps();
+      deps.aiClientService.validateReply.mockResolvedValue({
+        validation: {
+          addressesThread: true,
+          concerns: [],
+          unsupportedClaims: ['says the order ships tomorrow'],
+          grammarIssues: [],
+          toneAppropriate: true,
+          toneNote: '',
+          confidence: 40,
+        },
+      });
+
+      await deps.run();
+
+      const [, , , metadata] = deps.composeService.saveDraftReply.mock
+        .calls[0] as [unknown, unknown, unknown, { unsupportedClaims?: string[] }];
+      expect(metadata.unsupportedClaims).toEqual([
+        'says the order ships tomorrow',
+      ]);
+    });
+
+    it('still saves the draft when the check itself fails', async () => {
+      const deps = buildDeps();
+      deps.aiClientService.validateReply.mockRejectedValue(new Error('timeout'));
+
+      await deps.run();
+
+      const [, , , metadata] = deps.composeService.saveDraftReply.mock
+        .calls[0] as [unknown, unknown, unknown, { unsupportedClaims?: string[] }];
+      expect(metadata.unsupportedClaims).toBeUndefined();
     });
   });
 });

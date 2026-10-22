@@ -11,8 +11,9 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const logger = app.get(Logger);
+  // AppModule registers every queue processor, so this lists them all.
   logger.log(
-    'worker running, processing BullMQ queues (email-sync, ai, notification)',
+    'worker running, processing BullMQ queues (email-sync, ai, notification, documents, digest, approvals, automation)',
   );
 }
 

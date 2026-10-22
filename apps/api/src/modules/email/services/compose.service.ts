@@ -49,6 +49,10 @@ export interface GenerationMetadata {
   /** The agent persona that wrote it, if a rule used one — for the
    * per-agent quality metrics. */
   agentId?: string;
+  /** Held drafts only: statements the validation check found unsupported
+   * by the thread or context (possible invented facts), shown to the
+   * reviewer. */
+  unsupportedClaims?: string[];
 }
 
 /** Headers set on every autonomous (unreviewed) reply — RFC 3834 asks

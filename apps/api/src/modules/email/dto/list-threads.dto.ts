@@ -27,10 +27,15 @@ export class ListThreadsDto {
   @IsUUID()
   accountId?: string;
 
-  @ApiPropertyOptional({ enum: FOLDER_TYPES, default: 'INBOX' })
+  // No class default: InboxService treats a missing folderType as INBOX,
+  // except for the snoozed view, which spans every folder.
+  @ApiPropertyOptional({
+    enum: FOLDER_TYPES,
+    description: 'Defaults to INBOX; the snoozed view defaults to all folders',
+  })
   @IsOptional()
   @IsIn(FOLDER_TYPES)
-  folderType?: (typeof FOLDER_TYPES)[number] = 'INBOX';
+  folderType?: (typeof FOLDER_TYPES)[number];
 
   @ApiPropertyOptional({
     description: 'Free-text search across subject/snippet/body',

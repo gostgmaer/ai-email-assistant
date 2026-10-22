@@ -66,7 +66,10 @@ export class AuthController {
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Register with email and password' })
-  @ApiResponse({ status: 201, description: 'The created user and access token' })
+  @ApiResponse({
+    status: 201,
+    description: 'The created user and access token',
+  })
   @ApiResponse({ status: 409, description: 'Email already registered' })
   @HttpCode(HttpStatus.CREATED)
   async register(
@@ -145,6 +148,18 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
     await this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  @Post('connect-ticket')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'A 60-second ticket for starting a Connect (OAuth) redirect, passed as ?ticket= instead of the access token',
+  })
+  @ApiResponse({ status: 201, description: '{ ticket }' })
+  async connectTicket(@CurrentUser() user: JwtPayload) {
+    return { ticket: await this.tokenService.issueConnectTicket(user) };
   }
 
   @Get('sessions')
@@ -380,8 +395,7 @@ export class AuthController {
   }
 
   private setRefreshCookie(res: Response, token: string): void {
-    const isProd =
-      this.configService.get<string>('NODE_ENV') === 'production';
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
     const refreshExpiresIn = this.configService.getOrThrow<string>(
       'JWT_REFRESH_EXPIRES_IN',
     ) as ms.StringValue;

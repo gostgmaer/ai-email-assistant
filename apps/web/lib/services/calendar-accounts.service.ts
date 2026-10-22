@@ -1,24 +1,19 @@
-import { apiFetch, apiUrl } from "../api/client";
-import { getAccessToken } from "../auth/token-storage";
+import { apiFetch } from "../api/client";
+import { connectLink } from "../connect";
 import type { BusyInterval, CalendarAccount } from "../api/types";
 
 export async function listCalendarAccounts(): Promise<CalendarAccount[]> {
   return apiFetch<CalendarAccount[]>("/calendar-accounts");
 }
 
-/**
- * Full-page redirect (to Google/Microsoft), so it can't carry an
- * Authorization header — the access token rides along as a query param
- * instead, same as the email-accounts connect flow.
- */
+/** Full-page redirect to Google/Microsoft, started through /connect so a
+ * short-lived ticket — not the access token — goes in the URL. */
 export function connectGoogleCalendarUrl(): string {
-  const token = getAccessToken();
-  return `${apiUrl("/calendar-accounts/connect/google")}?token=${encodeURIComponent(token ?? "")}`;
+  return connectLink("/calendar-accounts/connect/google");
 }
 
 export function connectMicrosoftCalendarUrl(): string {
-  const token = getAccessToken();
-  return `${apiUrl("/calendar-accounts/connect/microsoft")}?token=${encodeURIComponent(token ?? "")}`;
+  return connectLink("/calendar-accounts/connect/microsoft");
 }
 
 export async function disconnectCalendarAccount(id: string): Promise<void> {
