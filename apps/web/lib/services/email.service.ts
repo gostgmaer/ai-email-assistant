@@ -81,14 +81,49 @@ export async function deleteThreadNote(
 export interface FollowUpCandidate {
   threadId: string;
   subject: string | null;
+  snippet: string | null;
+  summary: string | null;
   lastMessageAt: string | null;
   daysSinceLastMessage: number | null;
+  /** When "remind me if nobody replies" fires; null when no reminder is set. */
+  followUpAt: string | null;
+  /** The recipients of the user's last message, minus the account itself. */
+  waitingOn: { name?: string; address: string }[];
   account: { id: string; provider: string; email: string };
   relatedMeetingRequests: { id: string; description: string }[];
 }
 
-export async function listFollowUps(): Promise<FollowUpCandidate[]> {
-  return apiFetch<FollowUpCandidate[]>("/email/follow-ups");
+/** Threads where the user sent the last message and nobody has answered,
+ * waiting at least `olderThanDays` (0 = all of them). */
+export async function listFollowUps(
+  olderThanDays = 0,
+): Promise<FollowUpCandidate[]> {
+  return apiFetch<FollowUpCandidate[]>(
+    `/email/follow-ups?olderThanDays=${olderThanDays}`,
+  );
+}
+
+/** waiting=false hides a thread from the Waiting view (and cancels its
+ * reminder) until the user sends another message on it. */
+export async function setWaiting(
+  threadId: string,
+  waiting: boolean,
+): Promise<void> {
+  await apiFetch(`/email/threads/${threadId}/waiting`, {
+    method: "PATCH",
+    body: { waiting },
+  });
+}
+
+/** Sets, or with null cancels, "remind me if nobody replies". */
+export async function setFollowUpReminder(
+  threadId: string,
+  days: number | null,
+): Promise<void> {
+  await apiFetch(`/email/threads/${threadId}/follow-up-reminder`, {
+    method: "PATCH",
+    body: { days },
+  });
 }
 
 export interface MessageWithAccount extends EmailMessage {

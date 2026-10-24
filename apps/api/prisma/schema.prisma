@@ -794,6 +794,11 @@ model EmailThread {
   // last message is still the user's own, then clears it.
   followUpAt DateTime?
 
+  // "Not waiting on this" from the Waiting view — hides the thread there
+  // (and clears followUpAt) until the user sends another message, i.e.
+  // until lastMessageAt moves past it. Null means never dismissed.
+  waitingDismissedAt DateTime?
+
   // Shared Inbox (v2.0): who on the account is responsible for this
   // conversation. Must be an AccountMember of this thread's account —
   // enforced in InboxService, not at the schema level (Prisma can't

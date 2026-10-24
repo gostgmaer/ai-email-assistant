@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+
+import { REWRITE_STYLES, RewriteStyle } from '../utils/rewrite-styles.util';
 
 export class RewriteDto {
   @ApiProperty({ description: 'Draft text to rewrite' })
@@ -13,4 +15,13 @@ export class RewriteDto {
   @IsOptional()
   @IsString()
   instruction?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'A one-click rewrite preset. Without one, the draft is polished in its own tone.',
+    enum: REWRITE_STYLES,
+  })
+  @IsOptional()
+  @IsIn(REWRITE_STYLES)
+  style?: RewriteStyle;
 }

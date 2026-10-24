@@ -473,6 +473,9 @@ export interface EmailThreadDetail {
   notes: ThreadNote[];
   summary: string | null;
   summaryKeyPoints: string[];
+  /** The newest message is the user's own — they're waiting on a reply. */
+  lastMessageFromSelf: boolean;
+  followUpAt: string | null;
 }
 
 export interface Pagination {

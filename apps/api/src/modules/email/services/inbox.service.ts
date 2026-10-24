@@ -14,6 +14,8 @@ import { EmailAccountService } from '../../email-account/services/email-account.
 import { ListThreadsDto } from '../dto';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class InboxService {
   constructor(
@@ -266,22 +268,23 @@ export class InboxService {
   }
 
   /**
-   * Heuristic follow-up suggestions (see docs/v1.2-plan.md): threads where
-   * the user sent the most recent message and nothing has come back in
-   * `olderThanDays` — not an AI capability, a rules pass over data that's
-   * already there, reusing extracted meeting requests as a secondary
-   * signal rather than a fresh LLM call per thread.
+   * The Waiting view (see docs/v1.2-plan.md): threads where the user sent
+   * the most recent message and nothing has come back in `olderThanDays`
+   * (0 lists everything still waiting) — not an AI capability, a rules
+   * pass over data that's already there, reusing extracted meeting
+   * requests as a secondary signal rather than a fresh LLM call per thread.
    *
    * "The user sent the last message" is EmailThread.lastMessageFromSelf,
    * kept in step with lastMessageAt by sync and compose. Filtering on it in
    * the query (instead of fetching the 50 OLDEST threads and filtering in
    * code, which missed every recent candidate once an account had more
-   * than 50 threads) returns the most recent candidates first.
+   * than 50 threads) returns the most recent candidates first. A thread
+   * the user said they aren't waiting on stays out until they send
+   * another message on it.
    */
   async getFollowUpCandidates(userId: string, olderThanDays = 3) {
-    const threshold = new Date(
-      Date.now() - olderThanDays * 24 * 60 * 60 * 1000,
-    );
+    const now = new Date();
+    const threshold = new Date(now.getTime() - olderThanDays * DAY_MS);
 
     const threads = await this.prisma.emailThread.findMany({
       where: {
@@ -289,32 +292,96 @@ export class InboxService {
         lastMessageFromSelf: true,
         lastMessageAt: { lt: threshold },
         folder: { type: { not: 'DRAFTS' } },
-        OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: new Date() } }],
+        AND: [
+          { OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] },
+          {
+            OR: [
+              { waitingDismissedAt: null },
+              {
+                waitingDismissedAt: {
+                  lt: this.prisma.emailThread.fields.lastMessageAt,
+                },
+              },
+            ],
+          },
+        ],
       },
       include: {
-        account: { select: { id: true, provider: true, email: true } },
+        account: {
+          select: { id: true, provider: true, email: true, aliases: true },
+        },
         tasks: {
           where: { type: 'MEETING_REQUEST', status: 'PENDING' },
           select: { id: true, description: true },
+        },
+        // The user's own last message — its recipients are who the
+        // thread is waiting on.
+        messages: {
+          orderBy: { receivedAt: 'desc' },
+          take: 1,
+          select: { to: true },
         },
       },
       orderBy: { lastMessageAt: 'desc' },
       take: 50,
     });
 
-    return threads.map((thread) => ({
+    return threads.map(({ account: { aliases, ...account }, ...thread }) => ({
       threadId: thread.id,
       subject: thread.subject,
+      snippet: thread.snippet,
+      summary: thread.summary,
       lastMessageAt: thread.lastMessageAt,
       daysSinceLastMessage: thread.lastMessageAt
-        ? Math.floor(
-            (Date.now() - thread.lastMessageAt.getTime()) /
-              (24 * 60 * 60 * 1000),
-          )
+        ? Math.floor((now.getTime() - thread.lastMessageAt.getTime()) / DAY_MS)
         : null,
-      account: thread.account,
+      followUpAt: thread.followUpAt,
+      waitingOn: recipientsOtherThan(thread.messages[0]?.to, [
+        account.email,
+        ...aliases,
+      ]),
+      account,
       relatedMeetingRequests: thread.tasks,
     }));
+  }
+
+  /** "Not waiting on this" (waiting=false) hides a thread from the
+   * Waiting view and cancels its reminder until the user sends another
+   * message on it; waiting=true undoes that. */
+  async setWaiting(
+    userId: string,
+    threadId: string,
+    waiting: boolean,
+  ): Promise<void> {
+    const { count } = await this.prisma.emailThread.updateMany({
+      where: { id: threadId, account: { members: { some: { userId } } } },
+      data: waiting
+        ? { waitingDismissedAt: null }
+        : { waitingDismissedAt: new Date(), followUpAt: null },
+    });
+
+    if (count === 0) {
+      throw new NotFoundException('Thread not found');
+    }
+  }
+
+  /** Sets (or, with null, cancels) the "remind me if nobody replies"
+   * time on an existing thread — compose only sets it at send time. */
+  async setFollowUpReminder(
+    userId: string,
+    threadId: string,
+    days: number | null,
+  ): Promise<void> {
+    const { count } = await this.prisma.emailThread.updateMany({
+      where: { id: threadId, account: { members: { some: { userId } } } },
+      data: {
+        followUpAt: days ? new Date(Date.now() + days * DAY_MS) : null,
+      },
+    });
+
+    if (count === 0) {
+      throw new NotFoundException('Thread not found');
+    }
   }
 
   async getThread(userId: string, threadId: string) {
@@ -499,4 +566,20 @@ export class InboxService {
       message.thread.folder.providerFolderId ?? undefined,
     );
   }
+}
+
+/** A message's `to` list without the account's own addresses. */
+function recipientsOtherThan(
+  to: Prisma.JsonValue | undefined,
+  ownAddresses: string[],
+): { name?: string; address: string }[] {
+  if (!Array.isArray(to)) {
+    return [];
+  }
+  const own = new Set(ownAddresses.map((address) => address.toLowerCase()));
+  return (to as { name?: string; address?: string }[]).filter(
+    (recipient): recipient is { name?: string; address: string } =>
+      typeof recipient?.address === 'string' &&
+      !own.has(recipient.address.toLowerCase()),
+  );
 }

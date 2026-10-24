@@ -110,7 +110,7 @@ export class AiController {
     description: 'The AI service failed or is unreachable',
   })
   async rewrite(@Body() dto: RewriteDto) {
-    return this.aiClientService.rewrite(dto.draft, dto.instruction);
+    return this.aiClientService.rewrite(dto.draft, dto.instruction, dto.style);
   }
 
   @Post('classify')

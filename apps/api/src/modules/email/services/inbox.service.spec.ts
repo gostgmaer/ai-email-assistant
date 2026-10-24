@@ -9,6 +9,7 @@ describe('InboxService', () => {
         findMany: jest.fn().mockResolvedValue([]),
         count: jest.fn().mockResolvedValue(0),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        fields: { lastMessageAt: 'lastMessageAt-field' },
       },
       $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
       emailMessage: {
@@ -59,8 +60,14 @@ describe('InboxService', () => {
           id: 'thread-1',
           subject: 'Proposal',
           lastMessageAt,
-          account: { id: 'a', provider: 'GOOGLE', email: 'me@acme.io' },
+          account: {
+            id: 'a',
+            provider: 'GOOGLE',
+            email: 'me@acme.io',
+            aliases: ['me@acme.dev'],
+          },
           tasks: [],
+          messages: [],
         },
       ]);
 
@@ -70,6 +77,121 @@ describe('InboxService', () => {
         threadId: 'thread-1',
         daysSinceLastMessage: 5,
       });
+    });
+
+    it('lists who the thread is waiting on, leaving out the account and its aliases', async () => {
+      const { service, prisma } = buildDeps();
+      prisma.emailThread.findMany.mockResolvedValue([
+        {
+          id: 'thread-1',
+          subject: 'Proposal',
+          lastMessageAt: new Date(),
+          account: {
+            id: 'a',
+            provider: 'GOOGLE',
+            email: 'me@acme.io',
+            aliases: ['me@acme.dev'],
+          },
+          tasks: [],
+          messages: [
+            {
+              to: [
+                { name: 'Sam', address: 'sam@client.io' },
+                { address: 'ME@acme.io' },
+                { address: 'me@acme.dev' },
+              ],
+            },
+          ],
+        },
+      ]);
+
+      const [candidate] = await service.getFollowUpCandidates('user-1', 0);
+
+      expect(candidate.waitingOn).toEqual([
+        { name: 'Sam', address: 'sam@client.io' },
+      ]);
+    });
+
+    it('leaves out threads dismissed since the user last wrote', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.getFollowUpCandidates('user-1', 0);
+
+      const [[args]] = prisma.emailThread.findMany.mock.calls as [
+        [{ where: { AND: unknown[] } }],
+      ];
+      expect(args.where.AND).toContainEqual({
+        OR: [
+          { waitingDismissedAt: null },
+          { waitingDismissedAt: { lt: 'lastMessageAt-field' } },
+        ],
+      });
+    });
+  });
+
+  describe('setWaiting', () => {
+    it('dismisses a thread and cancels its reminder', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.setWaiting('user-1', 'thread-1', false);
+
+      const [[args]] = prisma.emailThread.updateMany.mock.calls as [
+        [{ where: unknown; data: { waitingDismissedAt: Date } }],
+      ];
+      expect(args.where).toEqual({
+        id: 'thread-1',
+        account: { members: { some: { userId: 'user-1' } } },
+      });
+      expect(args.data).toEqual({
+        waitingDismissedAt: args.data.waitingDismissedAt,
+        followUpAt: null,
+      });
+      expect(args.data.waitingDismissedAt).toBeInstanceOf(Date);
+    });
+
+    it('undoes a dismissal', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.setWaiting('user-1', 'thread-1', true);
+
+      expect(prisma.emailThread.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { waitingDismissedAt: null } }),
+      );
+    });
+
+    it("404s for a thread the user can't access", async () => {
+      const { service, prisma } = buildDeps();
+      prisma.emailThread.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.setWaiting('user-1', 'thread-1', false),
+      ).rejects.toThrow('Thread not found');
+    });
+  });
+
+  describe('setFollowUpReminder', () => {
+    it('sets the reminder the given number of days out', async () => {
+      const { service, prisma } = buildDeps();
+      const before = Date.now();
+
+      await service.setFollowUpReminder('user-1', 'thread-1', 3);
+
+      const [[args]] = prisma.emailThread.updateMany.mock.calls as [
+        [{ data: { followUpAt: Date } }],
+      ];
+      const offset = args.data.followUpAt.getTime() - before;
+      expect(offset).toBeGreaterThanOrEqual(3 * 24 * 60 * 60 * 1000);
+      expect(offset).toBeLessThan(3 * 24 * 60 * 60 * 1000 + 5000);
+    });
+
+    it('cancels the reminder with null', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.setFollowUpReminder('user-1', 'thread-1', null);
+
+      expect(prisma.emailThread.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { followUpAt: null } }),
+      );
     });
   });
 

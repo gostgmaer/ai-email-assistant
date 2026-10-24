@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 
 import {
   ApprovalIcon,
+  ClockIcon,
   DocumentIcon,
   HelpIcon,
   InboxIcon,
@@ -15,6 +16,7 @@ import {
 
 const NAV_ITEMS = [
   { href: "/inbox", label: "Inbox", icon: InboxIcon },
+  { href: "/waiting", label: "Waiting", icon: ClockIcon },
   { href: "/tasks", label: "Tasks", icon: TaskIcon },
   { href: "/approvals", label: "Approvals", icon: ApprovalIcon },
   { href: "/documents", label: "Documents", icon: DocumentIcon },

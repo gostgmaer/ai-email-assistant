@@ -115,16 +115,16 @@ Busy intervals:
         *,
         system_prompt: str,
         draft: str,
-        tone: str,
-        language: str,
+        tone: str | None,
+        language: str | None,
         instruction: str | None = None,
     ) -> list[BaseMessage]:
         return [
             SystemMessage(content=system_prompt),
             HumanMessage(content=f"""
-Tone: {tone}
+Tone: {tone or "Not specified — keep the original's tone"}
 
-Language: {language}
+Language: {language or "Not specified — keep the original's language"}
 
 Instruction:
 {instruction or "None"}

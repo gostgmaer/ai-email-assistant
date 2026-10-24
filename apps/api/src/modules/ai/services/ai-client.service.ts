@@ -8,6 +8,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { EmailMessageDto } from '../dto';
+import {
+  resolveRewriteStyle,
+  RewriteStyle,
+} from '../utils/rewrite-styles.util';
 
 const DEFAULT_AI_REQUEST_TIMEOUT_MS = 60_000;
 // Calls that legitimately take longer than one LLM round-trip: reply
@@ -379,10 +383,14 @@ export class AiClientService {
     };
   }
 
-  async rewrite(draft: string, instruction?: string): Promise<RewriteResponse> {
+  async rewrite(
+    draft: string,
+    instruction?: string,
+    style?: RewriteStyle,
+  ): Promise<RewriteResponse> {
     const res = await this.post<RawRewriteResponse>('/email/rewrite', {
       draft,
-      instruction,
+      ...resolveRewriteStyle(style, instruction),
     });
 
     return {

@@ -1,27 +1,43 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { SendIcon, SparklesIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import type { AttachmentInput, EmailMessage } from "@/lib/api/types";
-import { generateReply, rewrite, toAiThreadMessage } from "@/lib/services/ai.service";
+import { generateReply, toAiThreadMessage } from "@/lib/services/ai.service";
 import { replyToMessage } from "@/lib/services/email.service";
 import { textToSafeHtml } from "@/lib/utils/html";
 
 import { AttachmentPicker, RemindSelect } from "./AttachmentPicker";
+import { RewriteMenu } from "./RewriteMenu";
+
+// Sent with the thread when the user's own message is the newest one, so
+// the AI writes a nudge instead of answering the user's own email.
+const FOLLOW_UP_INSTRUCTION =
+  "The last message in this thread is mine and nobody has answered it yet. " +
+  "Write a short, polite follow-up to the people I wrote to: remind them in " +
+  "one line what I asked and ask whether they have had a chance to look at " +
+  "it. Don't repeat my whole message, don't apologise for following up, and " +
+  "don't say that anything has been sent, attached or done.";
 
 export function ReplyBox({
   threadId,
   subject,
   messages,
   lastMessage,
+  waitingForReply = false,
+  autoDraftFollowUp = false,
 }: {
   threadId: string;
   subject: string;
   messages: EmailMessage[];
   lastMessage: EmailMessage;
+  /** The newest message is the user's own: the AI button drafts a nudge. */
+  waitingForReply?: boolean;
+  /** Start drafting the nudge on load (the Waiting view's link). */
+  autoDraftFollowUp?: boolean;
 }) {
   const [body, setBody] = useState("");
   const [replyAll, setReplyAll] = useState(false);
@@ -32,7 +48,7 @@ export function ReplyBox({
     (lastMessage.to?.length ?? 0) + (lastMessage.cc?.length ?? 0) > 1;
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiClaims, setAiClaims] = useState<string[]>([]);
-  const [aiLoading, setAiLoading] = useState<"reply" | "rewrite" | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const queryClient = useQueryClient();
 
   const replyMutation = useMutation({
@@ -56,36 +72,35 @@ export function ReplyBox({
   });
 
   async function handleAiReply() {
-    setAiLoading("reply");
+    setAiLoading(true);
     setAiError(null);
     setAiClaims([]);
     try {
       const { reply, unsupportedClaims } = await generateReply(
         subject,
         messages.map(toAiThreadMessage),
+        waitingForReply ? FOLLOW_UP_INSTRUCTION : undefined,
       );
       setBody(reply);
       setAiClaims(unsupportedClaims ?? []);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "AI reply failed");
     } finally {
-      setAiLoading(null);
+      setAiLoading(false);
     }
   }
 
-  async function handleAiRewrite() {
-    if (!body.trim()) return;
-    setAiLoading("rewrite");
-    setAiError(null);
-    try {
-      const { text } = await rewrite(body);
-      setBody(text);
-    } catch (error) {
-      setAiError(error instanceof Error ? error.message : "AI rewrite failed");
-    } finally {
-      setAiLoading(null);
+  const startFollowUpDraft = useEffectEvent(() => void handleAiReply());
+  const autoDraftStarted = useRef(false);
+  useEffect(() => {
+    if (!autoDraftFollowUp || !waitingForReply || autoDraftStarted.current) {
+      return;
     }
-  }
+    autoDraftStarted.current = true;
+    // Drop ?followUp=1 so a reload doesn't redraft over the user's edits.
+    window.history.replaceState(null, "", window.location.pathname);
+    startFollowUpDraft();
+  }, [autoDraftFollowUp, waitingForReply]);
 
   return (
     <div className="shrink-0 border-t border-zinc-200 bg-white p-4">
@@ -111,21 +126,12 @@ export function ReplyBox({
               variant="ghost"
               size="sm"
               onClick={handleAiReply}
-              loading={aiLoading === "reply"}
+              loading={aiLoading}
             >
               <SparklesIcon className="h-4 w-4" />
-              AI Reply
+              {waitingForReply ? "Draft follow-up" : "AI Reply"}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleAiRewrite}
-              loading={aiLoading === "rewrite"}
-              disabled={!body.trim()}
-            >
-              Rewrite
-            </Button>
+            <RewriteMenu text={body} onChange={setBody} onError={setAiError} />
           </div>
           <div className="flex items-center gap-3">
             {hasOtherRecipients && (

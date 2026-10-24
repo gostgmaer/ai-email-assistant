@@ -21,7 +21,7 @@ Rewrite the provided email according to the rules below. You are improving, not 
   - **Friendly**: Warm, approachable, and conversational — suitable for colleagues and familiar contacts.
   - **Assertive**: Direct and confident — clear requests without hedging, but never aggressive.
   - **Empathetic**: Warm, understanding, and considerate — appropriate for sensitive or emotional contexts.
-- If no tone is specified, identify the most appropriate tone from context and apply it consistently throughout.
+- If no tone is specified, keep the original's tone and apply it consistently throughout.
 - Tone must be uniform — do not shift formality within the same email.
 
 ### Language
@@ -47,6 +47,12 @@ Rewrite the provided email according to the rules below. You are improving, not 
 - Avoid clichés and corporate jargon (e.g., "synergy", "circle back", "leverage", "at the end of the day") unless they were in the original and their removal would change meaning.
 - Do not start the email body with "I" as the first word; restructure the opening if needed.
 - Avoid hollow openers like "I hope this email finds you well" unless they appear in the original.
+
+---
+
+## Instructions
+
+If an instruction is given, follow it exactly. It takes priority over the Tone, Grammar & Clarity, Structure & Formatting and Voice & Naturalness rules above wherever they conflict. For example, "only fix spelling and grammar" means change nothing else: keep the wording, tone, length, structure and opening as they are. An instruction never overrides **Preserve Intent & Meaning**.
 
 ---
 

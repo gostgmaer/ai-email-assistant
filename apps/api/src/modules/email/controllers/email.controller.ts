@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -29,9 +30,12 @@ import {
   ComposeEmailDto,
   CreateDraftDto,
   CreateNoteDto,
+  ListFollowUpsDto,
   ListThreadsDto,
   ReplyEmailDto,
   SaveDraftDto,
+  SetFollowUpReminderDto,
+  SetWaitingDto,
   SnoozeThreadDto,
 } from '../dto';
 import { ComposeService } from '../services/compose.service';
@@ -75,8 +79,14 @@ export class EmailController {
       'Threads where the user sent the last message and nothing has come back yet',
   })
   @ApiResponse({ status: 200, description: 'Follow-up candidates' })
-  async followUps(@CurrentUser() user: JwtPayload) {
-    return this.inboxService.getFollowUpCandidates(user.sub);
+  async followUps(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: ListFollowUpsDto,
+  ) {
+    return this.inboxService.getFollowUpCandidates(
+      user.sub,
+      query.olderThanDays,
+    );
   }
 
   @Get('threads/:id')
@@ -113,6 +123,38 @@ export class EmailController {
     @Param('id') id: string,
   ) {
     await this.inboxService.unsnooze(user.sub, id);
+  }
+
+  @Patch('threads/:id/waiting')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'Stop (or resume) waiting on a reply — hides the thread from follow-ups until you send another message',
+  })
+  @ApiResponse({ status: 204, description: 'Waiting state updated' })
+  @ApiResponse({ status: 404, description: 'Thread not found' })
+  async setWaiting(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetWaitingDto,
+  ) {
+    await this.inboxService.setWaiting(user.sub, id, dto.waiting);
+  }
+
+  @Patch('threads/:id/follow-up-reminder')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'Set or cancel the "remind me if nobody replies" reminder on a thread',
+  })
+  @ApiResponse({ status: 204, description: 'Reminder updated' })
+  @ApiResponse({ status: 404, description: 'Thread not found' })
+  async setFollowUpReminder(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetFollowUpReminderDto,
+  ) {
+    await this.inboxService.setFollowUpReminder(user.sub, id, dto.days);
   }
 
   @Patch('threads/:id/assign')

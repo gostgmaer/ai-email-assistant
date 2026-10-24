@@ -5,16 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { AttachmentPicker, RemindSelect } from "@/components/inbox/AttachmentPicker";
+import { RewriteMenu } from "@/components/inbox/RewriteMenu";
 import { Button } from "@/components/ui/Button";
 import type { AttachmentInput } from "@/lib/api/types";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { getApprovalChainForDraft } from "@/lib/services/approval-chains.service";
 import { listEmailAccounts } from "@/lib/services/email-accounts.service";
-import { rewrite } from "@/lib/services/ai.service";
 import {
   deleteDraft,
   getMessage,
@@ -24,6 +24,7 @@ import {
   updateDraft,
 } from "@/lib/services/email.service";
 import { formatDateTime, participantListLabel } from "@/lib/utils/format";
+import { textToSafeHtml } from "@/lib/utils/html";
 import { parseRecipients, recipientsToInputValue } from "@/lib/utils/recipients";
 
 const composeSchema = z.object({
@@ -43,7 +44,6 @@ function ComposeContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [rewriteError, setRewriteError] = useState<string | null>(null);
-  const [rewriteLoading, setRewriteLoading] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentInput[]>([]);
   const [remindDays, setRemindDays] = useState<number | undefined>();
 
@@ -86,11 +86,13 @@ function ComposeContent() {
     getValues,
     setValue,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ComposeFormValues>({
     resolver: zodResolver(composeSchema),
     defaultValues: { accountId: "", to: "", cc: "", bcc: "", subject: "", body: "" },
   });
+  const body = useWatch({ control, name: "body" });
 
   useEffect(() => {
     if (!draftMessage) return;
@@ -114,7 +116,7 @@ function ComposeContent() {
 
   const sendMutation = useMutation({
     mutationFn: async (values: ComposeFormValues) => {
-      const bodyHtml = `<p>${values.body.replace(/\n/g, "<br />")}</p>`;
+      const bodyHtml = textToSafeHtml(values.body);
 
       if (draftId) {
         return sendDraft(draftId);
@@ -140,7 +142,7 @@ function ComposeContent() {
 
   const saveDraftMutation = useMutation({
     mutationFn: async (values: ComposeFormValues) => {
-      const bodyHtml = values.body ? `<p>${values.body.replace(/\n/g, "<br />")}</p>` : undefined;
+      const bodyHtml = values.body ? textToSafeHtml(values.body) : undefined;
       const payload = {
         to: values.to ? parseRecipients(values.to) : undefined,
         cc: values.cc ? parseRecipients(values.cc) : undefined,
@@ -169,21 +171,6 @@ function ComposeContent() {
       router.push("/inbox?folderType=DRAFTS");
     },
   });
-
-  async function handleRewrite() {
-    const body = getValues("body");
-    if (!body.trim()) return;
-    setRewriteLoading(true);
-    setRewriteError(null);
-    try {
-      const result = await rewrite(body);
-      setValue("body", result.text);
-    } catch (error) {
-      setRewriteError(error instanceof Error ? error.message : "Rewrite failed");
-    } finally {
-      setRewriteLoading(false);
-    }
-  }
 
   if (accountsLoading || (draftId && draftLoading)) return <FullPageSpinner />;
 
@@ -323,15 +310,13 @@ function ComposeContent() {
             <label className="block text-xs font-medium text-zinc-600">
               Message
             </label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleRewrite}
-              loading={rewriteLoading}
-            >
-              Rewrite with AI
-            </Button>
+            <RewriteMenu
+              text={body}
+              onChange={(text) =>
+                setValue("body", text, { shouldDirty: true, shouldValidate: true })
+              }
+              onError={setRewriteError}
+            />
           </div>
           <textarea
             {...register("body")}

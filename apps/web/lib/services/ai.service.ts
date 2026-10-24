@@ -76,13 +76,17 @@ export interface RewriteResult {
   usage: AiTokenUsage;
 }
 
+/** One-click rewrite presets — the wording sent to the model lives in the
+ * API (rewrite-styles.util.ts). No style polishes the draft in its own tone. */
+export type RewriteStyle = "shorter" | "formal" | "friendly" | "grammar";
+
 export async function rewrite(
   draft: string,
-  instruction?: string,
+  style?: RewriteStyle,
 ): Promise<RewriteResult> {
   return apiFetch("/ai/rewrite", {
     method: "POST",
-    body: { draft, instruction },
+    body: { draft, style },
   });
 }
 

@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ChevronLeftIcon, ClockIcon, SparklesIcon } from "@/components/icons";
@@ -48,6 +48,8 @@ const MessageBody = dynamic(
 export default function ThreadPage() {
   const { threadId } = useParams<{ threadId: string }>();
   const router = useRouter();
+  // Set by the Waiting view's "Draft follow-up" link.
+  const autoDraftFollowUp = useSearchParams().get("followUp") === "1";
   const queryClient = useQueryClient();
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -431,6 +433,8 @@ export default function ThreadPage() {
           subject={thread.subject ?? ""}
           messages={thread.messages}
           lastMessage={lastMessage}
+          waitingForReply={thread.lastMessageFromSelf}
+          autoDraftFollowUp={autoDraftFollowUp}
         />
       )}
     </div>

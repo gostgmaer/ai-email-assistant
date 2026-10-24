@@ -3,8 +3,11 @@ from pydantic import BaseModel
 
 class RewriteRequest(BaseModel):
     draft: str
-    tone: str = "professional"
-    language: str = "en"
+    # Unset keeps the draft's own tone and language. A fixed default here
+    # used to turn every "friendlier" rewrite professional and every
+    # non-English draft into English.
+    tone: str | None = None
+    language: str | None = None
     instruction: str | None = None
 
 

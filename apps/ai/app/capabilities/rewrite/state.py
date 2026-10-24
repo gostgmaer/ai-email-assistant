@@ -12,9 +12,9 @@ class TokenUsage(TypedDict):
 class RewriteState(TypedDict):
     # Input
     draft: str
-    tone: str
-    language: str
-    instruction: NotRequired[str]
+    tone: str | None
+    language: str | None
+    instruction: NotRequired[str | None]
 
     # Runtime
     system_prompt: NotRequired[str]

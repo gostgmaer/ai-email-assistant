@@ -9,7 +9,6 @@ import { EmptyState, ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ApiError } from "@/lib/api/client";
 import type { MeetingTimeSuggestion, Task, TaskStatus } from "@/lib/api/types";
-import { listFollowUps } from "@/lib/services/email.service";
 import {
   listTasks,
   scheduleMeeting,
@@ -329,116 +328,25 @@ function TasksTab() {
   );
 }
 
-function FollowUpsTab() {
-  const {
-    data: followUps,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["follow-ups"],
-    queryFn: listFollowUps,
-  });
-
-  return (
-    <>
-      <p className="text-xs text-zinc-500">
-        Threads where you sent the last message and haven&apos;t heard back.
-      </p>
-
-      {isLoading && <FullPageSpinner />}
-      {isError && (
-        <ErrorState
-          message={
-            error instanceof ApiError ? error.message : "Could not load follow-ups"
-          }
-        />
-      )}
-      {followUps && followUps.length === 0 && (
-        <EmptyState
-          title="Nothing to follow up on"
-          description="Threads awaiting a reply from the other side will show up here."
-        />
-      )}
-
-      {followUps && followUps.length > 0 && (
-        <ul className="space-y-2">
-          {followUps.map((item) => (
-            <li
-              key={item.threadId}
-              className="rounded-lg border border-zinc-200 bg-white p-3"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                  {item.daysSinceLastMessage ?? "?"} day
-                  {item.daysSinceLastMessage === 1 ? "" : "s"} waiting
-                </span>
-                <span className="text-[11px] text-zinc-400">
-                  {item.account.email}
-                </span>
-              </div>
-              <Link
-                href={`/inbox/${item.threadId}`}
-                className="mt-1 block text-sm font-medium text-zinc-800 hover:text-indigo-600 hover:underline"
-              >
-                {item.subject || "(no subject)"}
-              </Link>
-              {item.relatedMeetingRequests.length > 0 && (
-                <p className="mt-1 text-xs text-zinc-500">
-                  Meeting request: {item.relatedMeetingRequests[0].description}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
 export default function TasksPage() {
-  const [view, setView] = useState<"tasks" | "follow-ups">("tasks");
-
   return (
     <div className="mx-auto w-full  flex-1 space-y-6 p-4">
       <div>
-        <h1 className="text-lg font-semibold text-zinc-900">
-          Tasks &amp; Follow-ups
-        </h1>
+        <h1 className="text-lg font-semibold text-zinc-900">Tasks</h1>
         <p className="text-sm text-zinc-500">
-          Action items, meeting requests, and emails awaiting a reply —
-          automatically surfaced from your inbox.
+          Action items and meeting requests — automatically surfaced from your
+          inbox. Emails awaiting a reply are under{" "}
+          <Link
+            href="/waiting"
+            className="font-medium text-indigo-600 hover:underline"
+          >
+            Waiting
+          </Link>
+          .
         </p>
       </div>
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setView("tasks")}
-          className={clsx(
-            "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-            view === "tasks"
-              ? "bg-indigo-600 text-white"
-              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200",
-          )}
-        >
-          Tasks
-        </button>
-        <button
-          type="button"
-          onClick={() => setView("follow-ups")}
-          className={clsx(
-            "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-            view === "follow-ups"
-              ? "bg-indigo-600 text-white"
-              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200",
-          )}
-        >
-          Follow-ups
-        </button>
-      </div>
-
-      {view === "tasks" ? <TasksTab /> : <FollowUpsTab />}
+      <TasksTab />
     </div>
   );
 }
