@@ -1,3 +1,5 @@
+import { NormalizedParticipant } from '../../email/interfaces';
+import { describeAttachments } from '../../email/utils/attachments.util';
 import { EmailMessageDto } from '../dto';
 
 /**
@@ -117,4 +119,31 @@ export function buildThreadContext(
   }
 
   return [first, ...middle, latest];
+}
+
+export function firstParticipant(
+  from: unknown,
+): NormalizedParticipant | undefined {
+  const list = from as NormalizedParticipant[] | undefined;
+  return Array.isArray(list) ? list[0] : undefined;
+}
+
+export function toEmailMessageDto(message: {
+  from: unknown;
+  bodyText: string | null;
+  attachments?: { filename: string; mimeType: string; size: number }[];
+}): EmailMessageDto {
+  const from = firstParticipant(message.from);
+  // The AI sees attachment names, types and sizes — never their content.
+  // First, so quote stripping (which cuts from "On ... wrote:" down) can't
+  // drop it.
+  const attachments = message.attachments?.length
+    ? `[Attachments: ${describeAttachments(message.attachments)}]\n\n`
+    : '';
+
+  return {
+    name: from?.name ?? from?.address ?? 'Unknown',
+    email: from?.address ?? 'unknown@example.com',
+    content: attachments + (message.bodyText ?? ''),
+  };
 }

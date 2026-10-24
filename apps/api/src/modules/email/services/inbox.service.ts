@@ -153,6 +153,24 @@ export class InboxService {
     await this.queueService.cancelSnoozeWake(threadId);
   }
 
+  /** Stores a summary the user asked for, in the same fields the AI
+   * pipeline overwrites whenever a new message lands on the thread. */
+  async saveSummary(
+    userId: string,
+    threadId: string,
+    summary: string,
+    keyPoints: string[],
+  ): Promise<void> {
+    const { count } = await this.prisma.emailThread.updateMany({
+      where: { id: threadId, account: { members: { some: { userId } } } },
+      data: { summary, summaryKeyPoints: keyPoints },
+    });
+
+    if (count === 0) {
+      throw new NotFoundException('Thread not found');
+    }
+  }
+
   /**
    * Shared Inbox (v2.0): claim/reassign/unassign a thread. Any member can
    * do this (not owner-only) — matches how shared mailboxes elsewhere

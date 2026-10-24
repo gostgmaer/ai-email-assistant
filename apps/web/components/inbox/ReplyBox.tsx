@@ -31,6 +31,7 @@ export function ReplyBox({
   const hasOtherRecipients =
     (lastMessage.to?.length ?? 0) + (lastMessage.cc?.length ?? 0) > 1;
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiClaims, setAiClaims] = useState<string[]>([]);
   const [aiLoading, setAiLoading] = useState<"reply" | "rewrite" | null>(null);
   const queryClient = useQueryClient();
 
@@ -46,6 +47,7 @@ export function ReplyBox({
       }),
     onSuccess: () => {
       setBody("");
+      setAiClaims([]);
       setAttachments([]);
       setRemindDays(undefined);
       void queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
@@ -56,12 +58,14 @@ export function ReplyBox({
   async function handleAiReply() {
     setAiLoading("reply");
     setAiError(null);
+    setAiClaims([]);
     try {
-      const { reply } = await generateReply(
+      const { reply, unsupportedClaims } = await generateReply(
         subject,
         messages.map(toAiThreadMessage),
       );
       setBody(reply);
+      setAiClaims(unsupportedClaims ?? []);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "AI reply failed");
     } finally {
@@ -147,6 +151,19 @@ export function ReplyBox({
         </div>
       </div>
 
+      {aiClaims.length > 0 && (
+        <div className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800 ring-1 ring-amber-200 ring-inset">
+          <p className="font-medium">
+            Check before sending — the AI can&apos;t attach files or complete
+            tasks for you:
+          </p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+            {aiClaims.map((claim) => (
+              <li key={claim}>{claim}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {aiError && <p className="mt-1.5 text-xs text-red-600">{aiError}</p>}
       {replyMutation.isError && (
         <p className="mt-1.5 text-xs text-red-600">

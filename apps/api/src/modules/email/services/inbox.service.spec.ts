@@ -119,6 +119,33 @@ describe('InboxService', () => {
     });
   });
 
+  describe('saveSummary', () => {
+    it('saves the summary only on a thread the user is a member of', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.saveSummary('user-1', 'thread-1', 'Short summary', [
+        'Point A',
+      ]);
+
+      expect(prisma.emailThread.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'thread-1',
+          account: { members: { some: { userId: 'user-1' } } },
+        },
+        data: { summary: 'Short summary', summaryKeyPoints: ['Point A'] },
+      });
+    });
+
+    it("reports someone else's thread as not found", async () => {
+      const { service, prisma } = buildDeps();
+      prisma.emailThread.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.saveSummary('user-1', 'thread-1', 'x', []),
+      ).rejects.toThrow('Thread not found');
+    });
+  });
+
   describe('retryAiProcessing', () => {
     const message = (aiProcessedAt: Date | null) => ({
       id: 'message-1',

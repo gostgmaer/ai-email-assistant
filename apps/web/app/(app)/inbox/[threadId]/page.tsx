@@ -14,7 +14,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
 import { FullPageSpinner, Spinner } from "@/components/ui/Spinner";
-import { summarize, toAiThreadMessage } from "@/lib/services/ai.service";
+import type { EmailThreadDetail } from "@/lib/api/types";
+import { summarizeThread } from "@/lib/services/ai.service";
 import { listAccountMembers } from "@/lib/services/email-accounts.service";
 import {
   addThreadNote,
@@ -48,7 +49,6 @@ export default function ThreadPage() {
   const { threadId } = useParams<{ threadId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -133,11 +133,18 @@ export default function ThreadPage() {
     setSummaryLoading(true);
     setSummaryError(null);
     try {
-      const result = await summarize(
-        thread.subject ?? "",
-        thread.messages.map(toAiThreadMessage),
+      const result = await summarizeThread(thread.id);
+      queryClient.setQueryData<EmailThreadDetail>(
+        ["thread", threadId],
+        (current) =>
+          current && {
+            ...current,
+            summary: result.summary,
+            summaryKeyPoints: result.keyPoints,
+          },
       );
-      setSummary(result.summary);
+      // The inbox list shows the saved summary too.
+      void queryClient.invalidateQueries({ queryKey: ["threads"] });
     } catch (err) {
       setSummaryError(err instanceof Error ? err.message : "Failed to summarize");
     } finally {
@@ -247,7 +254,7 @@ export default function ThreadPage() {
           loading={summaryLoading}
         >
           <SparklesIcon className="h-4 w-4" />
-          Summarize
+          {thread.summary ? "Refresh summary" : "Summarize"}
         </Button>
       </div>
 
@@ -256,13 +263,20 @@ export default function ThreadPage() {
           {summaryError}
         </p>
       )}
-      {summary && (
-        <div className="shrink-0 border-b border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+      {thread.summary && (
+        <div className="max-h-48 shrink-0 overflow-y-auto border-b border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
           <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-indigo-500 uppercase">
             <SparklesIcon className="h-3.5 w-3.5" />
             AI Summary
           </p>
-          {summary}
+          {thread.summary}
+          {thread.summaryKeyPoints.length > 0 && (
+            <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-indigo-800">
+              {thread.summaryKeyPoints.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

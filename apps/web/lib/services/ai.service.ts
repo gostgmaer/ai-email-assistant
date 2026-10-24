@@ -40,11 +40,22 @@ export async function summarize(
   });
 }
 
+/** Summarizes a thread on the server and saves the result on it, so the
+ * inbox list shows the same summary. */
+export async function summarizeThread(
+  threadId: string,
+): Promise<SummarizeResult> {
+  return apiFetch(`/ai/threads/${threadId}/summary`, { method: "POST" });
+}
+
 export interface GenerateReplyResult {
   reply: string;
   provider: string;
   model: string;
   usage: AiTokenUsage;
+  // Sentences saying something is already done or attached — the AI can do
+  // neither, so the user should check them before sending.
+  unsupportedClaims?: string[];
 }
 
 export async function generateReply(

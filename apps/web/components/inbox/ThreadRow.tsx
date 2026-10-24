@@ -1,6 +1,7 @@
 import { clsx } from "clsx";
 import Link from "next/link";
 
+import { SparklesIcon } from "@/components/icons";
 import { Avatar } from "@/components/ui/Avatar";
 import type { EmailThreadSummary } from "@/lib/api/types";
 import {
@@ -85,8 +86,21 @@ export function ThreadRow({
           )}
           {thread.subject || "(no subject)"}
         </p>
-        <p className="truncate text-xs text-zinc-400">
-          {thread.snippet}
+        <p
+          className="truncate text-xs text-zinc-400"
+          title={thread.summary ?? undefined}
+        >
+          {/* The AI's summary of the whole conversation says more than the
+              latest message's first line, so it replaces the snippet. */}
+          {thread.summary ? (
+            <>
+              <SparklesIcon className="mr-1 inline h-3 w-3 align-[-2px] text-indigo-400" />
+              <span className="sr-only">AI summary: </span>
+              {thread.summary}
+            </>
+          ) : (
+            thread.snippet
+          )}
           {thread._count.messages > 1 && (
             <span className="ml-1.5 rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
               {thread._count.messages}

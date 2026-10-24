@@ -1395,6 +1395,30 @@ describe('AiProcessingProcessor', () => {
       ]);
     });
 
+    it('holds a reply that says a file is attached, even when every other rail passes', async () => {
+      const deps = buildDeps({ rule: AUTO_REPLY_RULE });
+      deps.aiClientService.generateReply.mockResolvedValue({
+        reply: 'Hi Casey,\n\nPlease find the signed NDA attached.',
+        provider: 'test',
+        model: 'test-model',
+        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      });
+
+      await deps.run();
+
+      expect(deps.composeService.reply).not.toHaveBeenCalled();
+      const [, , , metadata] = deps.composeService.saveDraftReply.mock
+        .calls[0] as [
+        unknown,
+        unknown,
+        unknown,
+        { unsupportedClaims?: string[] },
+      ];
+      expect(metadata.unsupportedClaims).toEqual([
+        '"Please find the signed NDA attached." says something is already done or attached; nothing in the conversation shows that.',
+      ]);
+    });
+
     it('still saves the draft when the check itself fails', async () => {
       const deps = buildDeps();
       deps.aiClientService.validateReply.mockRejectedValue(new Error('timeout'));

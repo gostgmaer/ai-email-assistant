@@ -443,6 +443,10 @@ export interface EmailThreadSummary {
   messages: EmailMessage[];
   assignedTo: ThreadAssignee | null;
   _count: { messages: number };
+  /** AI summary of the conversation; null until it has 2+ messages or
+   * someone clicks Summarize. */
+  summary: string | null;
+  summaryKeyPoints: string[];
 }
 
 // Deliberately NOT `Omit<EmailThreadSummary, "messages">` — InboxService.getThread
@@ -467,6 +471,8 @@ export interface EmailThreadDetail {
   messages: ThreadDetailMessage[];
   assignedTo: ThreadAssignee | null;
   notes: ThreadNote[];
+  summary: string | null;
+  summaryKeyPoints: string[];
 }
 
 export interface Pagination {

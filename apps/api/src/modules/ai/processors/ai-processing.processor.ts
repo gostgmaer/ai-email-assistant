@@ -39,8 +39,6 @@ import {
   DocumentsService,
 } from '../../documents/services/documents.service';
 import { isAutomatedAddress } from '../../email/providers/bulk-mail.util';
-import { NormalizedParticipant } from '../../email/interfaces';
-import { describeAttachments } from '../../email/utils/attachments.util';
 import {
   AUTO_REPLY_HEADERS,
   ComposeService,
@@ -68,6 +66,7 @@ import {
   ContactMemoryMatch,
   ContactMemoryService,
 } from '../services/contact-memory.service';
+import { scanOutputForActionClaims } from '../utils/action-claim-scan.util';
 import {
   classifySenderTrust,
   findVerbatimQuote,
@@ -78,7 +77,9 @@ import { scheduleAutoSend } from '../utils/send-schedule.util';
 import { hasSignature, withSignature } from '../utils/signature.util';
 import {
   buildThreadContext,
+  firstParticipant,
   stripQuotedHistory,
+  toEmailMessageDto,
 } from '../utils/thread-context.util';
 import { scanOutputForPolicyViolations } from '../utils/output-policy-scan.util';
 
@@ -540,6 +541,7 @@ export class AiProcessingProcessor
       reply.reply,
       account.prohibitedPhrases,
     );
+    const actionClaimScan = scanOutputForActionClaims(reply.reply);
 
     // Workflow Builder (v2.0 §3): the account's WorkflowRule rows decide
     // whether this reply auto-sends. replyDirectives was already resolved
@@ -585,6 +587,10 @@ export class AiProcessingProcessor
       // - outputPiiScan / outputPolicyScan: never auto-send text that
       //   looks like it contains an SSN/account number, or that trips
       //   the account's own prohibited-phrase list (empty by default).
+      // - actionClaimScan: never auto-send a reply saying a task is
+      //   already done or a file is attached — the AI can do neither, and
+      //   validateReply reliably misses these (the request is in the
+      //   thread, so the claim "looks" supported).
       // - validateReply: a second, more expensive LLM call checking the
       //   draft actually addresses the thread, has no grammar issues,
       //   and self-reports enough confidence — only paid for once the
@@ -596,6 +602,7 @@ export class AiProcessingProcessor
         classification.priority.toLowerCase() !== 'urgent';
       const passesPiiRail = !outputPiiScan.detected;
       const passesPolicyRail = !outputPolicyScan.violated;
+      const passesActionClaimRail = !actionClaimScan.detected;
       const groundingBlocker = autoReply
         ? await this.findGroundingBlocker(
             account,
@@ -619,6 +626,7 @@ export class AiProcessingProcessor
         passesUrgentRail &&
         passesPiiRail &&
         passesPolicyRail &&
+        passesActionClaimRail &&
         passesGroundingRail
       ) {
         const { validation } = await this.aiClientService.validateReply(
@@ -678,8 +686,15 @@ export class AiProcessingProcessor
         passesUrgentRail &&
         passesPiiRail &&
         passesPolicyRail &&
+        passesActionClaimRail &&
         passesGroundingRail &&
         passesValidationRail;
+    }
+
+    if (actionClaimScan.detected) {
+      this.logger.warn(
+        `Generated reply for message ${messageId} says a task is already done or a file is attached — will not auto-send regardless of matching rules.`,
+      );
     }
 
     if (outputPiiScan.detected) {
@@ -881,6 +896,14 @@ export class AiProcessingProcessor
             );
             return undefined;
           });
+      }
+      // The deterministic claims go first: they're the ones the LLM check
+      // above tends to miss.
+      if (actionClaimScan.detected) {
+        unsupportedClaims = [
+          ...actionClaimScan.claims,
+          ...(unsupportedClaims ?? []),
+        ];
       }
 
       const draft = await this.composeService.saveDraftReply(
@@ -1545,31 +1568,6 @@ function isUniqueViolation(error: unknown): boolean {
 
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : JSON.stringify(error);
-}
-
-function firstParticipant(from: unknown): NormalizedParticipant | undefined {
-  const list = from as NormalizedParticipant[] | undefined;
-  return Array.isArray(list) ? list[0] : undefined;
-}
-
-function toEmailMessageDto(message: {
-  from: unknown;
-  bodyText: string | null;
-  attachments?: { filename: string; mimeType: string; size: number }[];
-}): EmailMessageDto {
-  const from = firstParticipant(message.from);
-  // The AI sees attachment names, types and sizes — never their content.
-  // First, so quote stripping (which cuts from "On ... wrote:" down) can't
-  // drop it.
-  const attachments = message.attachments?.length
-    ? `[Attachments: ${describeAttachments(message.attachments)}]\n\n`
-    : '';
-
-  return {
-    name: from?.name ?? from?.address ?? 'Unknown',
-    email: from?.address ?? 'unknown@example.com',
-    content: attachments + (message.bodyText ?? ''),
-  };
 }
 
 function buildContextInstruction(
