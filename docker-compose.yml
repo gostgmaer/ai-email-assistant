@@ -1,3 +1,26 @@
+# Local development stack — everything the apps need, on one machine.
+#
+#   Whole stack (web http://localhost:3001, api :3000, ai :8000):
+#     docker compose up -d --build
+#
+#   Dependencies only, to run api/worker/ai/web natively (npm / uvicorn):
+#     docker compose up -d postgres redis mongo file-service mailpit
+#
+# Ports published on the host (override any of them in a root .env, which
+# Compose reads for ${...} substitution):
+#   postgres      5433  POSTGRES_HOST_PORT   (5432 is often another project's)
+#   redis         6380  REDIS_HOST_PORT
+#   file-service  4001  FILE_SERVICE_HOST_PORT
+#   mailpit       8025 (inbox UI), 1025 (SMTP)
+#   pgadmin       5050
+#
+# The file service is the sibling repo Backend/file-upload-service, built
+# from FILE_SERVICE_PATH (default: ../../../Backend/file-upload-service,
+# i.e. WorkSpace/Backend/file-upload-service). It stores uploads on a local
+# volume; nothing goes to the hosted fms.easydev.in.
+#
+# Production uses docker-compose.prod.yml, not this file.
+
 services:
   postgres:
     image: pgvector/pgvector:pg17
@@ -11,10 +34,10 @@ services:
       POSTGRES_PASSWORD: postgres
 
     ports:
-      # Set POSTGRES_HOST_PORT (e.g. 5433) when another project's Postgres
-      # already holds 5432 on this machine — and point DATABASE_URL in
-      # apps/api/.env at the same port.
-      - "${POSTGRES_HOST_PORT:-5432}:5432"
+      # 5433 rather than 5432: another project's Postgres usually holds
+      # 5432 on this machine. DATABASE_URL in apps/api/.env (for a natively
+      # run API) must use the same port.
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -49,6 +72,81 @@ services:
       timeout: 5s
       retries: 5
 
+  # File-service metadata store. Not published: only file-service uses it,
+  # and another project's Mongo may already hold 27017 on the host.
+  mongo:
+    image: mongo:7
+    container_name: ai-email-mongo
+
+    restart: unless-stopped
+
+    volumes:
+      - mongo_data:/data/db
+
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Document uploads (apps/api) and downloads (apps/ai) go through this —
+  # see FILE_SERVICE_* in apps/api/src/config/env.schema.ts.
+  file-service:
+    build:
+      context: ${FILE_SERVICE_PATH:-../../../Backend/file-upload-service}
+      dockerfile: Dockerfile
+    container_name: ai-email-file-service
+
+    restart: unless-stopped
+
+    # Deliberately no env_file: that repo's .env may hold cloud storage
+    # credentials or a production Mongo URI. Local dev needs only these.
+    environment:
+      NODE_ENV: production
+      PORT: 4001
+      MONGO_URI: mongodb://mongo:27017/fms-service
+      # Must equal FILE_SERVICE_HMAC_SECRET on api, worker and ai below.
+      GATEWAY_AUTH_REQUIRED: "true"
+      GATEWAY_INTERNAL_SECRET: ${FILE_SERVICE_HMAC_SECRET:-local-dev-file-service-hmac-secret-0001}
+      DEFAULT_TENANT_ID: easydev
+      STORAGE_TYPE: local
+      LOCAL_SIGNED_URL_SECRET: ${FILE_SERVICE_SIGNED_URL_SECRET:-local-dev-file-service-signed-url-secret-0001}
+      CORS_ORIGIN: http://localhost:3001,http://localhost:3000
+
+    ports:
+      # Loopback only, for a natively run api/ai (FILE_SERVICE_URL=
+      # http://localhost:4001); containers use http://file-service:4001.
+      - "127.0.0.1:${FILE_SERVICE_HOST_PORT:-4001}:4001"
+
+    volumes:
+      - file_uploads:/app/uploads
+
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Catches every email the API sends (verification, password reset,
+  # notifications) — read them at http://localhost:8025. Mail sent through
+  # connected Gmail/Outlook accounts is unaffected: that goes through the
+  # provider's API, not SMTP.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ai-email-mailpit
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: ai-email-pgadmin
@@ -78,7 +176,11 @@ services:
       - apps/ai/.env
 
     environment:
-      FILE_SERVICE_URL: https://fms.easydev.in
+      FILE_SERVICE_URL: http://file-service:4001
+      FILE_SERVICE_HMAC_SECRET: ${FILE_SERVICE_HMAC_SECRET:-local-dev-file-service-hmac-secret-0001}
+      # Only used when LLM_PROVIDER=ollama — Ollama runs on the host, not
+      # in this stack, and localhost inside the container is the container.
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
 
     ports:
       # Loopback only: api/worker reach this over the compose network
@@ -88,6 +190,10 @@ services:
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+    depends_on:
+      file-service:
+        condition: service_healthy
 
     healthcheck:
       # No curl in the python:3.14-slim base image — a stdlib-only
@@ -110,12 +216,18 @@ services:
       - apps/api/.env
 
     environment:
+      # production, not development: the image is built with production
+      # dependencies only, and development logging needs pino-pretty.
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_email?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
       AI_SERVICE_URL: http://ai:8000
-      FILE_SERVICE_URL: https://fms.easydev.in
+      FILE_SERVICE_URL: http://file-service:4001
+      FILE_SERVICE_HMAC_SECRET: ${FILE_SERVICE_HMAC_SECRET:-local-dev-file-service-hmac-secret-0001}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURE: "false"
 
     ports:
       - "3000:3000"
@@ -130,6 +242,10 @@ services:
         condition: service_healthy
       ai:
         condition: service_healthy
+      file-service:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
 
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
@@ -155,7 +271,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       AI_SERVICE_URL: http://ai:8000
-      FILE_SERVICE_URL: https://fms.easydev.in
+      FILE_SERVICE_URL: http://file-service:4001
+      FILE_SERVICE_HMAC_SECRET: ${FILE_SERVICE_HMAC_SECRET:-local-dev-file-service-hmac-secret-0001}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURE: "false"
 
     command: ["node", "dist/main.worker.js"]
 
@@ -186,24 +306,35 @@ services:
       retries: 5
       start_period: 20s
 
-  # web:
-  #   build:
-  #     context: .
-  #     dockerfile: apps/web/Dockerfile
-  #     args:
-  #       NEXT_PUBLIC_API_URL: http://localhost:3000
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Baked into the browser bundle at build time — the browser calls
+        # the API on the host's published port, not over the compose network.
+        NEXT_PUBLIC_API_URL: http://localhost:3000
 
-  #   container_name: ai-email-web
+    container_name: ai-email-web
 
-  #   restart: unless-stopped
+    restart: unless-stopped
 
-  #   ports:
-  #     - "3001:3000"
+    environment:
+      # Docker sets HOSTNAME to the container id; Next's standalone server
+      # binds to it, so set it explicitly to listen on every interface.
+      HOSTNAME: 0.0.0.0
 
-  #   depends_on:
-  #     api:
-  #       condition: service_started
+    ports:
+      # 3001 on the host — the API already has 3000, and FRONTEND_URL in
+      # apps/api/.env points here.
+      - "3001:3000"
+
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   postgres_data:
   redis_data:
+  mongo_data:
+  file_uploads:
