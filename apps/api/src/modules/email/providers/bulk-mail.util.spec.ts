@@ -1,4 +1,8 @@
-import { detectBulkMailSignals } from './bulk-mail.util';
+import {
+  bulkKindOf,
+  DEFAULT_MAIL_FILTER_SETTINGS,
+  detectBulkMailSignals,
+} from './bulk-mail.util';
 
 describe('detectBulkMailSignals — autoReply', () => {
   const human = 'casey@example.com';
@@ -61,4 +65,45 @@ describe('detectBulkMailSignals — autoReply', () => {
       );
     },
   );
+});
+
+describe('bulkKindOf', () => {
+  const human = 'sam@client.io';
+
+  it('is a newsletter for mailing-list mail', () => {
+    const signals = detectBulkMailSignals(
+      { listUnsubscribe: '<https://x.example/u>' },
+      'news@brand.example',
+      'This week',
+    );
+    expect(signals.mailingList).toBe(true);
+    expect(bulkKindOf(signals)).toBe('NEWSLETTER');
+  });
+
+  it('is a newsletter for marketing subjects', () => {
+    expect(
+      bulkKindOf(detectBulkMailSignals({}, human, 'Black Friday sale')),
+    ).toBe('NEWSLETTER');
+  });
+
+  it('is a notification for other automated mail', () => {
+    expect(
+      bulkKindOf(
+        detectBulkMailSignals({}, 'no-reply@bank.example', 'Statement ready'),
+      ),
+    ).toBe('NOTIFICATION');
+    expect(
+      bulkKindOf(detectBulkMailSignals({}, human, 'Your OTP is 1234')),
+    ).toBe('NOTIFICATION');
+  });
+
+  it('is null for normal mail, and when the category filter is off', () => {
+    expect(bulkKindOf(detectBulkMailSignals({}, human, 'Hello'))).toBeNull();
+    expect(
+      bulkKindOf(detectBulkMailSignals({}, human, 'Big sale'), {
+        ...DEFAULT_MAIL_FILTER_SETTINGS,
+        filterMarketing: false,
+      }),
+    ).toBeNull();
+  });
 });

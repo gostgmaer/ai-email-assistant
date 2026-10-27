@@ -6,6 +6,8 @@ import type {
   MailFolderSummary,
   ThreadNote,
   ThreadsPage,
+  ThreadTriage,
+  TriageCounts,
 } from "../api/types";
 
 export interface ListThreadsParams {
@@ -13,6 +15,7 @@ export interface ListThreadsParams {
   folderType?: string;
   q?: string;
   priority?: string;
+  triage?: ThreadTriage;
   snoozed?: boolean;
   page?: number;
   limit?: number;
@@ -26,11 +29,62 @@ export async function listThreads(
   if (params.folderType) query.set("folderType", params.folderType);
   if (params.q) query.set("q", params.q);
   if (params.priority) query.set("priority", params.priority);
+  if (params.triage) query.set("triage", params.triage);
   if (params.snoozed) query.set("snoozed", "true");
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
   const qs = query.toString();
   return apiFetch<ThreadsPage>(`/email/threads${qs ? `?${qs}` : ""}`);
+}
+
+export async function getTriageCounts(accountId?: string): Promise<TriageCounts> {
+  const qs = accountId ? `?accountId=${encodeURIComponent(accountId)}` : "";
+  return apiFetch<TriageCounts>(`/email/threads/triage-counts${qs}`);
+}
+
+export async function previewNewsletterCleanup(
+  olderThanDays: number,
+  accountId?: string,
+): Promise<{ count: number }> {
+  const query = new URLSearchParams({ olderThanDays: String(olderThanDays) });
+  if (accountId) query.set("accountId", accountId);
+  return apiFetch<{ count: number }>(
+    `/email/threads/cleanup-newsletters?${query.toString()}`,
+  );
+}
+
+export interface NewsletterCleanupResult {
+  archived: number;
+  failed: number;
+  remaining: number;
+}
+
+/** Archives old inbox newsletters in the mailbox itself, not only here. */
+export async function cleanupNewsletters(
+  olderThanDays: number,
+  accountId?: string,
+): Promise<NewsletterCleanupResult> {
+  return apiFetch<NewsletterCleanupResult>(
+    "/email/threads/cleanup-newsletters",
+    { method: "POST", body: { olderThanDays, accountId } },
+  );
+}
+
+export interface UnsubscribeOptions {
+  oneClickUrl?: string;
+  url?: string;
+  mailto?: { address: string; subject?: string; body?: string };
+}
+
+export async function getUnsubscribeOptions(
+  threadId: string,
+): Promise<UnsubscribeOptions> {
+  return apiFetch<UnsubscribeOptions>(`/email/threads/${threadId}/unsubscribe`);
+}
+
+/** RFC 8058 one-click unsubscribe, sent by the server. */
+export async function unsubscribeOneClick(threadId: string): Promise<void> {
+  await apiFetch(`/email/threads/${threadId}/unsubscribe`, { method: "POST" });
 }
 
 export async function getThread(id: string): Promise<EmailThreadDetail> {

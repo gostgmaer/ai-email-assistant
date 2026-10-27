@@ -427,6 +427,8 @@ export class MicrosoftGraphClient implements MailProviderClient {
         size: attachment.size ?? 0,
         isInline: attachment.isInline ?? false,
       })),
+      listUnsubscribe: header('List-Unsubscribe'),
+      listUnsubscribePost: header('List-Unsubscribe-Post'),
       bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('List-Unsubscribe'),

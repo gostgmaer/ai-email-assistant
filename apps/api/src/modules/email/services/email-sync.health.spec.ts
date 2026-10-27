@@ -48,6 +48,7 @@ describe('EmailSyncService — change tracking and sync health', () => {
         shipping: false,
         calendar: false,
         autoReply: false,
+        mailingList: false,
       },
       ...overrides,
     };
@@ -166,6 +167,7 @@ describe('EmailSyncService — change tracking and sync health', () => {
       } as unknown as MailProviderFactory,
       queueService as unknown as QueueService,
       configService,
+      { refreshQuietly: jest.fn().mockResolvedValue(undefined) } as never,
     );
 
     return { service, emailAccountService, queueService };

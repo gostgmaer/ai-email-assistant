@@ -57,6 +57,7 @@ export async function updateEmailAccount(
     filterBilling?: boolean;
     filterShipping?: boolean;
     filterCalendar?: boolean;
+    keepNewsletters?: boolean;
     prohibitedPhrases?: string[];
     autoSendEnabled?: boolean;
     autoSendHourlyCap?: number;

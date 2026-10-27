@@ -45,6 +45,8 @@ export interface EmailAccount {
   filterBilling: boolean;
   filterShipping: boolean;
   filterCalendar: boolean;
+  /** Keep newsletters in a Newsletters group instead of dropping them. */
+  keepNewsletters: boolean;
   prohibitedPhrases: string[];
   autoSendEnabled: boolean;
   autoSendHourlyCap: number;
@@ -290,6 +292,8 @@ export interface EmailMessage {
    * processed before this existed. */
   needsReply?: boolean | null;
   replyReason?: string | null;
+  /** Raw List-Unsubscribe header; set on newsletter mail. */
+  listUnsubscribe?: string | null;
 }
 
 /** An AI-generated reply held for review, as surfaced on the message it
@@ -425,6 +429,11 @@ export interface ThreadDetailMessage extends EmailMessage {
   draftReplies: PendingDraftReply[];
 }
 
+/** Smart triage inbox groups (EmailThread.triage on the API). */
+export type ThreadTriage = "NEEDS_REPLY" | "FYI" | "NOTIFICATION" | "NEWSLETTER";
+
+export type TriageCounts = Record<ThreadTriage | "all", number>;
+
 export interface EmailThreadSummary {
   id: string;
   folderId: string;
@@ -447,6 +456,8 @@ export interface EmailThreadSummary {
    * someone clicks Summarize. */
   summary: string | null;
   summaryKeyPoints: string[];
+  /** Null until the triage scan reaches an older thread. */
+  triage: ThreadTriage | null;
 }
 
 // Deliberately NOT `Omit<EmailThreadSummary, "messages">` — InboxService.getThread
@@ -476,6 +487,7 @@ export interface EmailThreadDetail {
   /** The newest message is the user's own — they're waiting on a reply. */
   lastMessageFromSelf: boolean;
   followUpAt: string | null;
+  triage: ThreadTriage | null;
 }
 
 export interface Pagination {

@@ -27,6 +27,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
 import {
   AssignThreadDto,
+  CleanupNewslettersDto,
   ComposeEmailDto,
   CreateDraftDto,
   CreateNoteDto,
@@ -40,6 +41,7 @@ import {
 } from '../dto';
 import { ComposeService } from '../services/compose.service';
 import { InboxService } from '../services/inbox.service';
+import { UnsubscribeService } from '../services/unsubscribe.service';
 
 @ApiTags('email')
 @ApiBearerAuth('access-token')
@@ -49,6 +51,7 @@ export class EmailController {
   constructor(
     private readonly inboxService: InboxService,
     private readonly composeService: ComposeService,
+    private readonly unsubscribeService: UnsubscribeService,
   ) {}
 
   @Get('threads')
@@ -61,6 +64,72 @@ export class EmailController {
     @Query() query: ListThreadsDto,
   ) {
     return this.inboxService.listThreads(user.sub, query);
+  }
+
+  // Declared before threads/:id so the literal paths aren't parsed as ids.
+  @Get('threads/triage-counts')
+  @ApiOperation({ summary: 'Smart triage: inbox thread counts per group' })
+  async getTriageCounts(
+    @CurrentUser() user: JwtPayload,
+    @Query('accountId', new ParseUUIDPipe({ optional: true }))
+    accountId?: string,
+  ) {
+    return this.inboxService.getTriageCounts(user.sub, accountId);
+  }
+
+  @Get('threads/cleanup-newsletters')
+  @ApiOperation({
+    summary: 'How many newsletter threads Clean up would archive',
+  })
+  async previewNewsletterCleanup(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: CleanupNewslettersDto,
+  ) {
+    return this.inboxService.previewNewsletterCleanup(
+      user.sub,
+      query.olderThanDays,
+      query.accountId,
+    );
+  }
+
+  @Post('threads/cleanup-newsletters')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Archive inbox newsletter threads older than N days (at the provider too)',
+  })
+  async cleanupNewsletters(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CleanupNewslettersDto,
+  ) {
+    return this.inboxService.cleanupNewsletters(
+      user.sub,
+      dto.olderThanDays,
+      dto.accountId,
+    );
+  }
+
+  @Get('threads/:id/unsubscribe')
+  @ApiOperation({
+    summary: "How this thread's newsletter can be unsubscribed from",
+  })
+  async getUnsubscribeOptions(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.unsubscribeService.getOptions(user.sub, id);
+  }
+
+  @Post('threads/:id/unsubscribe')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: "One-click unsubscribe (RFC 8058) from this thread's newsletter",
+  })
+  async unsubscribe(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.unsubscribeService.unsubscribeOneClick(user.sub, id);
   }
 
   @Get('accounts/:accountId/folders')

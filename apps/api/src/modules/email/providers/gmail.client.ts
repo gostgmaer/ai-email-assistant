@@ -425,6 +425,8 @@ export class GmailClient implements MailProviderClient {
       messageIdHeader: header('Message-ID')?.trim(),
       references: parseMessageIdList(header('References')),
       attachments: this.collectAttachments(message.payload),
+      listUnsubscribe: header('List-Unsubscribe'),
+      listUnsubscribePost: header('List-Unsubscribe-Post'),
       bulkMailSignals: detectBulkMailSignals(
         {
           listUnsubscribe: header('List-Unsubscribe'),

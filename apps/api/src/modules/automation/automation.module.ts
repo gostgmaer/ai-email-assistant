@@ -35,5 +35,6 @@ export class AutomationModule implements OnApplicationBootstrap {
   async onApplicationBootstrap(): Promise<void> {
     await this.queueService.scheduleRuleExecutionCleanup();
     await this.queueService.scheduleFollowUpScan();
+    await this.queueService.scheduleTriageScan();
   }
 }

@@ -39,6 +39,7 @@ import {
   DocumentsService,
 } from '../../documents/services/documents.service';
 import { isAutomatedAddress } from '../../email/providers/bulk-mail.util';
+import { ThreadTriageService } from '../../email/services/thread-triage.service';
 import {
   AUTO_REPLY_HEADERS,
   ComposeService,
@@ -137,6 +138,7 @@ export class AiProcessingProcessor
     private readonly approvalChainService: ApprovalChainService,
     private readonly configService: ConfigService,
     private readonly queueService: QueueService,
+    private readonly threadTriageService: ThreadTriageService,
   ) {
     super();
   }
@@ -240,6 +242,8 @@ export class AiProcessingProcessor
     // for messages that get skipped past this point (see
     // docs/v1.2-plan.md's "Priority Inbox" section, previously discarded).
     await this.persistClassification(messageId, classification, noReplyReason);
+    // needsReply just changed, and it decides Needs reply vs FYI.
+    await this.threadTriageService.refreshQuietly(message.threadId);
 
     if (classification.spam) {
       this.logger.log(`Message ${messageId} classified as spam, skipping.`);

@@ -21,6 +21,13 @@ const FOLDER_TYPES = [
   'CUSTOM',
 ] as const;
 
+export const TRIAGE_GROUPS = [
+  'NEEDS_REPLY',
+  'FYI',
+  'NOTIFICATION',
+  'NEWSLETTER',
+] as const;
+
 export class ListThreadsDto {
   @ApiPropertyOptional({ description: 'Limit to a single connected account' })
   @IsOptional()
@@ -51,6 +58,14 @@ export class ListThreadsDto {
   @IsOptional()
   @IsString()
   priority?: string;
+
+  @ApiPropertyOptional({
+    enum: TRIAGE_GROUPS,
+    description: 'Smart triage: only threads in this inbox group',
+  })
+  @IsOptional()
+  @IsIn(TRIAGE_GROUPS)
+  triage?: (typeof TRIAGE_GROUPS)[number];
 
   @ApiPropertyOptional({
     default: false,

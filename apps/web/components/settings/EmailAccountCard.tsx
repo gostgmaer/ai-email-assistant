@@ -68,7 +68,9 @@ export function EmailAccountCard({
   onToggleSync: () => void;
   onSyncNow: () => void;
   onDisconnect: () => void;
-  onUpdateFilters: (filters: Partial<Record<SyncFilterKey, boolean>>) => void;
+  onUpdateFilters: (
+    filters: Partial<Record<SyncFilterKey | "keepNewsletters", boolean>>,
+  ) => void;
   onUpdateAutoScheduleMeetings: (enabled: boolean) => void;
   onUpdateProhibitedPhrases: (phrases: string[]) => void;
   busy: boolean;
@@ -303,6 +305,26 @@ export function EmailAccountCard({
               );
             })}
           </div>
+          <label className="mt-3 flex items-start gap-2 text-xs text-zinc-600">
+            <input
+              type="checkbox"
+              checked={account.keepNewsletters}
+              disabled={busy}
+              onChange={() =>
+                onUpdateFilters({ keepNewsletters: !account.keepNewsletters })
+              }
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium text-zinc-800">
+                Keep newsletters
+              </span>{" "}
+              — instead of dropping mailing-list and marketing mail, put it
+              under Inbox → Newsletters, where you can unsubscribe or clean
+              it up. The AI never replies to it. Applies to mail that arrives
+              from now on.
+            </span>
+          </label>
         </div>
       )}
 

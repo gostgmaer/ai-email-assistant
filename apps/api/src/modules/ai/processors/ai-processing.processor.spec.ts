@@ -262,6 +262,7 @@ describe('AiProcessingProcessor', () => {
       approvalChainService as never,
       configService,
       queueService as never,
+      { refreshQuietly: jest.fn().mockResolvedValue(undefined) } as never,
     );
 
     const run = () =>

@@ -70,6 +70,9 @@ export interface BulkMailSignals {
    * still synced — it's the signal that must stop the AI pipeline from
    * auto-sending back, or two responders can loop forever (RFC 3834). */
   autoReply: boolean;
+  /** List-Unsubscribe or List-Id is present: mailing-list mail. Together
+   * with `marketing`, what makes bulk mail a newsletter (bulkKindOf). */
+  mailingList: boolean;
 }
 
 // Real-world test against a live inbox showed many automated senders (job
@@ -141,9 +144,11 @@ export function detectBulkMailSignals(
     !!(headers.precedence && /\bauto_reply\b/i.test(headers.precedence)) ||
     headers.returnPath?.trim() === '<>';
 
+  const mailingList = !!(headers.listUnsubscribe || headers.listId);
+
   const automated =
     autoReplyHeader ||
-    !!(headers.listUnsubscribe || headers.listId) ||
+    mailingList ||
     !!(
       headers.precedence && /\b(bulk|list|junk)\b/i.test(headers.precedence)
     ) ||
@@ -164,6 +169,7 @@ export function detectBulkMailSignals(
       autoReplyHeader ||
       (!!subject && AUTO_REPLY_SUBJECT.test(subject)) ||
       BOUNCE_SENDER_LOCAL_PART.test(senderAddress?.split('@')[0] ?? ''),
+    mailingList,
   };
 }
 
@@ -192,4 +198,23 @@ export function isBulkMail(
     (settings.filterShipping && signals.shipping) ||
     (settings.filterCalendar && signals.calendar)
   );
+}
+
+/**
+ * What kind of bulk mail a message is, for smart triage — or null when
+ * isBulkMail() says it isn't bulk under these settings. Mailing-list and
+ * marketing mail is a NEWSLETTER (the kind an account can opt to keep, and
+ * the kind that can be unsubscribed from); everything else automated (OTP
+ * codes, receipts, alerts, noreply senders) is a NOTIFICATION.
+ */
+export function bulkKindOf(
+  signals: BulkMailSignals,
+  settings: MailFilterSettings = DEFAULT_MAIL_FILTER_SETTINGS,
+): 'NEWSLETTER' | 'NOTIFICATION' | null {
+  if (!isBulkMail(signals, settings)) {
+    return null;
+  }
+  return signals.mailingList || signals.marketing
+    ? 'NEWSLETTER'
+    : 'NOTIFICATION';
 }

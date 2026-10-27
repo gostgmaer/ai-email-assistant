@@ -10,7 +10,7 @@ import {
 import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNamespace';
 import { QueueService } from '../../../infrastructure/queue';
 import { EmailAccountService } from '../../email-account';
-import { isBulkMail, MailFilterSettings } from '../providers/bulk-mail.util';
+import { bulkKindOf, MailFilterSettings } from '../providers/bulk-mail.util';
 import { OAuthReconnectRequiredException } from '../../oauth';
 import {
   FolderChangeSet,
@@ -23,6 +23,7 @@ import {
   SyncCursorExpiredError,
 } from '../providers/mail-errors';
 import { MailProviderFactory } from '../providers/mail-provider.factory';
+import { ThreadTriageService } from './thread-triage.service';
 
 // Backoff for a failing account: 5 min, 10, 20, ... capped at 6 h.
 const SYNC_BACKOFF_BASE_MS = 5 * 60 * 1000;
@@ -44,6 +45,7 @@ export class EmailSyncService {
     private readonly mailProviderFactory: MailProviderFactory,
     private readonly queueService: QueueService,
     private readonly configService: ConfigService,
+    private readonly threadTriageService: ThreadTriageService,
   ) {}
 
   async syncAccount(
@@ -561,7 +563,17 @@ export class EmailSyncService {
       filterCalendar: account.filterCalendar,
     };
 
-    if (isInbound && isBulkMail(message.bulkMailSignals, filterSettings)) {
+    // Smart triage: an account that keeps newsletters stores them (in the
+    // Newsletters group) instead of dropping them — but they're still bulk
+    // mail, so they never enter the AI pipeline below. That holds even on
+    // an existing thread: the thread may be nothing but earlier issues.
+    const bulkKind = isInbound
+      ? bulkKindOf(message.bulkMailSignals, filterSettings)
+      : null;
+    const keptAsNewsletter =
+      bulkKind === 'NEWSLETTER' && account.keepNewsletters;
+
+    if (bulkKind && !keptAsNewsletter) {
       const isPartOfConversation =
         !!message.inReplyTo ||
         (await this.prisma.emailThread.findFirst({
@@ -644,6 +656,9 @@ export class EmailSyncService {
         receivedAt: message.receivedAt,
         isRead: message.isRead,
         isAutoReply: message.bulkMailSignals.autoReply,
+        bulkKind,
+        listUnsubscribe: message.listUnsubscribe?.slice(0, 2000),
+        listUnsubscribePost: message.listUnsubscribePost?.slice(0, 200),
         replyTo: message.replyTo?.length
           ? (message.replyTo as unknown as InputJsonValue)
           : undefined,
@@ -670,10 +685,15 @@ export class EmailSyncService {
     // Only run the AI pipeline for genuinely new, inbound messages — never
     // for updates (re-syncs) or the SENT-folder copy of our own outbound
     // mail. Bulk mail is already filtered out above, before it's ever
-    // persisted.
+    // persisted — or, for a kept newsletter, excluded here.
+    if (!existing) {
+      await this.threadTriageService.refreshQuietly(thread.id);
+    }
+
     if (
       !existing &&
       isInbound &&
+      !keptAsNewsletter &&
       this.isEligibleForAi(folder, message, account, mode)
     ) {
       // Delayed briefly so a burst of messages on one thread (a sync

@@ -26,6 +26,7 @@ const DAILY_DIGEST_CRON = '0 * * * *';
 const APPROVAL_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 const RULE_EXECUTION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const FOLLOW_UP_SCAN_INTERVAL_MS = 60 * 60 * 1000;
+const TRIAGE_SCAN_INTERVAL_MS = 5 * 60 * 1000;
 // New mail is searchable in "Ask your inbox" within about a minute.
 const SEARCH_INDEX_SCAN_INTERVAL_MS = 60 * 1000;
 
@@ -279,6 +280,15 @@ export class QueueService {
       'follow-up-scan',
       { every: FOLLOW_UP_SCAN_INTERVAL_MS },
       { name: AutomationJobs.FollowUpScan, data: {} },
+    );
+  }
+
+  /** Idempotent: registers the smart-triage backfill scan. */
+  async scheduleTriageScan(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'triage-scan',
+      { every: TRIAGE_SCAN_INTERVAL_MS },
+      { name: AutomationJobs.TriageScan, data: {} },
     );
   }
 

@@ -3,19 +3,26 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 
 import { AutomationJobs, QueueNames } from '../../../infrastructure/queue';
+import { ThreadTriageService } from '../../email/services/thread-triage.service';
 import { AutomationService } from '../services/automation.service';
+
+// One triage scan's time budget; what's left waits for the next scan.
+const TRIAGE_SCAN_BUDGET_MS = 60_000;
 
 interface ScheduledSendJobData {
   draftMessageId: string;
 }
 
-/** Scheduled auto-reply sends (delayed jobs) and the daily RuleExecution
- * retention cleanup — see AutomationService. */
+/** Scheduled auto-reply sends (delayed jobs), the daily RuleExecution
+ * retention cleanup — see AutomationService — and the triage backfill. */
 @Processor(QueueNames.Automation)
 export class AutomationProcessor extends WorkerHost {
   private readonly logger = new Logger(AutomationProcessor.name);
 
-  constructor(private readonly automationService: AutomationService) {
+  constructor(
+    private readonly automationService: AutomationService,
+    private readonly threadTriageService: ThreadTriageService,
+  ) {
     super();
   }
 
@@ -40,6 +47,20 @@ export class AutomationProcessor extends WorkerHost {
         const reminded = await this.automationService.runFollowUpScan();
         if (reminded > 0) {
           this.logger.log(`Created ${reminded} follow-up reminder(s).`);
+        }
+        return;
+      }
+
+      case AutomationJobs.TriageScan: {
+        const started = Date.now();
+        let triaged = 0;
+        let batch: number;
+        do {
+          batch = await this.threadTriageService.backfill();
+          triaged += batch;
+        } while (batch > 0 && Date.now() - started < TRIAGE_SCAN_BUDGET_MS);
+        if (triaged > 0) {
+          this.logger.log(`Triaged ${triaged} thread(s).`);
         }
         return;
       }

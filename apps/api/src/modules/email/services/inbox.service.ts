@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -16,8 +17,15 @@ import { MailProviderFactory } from '../providers/mail-provider.factory';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Threads one "Clean up" request archives — each is a provider call per
+// message, so a bigger backlog takes a few clicks rather than one long
+// request.
+const CLEANUP_BATCH = 100;
+
 @Injectable()
 export class InboxService {
+  private readonly logger = new Logger(InboxService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailProviderFactory: MailProviderFactory,
@@ -53,6 +61,10 @@ export class InboxService {
     // pass; see docs/v1.2-plan.md's Priority Inbox section.
     if (query.priority) {
       conditions.push({ messages: { some: { priority: query.priority } } });
+    }
+
+    if (query.triage) {
+      conditions.push({ triage: query.triage });
     }
 
     // Default view excludes snoozed threads; snoozed=true flips to
@@ -123,6 +135,152 @@ export class InboxService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Smart triage tab counts: the default inbox view (INBOX folder, not
+   * snoozed) grouped by EmailThread.triage. Threads not triaged yet count
+   * only toward `all`.
+   */
+  async getTriageCounts(userId: string, accountId?: string) {
+    const now = new Date();
+    const where: Prisma.EmailThreadWhereInput = {
+      account: {
+        id: accountId,
+        members: { some: { userId } },
+        deletedAt: null,
+      },
+      folder: { type: 'INBOX' },
+      OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }],
+    };
+    const groups = await this.prisma.emailThread.groupBy({
+      by: ['triage'],
+      where,
+      _count: { _all: true },
+    });
+
+    const counts = {
+      all: 0,
+      NEEDS_REPLY: 0,
+      FYI: 0,
+      NOTIFICATION: 0,
+      NEWSLETTER: 0,
+    };
+    for (const group of groups) {
+      counts.all += group._count._all;
+      if (group.triage) {
+        counts[group.triage] = group._count._all;
+      }
+    }
+    return counts;
+  }
+
+  /** The inbox newsletter threads "Clean up" would archive: nothing newer
+   * than olderThanDays, on accounts the user may change (owner or member —
+   * same as rules acting on the mailbox). */
+  private cleanupWhere(
+    userId: string,
+    olderThanDays: number,
+    accountId?: string,
+  ): Prisma.EmailThreadWhereInput {
+    return {
+      account: {
+        id: accountId,
+        members: { some: { userId } },
+        deletedAt: null,
+      },
+      folder: { type: 'INBOX' },
+      triage: 'NEWSLETTER',
+      lastMessageAt: { lt: new Date(Date.now() - olderThanDays * DAY_MS) },
+    };
+  }
+
+  async previewNewsletterCleanup(
+    userId: string,
+    olderThanDays: number,
+    accountId?: string,
+  ): Promise<{ count: number }> {
+    return {
+      count: await this.prisma.emailThread.count({
+        where: this.cleanupWhere(userId, olderThanDays, accountId),
+      }),
+    };
+  }
+
+  /**
+   * "Clean up": archives old newsletter threads at the provider (each
+   * message, like the ARCHIVE rule action) and files them under the local
+   * Archive folder. At most CLEANUP_BATCH threads per call; a thread that
+   * fails is left in the inbox and counted, never half-moved locally.
+   */
+  async cleanupNewsletters(
+    userId: string,
+    olderThanDays: number,
+    accountId?: string,
+  ): Promise<{ archived: number; failed: number; remaining: number }> {
+    const where = this.cleanupWhere(userId, olderThanDays, accountId);
+    const threads = await this.prisma.emailThread.findMany({
+      where,
+      orderBy: { lastMessageAt: 'asc' },
+      take: CLEANUP_BATCH,
+      include: {
+        account: true,
+        folder: { select: { providerFolderId: true } },
+        messages: { select: { id: true, providerMessageId: true } },
+      },
+    });
+
+    let archived = 0;
+    let failed = 0;
+    for (const thread of threads) {
+      try {
+        const client = await this.mailProviderFactory.createClient(
+          thread.account,
+        );
+        if (!client.archiveMessage) {
+          failed++;
+          continue;
+        }
+        for (const message of thread.messages) {
+          const newProviderId = await client.archiveMessage(
+            message.providerMessageId,
+            thread.folder.providerFolderId ?? undefined,
+          );
+          if (newProviderId && newProviderId !== message.providerMessageId) {
+            await this.prisma.emailMessage.update({
+              where: { id: message.id },
+              data: { providerMessageId: newProviderId },
+            });
+          }
+        }
+        const archive = await this.findOrCreateArchiveFolder(thread.accountId);
+        await this.prisma.emailThread.update({
+          where: { id: thread.id },
+          data: { folderId: archive.id },
+        });
+        archived++;
+      } catch (error: unknown) {
+        failed++;
+        this.logger.warn(
+          { err: error },
+          `Clean up couldn't archive thread ${thread.id}`,
+        );
+      }
+    }
+
+    const remaining = await this.prisma.emailThread.count({ where });
+    return { archived, failed, remaining };
+  }
+
+  private async findOrCreateArchiveFolder(accountId: string) {
+    return (
+      (await this.prisma.mailFolder.findFirst({
+        where: { accountId, type: 'ARCHIVE' },
+      })) ??
+      this.prisma.mailFolder.create({
+        data: { accountId, type: 'ARCHIVE', name: 'Archive' },
+      })
+    );
   }
 
   /** updateMany scoped by userId (via a nested relation filter) avoids a

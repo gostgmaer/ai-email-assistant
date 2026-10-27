@@ -10,6 +10,7 @@ import { ChevronLeftIcon, ClockIcon, SparklesIcon } from "@/components/icons";
 import { MessageAttachments } from "@/components/inbox/MessageAttachments";
 import { PendingDraftCard } from "@/components/inbox/PendingDraftCard";
 import { ReplyBox } from "@/components/inbox/ReplyBox";
+import { UnsubscribeBar } from "@/components/inbox/UnsubscribeBar";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
@@ -259,6 +260,11 @@ export default function ThreadPage() {
           {thread.summary ? "Refresh summary" : "Summarize"}
         </Button>
       </div>
+
+      {(thread.triage === "NEWSLETTER" ||
+        thread.messages.some((message) => message.listUnsubscribe)) && (
+        <UnsubscribeBar threadId={thread.id} accountId={thread.account.id} />
+      )}
 
       {summaryError && (
         <p className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">

@@ -46,6 +46,9 @@ export const AutomationJobs = {
   /** Repeatable job (hourly): turns due "remind me if no reply" threads
    * into FOLLOW_UP tasks. */
   FollowUpScan: 'follow-up-scan',
+  /** Repeatable job: sets EmailThread.triage on threads that never got
+   * one (ThreadTriageService.backfill). */
+  TriageScan: 'triage-scan',
 } as const;
 
 export const DocumentJobs = {

@@ -29,6 +29,7 @@ describe('EmailSyncService', () => {
           filterBilling: true,
           filterShipping: true,
           filterCalendar: true,
+          keepNewsletters: false,
           aiEnabledFrom: new Date(Date.now() - 7 * 24 * HOUR_MS),
           aliases: [],
           aliasesRefreshedAt: null,
@@ -48,6 +49,7 @@ describe('EmailSyncService', () => {
         update: jest.fn(),
       },
       emailThread: {
+        findFirst: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockResolvedValue({ id: 'thread-row-1' }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         delete: jest.fn(),
@@ -61,7 +63,12 @@ describe('EmailSyncService', () => {
 
   function buildClient(
     from: { address: string }[],
-    overrides: { receivedAt?: Date; autoReply?: boolean } = {},
+    overrides: {
+      receivedAt?: Date;
+      autoReply?: boolean;
+      /** A mailing-list message: List-Unsubscribe and the bulk signals. */
+      newsletter?: boolean;
+    } = {},
   ): MailProviderClient {
     return {
       listFolders: jest
@@ -78,8 +85,12 @@ describe('EmailSyncService', () => {
             to: [{ address: 'b@example.com' }],
             receivedAt: overrides.receivedAt ?? new Date(),
             isRead: false,
+            listUnsubscribe: overrides.newsletter
+              ? '<https://news.example.com/u/1>'
+              : undefined,
             bulkMailSignals: {
-              automated: false,
+              automated: overrides.newsletter ?? false,
+              mailingList: overrides.newsletter ?? false,
               marketing: false,
               otp: false,
               passwordReset: false,
@@ -105,6 +116,9 @@ describe('EmailSyncService', () => {
       enqueueNotification: jest.Mock;
       enqueueAiProcessing: jest.Mock;
     },
+    threadTriageService = {
+      refreshQuietly: jest.fn().mockResolvedValue(undefined),
+    },
   ): EmailSyncService {
     const emailAccountService = {
       markSyncStarted: jest.fn(),
@@ -126,6 +140,7 @@ describe('EmailSyncService', () => {
       mailProviderFactory,
       queueService as unknown as QueueService,
       configService,
+      threadTriageService as never,
     );
   }
 
@@ -241,6 +256,58 @@ describe('EmailSyncService', () => {
       }),
     );
     /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+  });
+
+  it('drops a newsletter at sync when the account does not keep newsletters', async () => {
+    const prisma = buildPrismaMock();
+    const client = buildClient([{ address: 'news@brand.example' }], {
+      newsletter: true,
+    });
+    const service = buildService(prisma, client, buildQueueService());
+
+    await service.syncAccount(accountId, 'incremental');
+
+    expect(prisma.emailMessage.upsert).not.toHaveBeenCalled();
+  });
+
+  it('keeps a newsletter, with its unsubscribe header, when the account keeps newsletters — but never sends it to the AI', async () => {
+    const prisma = buildPrismaMock();
+    prisma.emailAccount.findUniqueOrThrow.mockResolvedValue({
+      ...(await prisma.emailAccount.findUniqueOrThrow()),
+      keepNewsletters: true,
+    });
+    const client = buildClient([{ address: 'news@brand.example' }], {
+      newsletter: true,
+    });
+    const queueService = buildQueueService();
+    const triage = { refreshQuietly: jest.fn().mockResolvedValue(undefined) };
+    const service = buildService(prisma, client, queueService, triage);
+
+    await service.syncAccount(accountId, 'incremental');
+
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment -- jest.fn() mock */
+    expect(prisma.emailMessage.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          bulkKind: 'NEWSLETTER',
+          listUnsubscribe: '<https://news.example.com/u/1>',
+        }),
+      }),
+    );
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+    expect(queueService.enqueueAiProcessing).not.toHaveBeenCalled();
+    expect(triage.refreshQuietly).toHaveBeenCalledWith('thread-row-1');
+  });
+
+  it('updates the thread triage when a new message lands', async () => {
+    const prisma = buildPrismaMock();
+    const client = buildClient([{ address: 'a@example.com' }]);
+    const triage = { refreshQuietly: jest.fn().mockResolvedValue(undefined) };
+    const service = buildService(prisma, client, buildQueueService(), triage);
+
+    await service.syncAccount(accountId, 'full');
+
+    expect(triage.refreshQuietly).toHaveBeenCalledWith('thread-row-1');
   });
 
   it('does not enqueue AI processing for our own outbound (SENT-copy) message', async () => {

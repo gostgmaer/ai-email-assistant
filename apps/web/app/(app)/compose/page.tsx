@@ -108,11 +108,29 @@ function ComposeContent() {
 
   useEffect(() => {
     if (!draftId && accounts && accounts.length > 0 && !getValues("accountId")) {
+      // ?accountId= (e.g. an unsubscribe request from a newsletter thread)
+      // picks the account it came from, if it's still one of the user's.
+      const requested = accounts.find(
+        (account) => account.id === searchParams.get("accountId"),
+      );
       const primary = accounts.find((account) => account.isPrimary) ?? accounts[0];
-      setValue("accountId", primary.id);
+      setValue("accountId", (requested ?? primary).id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accounts, draftId]);
+
+  // A prefilled new message (?to=&subject=&body=) — filled once, then the
+  // user edits and sends it like any other.
+  useEffect(() => {
+    if (draftId) return;
+    for (const field of ["to", "subject", "body"] as const) {
+      const value = searchParams.get(field);
+      if (value && !getValues(field)) {
+        setValue(field, value);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftId]);
 
   const sendMutation = useMutation({
     mutationFn: async (values: ComposeFormValues) => {

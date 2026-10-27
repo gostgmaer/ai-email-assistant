@@ -85,6 +85,14 @@ export class UpdateEmailAccountDto {
   filterCalendar?: boolean;
 
   @ApiPropertyOptional({
+    description:
+      'Keep newsletter mail (mailing lists, marketing) in a Newsletters inbox group instead of dropping it at sync (default false). Kept newsletters never reach the AI pipeline.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  keepNewsletters?: boolean;
+
+  @ApiPropertyOptional({
     type: [String],
     description:
       'Case-insensitive phrases that block an AI reply from auto-sending if present (e.g. "refund", "guarantee") — held for review instead. Empty by default; this account defines its own policy, nothing is pre-populated.',

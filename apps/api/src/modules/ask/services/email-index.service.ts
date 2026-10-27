@@ -162,6 +162,9 @@ export class EmailIndexService {
     return {
       receivedAt: { gte: since },
       isSpam: false,
+      // Newsletters (kept by an account's keepNewsletters setting) would
+      // crowd out real mail in answers and spend the embedding quota.
+      OR: [{ bulkKind: null }, { bulkKind: { not: 'NEWSLETTER' } }],
       thread: {
         folder: { type: { notIn: [...UNINDEXED_FOLDERS] } },
         account: { deletedAt: null },

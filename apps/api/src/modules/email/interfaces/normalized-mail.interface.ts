@@ -63,6 +63,10 @@ export interface NormalizedMessage {
   /** RFC 5322 References, oldest first. */
   references?: string[];
   attachments?: NormalizedAttachment[];
+  /** Raw List-Unsubscribe / List-Unsubscribe-Post headers (RFC 2369 /
+   * RFC 8058), stored for the Unsubscribe button. */
+  listUnsubscribe?: string;
+  listUnsubscribePost?: string;
 }
 
 export interface ListMessagesOptions {

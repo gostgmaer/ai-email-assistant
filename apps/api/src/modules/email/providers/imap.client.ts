@@ -333,6 +333,18 @@ export class ImapClient implements MailProviderClient {
     const messageId = message.envelope?.messageId ?? `<uid-${message.uid}>`;
     const header = (name: string) =>
       this.headerString(parsed?.headers.get(name.toLowerCase()));
+    // mailparser folds every List-* header into one parsed "list" object,
+    // so headers.get('list-unsubscribe') is always undefined — read those
+    // from the raw header lines instead.
+    const rawHeader = (name: string) => {
+      const line = parsed?.headerLines.find(
+        (h) => h.key === name.toLowerCase(),
+      )?.line;
+      return line
+        ?.slice(line.indexOf(':') + 1)
+        .replace(/\r?\n[ \t]+/g, ' ')
+        .trim();
+    };
     const hasEspSignature = Array.from(parsed?.headers.keys() ?? []).some(
       (name) => /^x-(mailgun|sg|sendgrid)/i.test(name),
     );
@@ -373,10 +385,12 @@ export class ImapClient implements MailProviderClient {
         isInline:
           attachment.contentDisposition === 'inline' || attachment.related,
       })),
+      listUnsubscribe: rawHeader('list-unsubscribe'),
+      listUnsubscribePost: rawHeader('list-unsubscribe-post'),
       bulkMailSignals: detectBulkMailSignals(
         {
-          listUnsubscribe: header('list-unsubscribe'),
-          listId: header('list-id'),
+          listUnsubscribe: rawHeader('list-unsubscribe'),
+          listId: rawHeader('list-id'),
           precedence: header('precedence'),
           autoSubmitted: header('auto-submitted'),
           autoResponseSuppress: header('x-auto-response-suppress'),

@@ -39,7 +39,8 @@ These are solo-developer estimates.
 |-------|--------|
 | 0 | ✅ Done (2026-10-27). All 10 services healthy from `docker compose up -d --build`. Checked end to end: web login, password-reset email in Mailpit, document upload → file service → AI indexing → search. Fixes: `uv.lock` was missing `sentry-sdk` (AI image crashed on start); the file service needs `TENANCY_ENABLED=true`; `SMTP_SECURE="false"` was read as true; unhandled API errors were logged without their cause. README now has local-development steps. |
 | 1 | 🟡 1a–1d done (2026-10-27); 1e (evaluation set) not started. Migration `20261027090000_ask_inbox_email_chunks`. Indexing: `search-index` queue scans every minute; 216 real messages indexed as 259 chunks; Gemini's per-minute embedding quota now pauses the scan instead of failing it. Search: vector + keyword with rank fusion; cosine cut-off 0.45, measured on real mail (relevant ≈0.29–0.32, unrelated ≥0.50). New `answer` capability with citation checks in both services. Web: `/ask` page, "Ask AI" in the search box, sidebar item. Checked in Chrome on real mail. API 582/582, AI 75/75 tests. |
-| 2–7 | Not started |
+| 2 | 🟡 Built and checked live (2026-10-27); unsubscribe and Clean up not yet tried on real mail (they act on the mailbox). Migration `20261027120000_smart_triage`. `EmailThread.triage` set by `ThreadTriageService` from the newest message (sync, AI pipeline, and a 5-minute backfill scan). Opt-in `EmailAccount.keepNewsletters` (off by default): newsletters are kept in a Newsletters group instead of dropped, never AI-processed or indexed for Ask. Unsubscribe: one-click POST (RFC 8058) from the server with a private-network guard; otherwise the sender's link, or a prefilled compose for `mailto:`. Clean up archives old newsletters in the mailbox after a preview and a second click. Fixed on the way: IMAP never read `List-*` headers (mailparser folds them into `list`). Live: the scan triaged all 228 threads in ~2s (inbox: 7 Needs reply / 29 FYI / 3 Notifications / 1 Newsletter); in Chrome every group's list matched its count, chips hide outside Inbox, the Keep newsletters switch renders. Checked with the API and web run natively: Docker builds currently fail on TLS errors inside Docker's network. API 64 suites, 642 tests. |
+| 3–7 | Not started |
 
 ## What the plan reuses
 
@@ -156,6 +157,12 @@ These pieces already exist. The phases below build on them rather than adding pa
 5. **"Clean up" action:** archive newsletters older than N days, with a preview of the count first.
 
 **Done when:** most inbound threads land in the right group on a real mailbox, and unsubscribe works for a one-click sender.
+
+**Decisions made while building (2026-10-27):**
+- Sync drops newsletters before they're stored, so they're kept only when the account turns on **Keep newsletters**. That setting keeps newsletter-type mail only (mailing-list headers or marketing); OTP codes, receipts and other notifications still follow the sync filters.
+- Most of a mailbox is history the AI pipeline never classified, so triage has a rule-based fallback: noreply-style senders are Notifications, Cc-only and "thanks" messages are FYI, and a question addressed to you (ignoring the `?` in links) is Needs reply.
+- A thread whose newest message is your own is FYI; the Waiting page covers "they haven't replied".
+- `mailto:` unsubscribes open compose prefilled; the user sends it. Only one-click is done by the server.
 
 ---
 

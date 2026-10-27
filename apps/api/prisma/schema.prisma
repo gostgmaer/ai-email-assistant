@@ -261,6 +261,12 @@ model EmailAccount {
   filterShipping      Boolean @default(true)
   filterCalendar      Boolean @default(true)
 
+  // Smart triage: keep newsletter mail (mailing-list headers or marketing)
+  // in a Newsletters group instead of dropping it at sync. Kept
+  // newsletters never enter the AI pipeline or the Ask index. Off by
+  // default, so nothing changes until the user opts in.
+  keepNewsletters Boolean @default(false)
+
   // Output validation §6 (see docs/enterprise-ai-pipeline-plan.md) —
   // case-insensitive substring check against every AI-generated reply
   // before it's allowed to auto-send (e.g. "refund", "discount",
@@ -814,6 +820,13 @@ model EmailThread {
   summary          String?
   summaryKeyPoints String[] @default([])
 
+  // Smart triage (docs/ai-features-implementation-plan.md, Phase 2): which
+  // inbox group the thread belongs in, decided from its newest message by
+  // ThreadTriageService — no AI call of its own, it reuses needsReply and
+  // the sync-time bulk-mail signals. Null until first computed (older
+  // threads are filled in by the triage scan).
+  triage ThreadTriage?
+
   messages EmailMessage[]
   tasks    Task[]
   notes    ThreadNote[]
@@ -827,6 +840,15 @@ model EmailThread {
   @@index([followUpAt])
   @@index([assignedToUserId])
   @@index([lastMessageFromSelf, lastMessageAt])
+  @@index([accountId, triage])
+}
+
+/// Inbox groups for smart triage — see EmailThread.triage.
+enum ThreadTriage {
+  NEEDS_REPLY
+  FYI
+  NOTIFICATION
+  NEWSLETTER
 }
 
 /**
@@ -894,6 +916,19 @@ model EmailMessage {
   // (it's part of a real conversation) but must never trigger an
   // autonomous send back, or two auto-responders can loop forever.
   isAutoReply Boolean @default(false)
+
+  // Set when sync judged this inbound message to be bulk mail (see
+  // bulkKindOf in bulk-mail.util.ts): NEWSLETTER for mailing-list and
+  // marketing mail, NOTIFICATION for other automated mail. Such mail is
+  // normally dropped at sync; it's only stored when it's part of a real
+  // conversation, or when the account keeps newsletters. Null for
+  // everything else. Never one of the other ThreadTriage values.
+  bulkKind ThreadTriage?
+
+  // Raw List-Unsubscribe / List-Unsubscribe-Post headers (RFC 2369 / RFC
+  // 8058), for the Unsubscribe button on newsletter threads.
+  listUnsubscribe     String?
+  listUnsubscribePost String?
 
   // Set only on a message sent from an AI-generated draft: whether the
   // human changed the AI's text before sending. Null for everything else.
