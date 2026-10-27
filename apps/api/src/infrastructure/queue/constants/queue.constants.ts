@@ -6,6 +6,7 @@ export const QueueNames = {
   Digest: 'digest',
   Approvals: 'approvals',
   Automation: 'automation',
+  SearchIndex: 'search-index',
 } as const;
 
 export type QueueName = (typeof QueueNames)[keyof typeof QueueNames];

@@ -17,8 +17,10 @@ export class MailerService {
     this.transporter = host
       ? nodemailer.createTransport({
           host,
-          port: this.configService.getOrThrow<number>('SMTP_PORT'),
-          secure: this.configService.getOrThrow<boolean>('SMTP_SECURE'),
+          // Raw env strings, so parsed here: "false" is truthy, and both
+          // are optional (env.schema.ts defaults them to 587 / false).
+          port: Number(this.configService.get<string>('SMTP_PORT') ?? 587),
+          secure: this.configService.get<string>('SMTP_SECURE') === 'true',
           auth: this.configService.get<string>('SMTP_USER')
             ? {
                 user: this.configService.get<string>('SMTP_USER'),

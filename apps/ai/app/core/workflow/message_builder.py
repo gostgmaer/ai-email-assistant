@@ -81,6 +81,35 @@ class MessageBuilder:
 
         return messages
 
+    @staticmethod
+    def ask_sources(
+        *,
+        system_prompt: str,
+        question: str,
+        today: str,
+        sources: list[dict],
+    ) -> list[BaseMessage]:
+        """Messages for "Ask your inbox": each search hit as its own numbered
+        <email> block (untrusted, defused like email_thread's), then the
+        user's question. The question is the user's own words, but it still
+        goes in a human message, never the system one."""
+        system = system_prompt + UNTRUSTED_CONTENT_RULES
+        system += f"\n\n## Task details\n\nToday's date: {today}"
+
+        messages: list[BaseMessage] = [SystemMessage(content=system)]
+
+        for source in sources:
+            messages.append(HumanMessage(content=(
+                f'<email index="{source["n"]}" from="{_attr(source["sender"])}" '
+                f'subject="{_attr(source["subject"])}" date="{_attr(source["date"])}">\n'
+                f"{_defuse(source['content'])}\n"
+                "</email>"
+            )))
+
+        messages.append(HumanMessage(content=f"Question: {_defuse(question)}"))
+
+        return messages
+
     # Aliases used by per-capability nodes.py files.
     reply = email_thread
     summarize = email_thread

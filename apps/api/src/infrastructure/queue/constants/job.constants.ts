@@ -58,3 +58,9 @@ export const DocumentJobs = {
    * itself and does the actual parsing/chunking/embedding work. */
   Process: 'process-document',
 } as const;
+
+export const SearchIndexJobs = {
+  /** Repeatable job: embeds synced and sent mail that isn't indexed yet
+   * for "Ask your inbox", newest first (EmailIndexService.indexPending). */
+  Scan: 'search-index-scan',
+} as const;

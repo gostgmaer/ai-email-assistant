@@ -1,3 +1,5 @@
+from app.capabilities.answer.graph import answer_graph
+from app.capabilities.answer.schemas import AnswerRequest, AnswerResponse
 from app.capabilities.reply.graph import reply_graph
 from app.capabilities.reply.schemas import (
     ReplyRequest,
@@ -52,6 +54,22 @@ class EmailAIService:
         return SummarizeResponse(
             summary=result["summary"],
             key_points=result["key_points"],
+            provider=result["provider"],
+            model=result["model"],
+            usage=result["usage"],
+        )
+
+    async def answer(
+        self,
+        request: AnswerRequest,
+    ) -> AnswerResponse:
+
+        result = await answer_graph.ainvoke(request.model_dump())
+
+        return AnswerResponse(
+            answer=result["answer"],
+            citations=result["citations"],
+            found=result["found"],
             provider=result["provider"],
             model=result["model"],
             usage=result["usage"],

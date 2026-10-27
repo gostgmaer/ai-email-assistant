@@ -109,6 +109,9 @@ services:
       # Must equal FILE_SERVICE_HMAC_SECRET on api, worker and ai below.
       GATEWAY_AUTH_REQUIRED: "true"
       GATEWAY_INTERNAL_SECRET: ${FILE_SERVICE_HMAC_SECRET:-local-dev-file-service-hmac-secret-0001}
+      # Required: with tenancy off the service stores files with no
+      # tenantId, which its own File model rejects ("Validation failed").
+      TENANCY_ENABLED: "true"
       DEFAULT_TENANT_ID: easydev
       STORAGE_TYPE: local
       LOCAL_SIGNED_URL_SECRET: ${FILE_SERVICE_SIGNED_URL_SECRET:-local-dev-file-service-signed-url-secret-0001}

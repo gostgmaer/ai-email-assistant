@@ -54,3 +54,21 @@ class EmbedQueryResponse(BaseModel):
     embedding: list[float]
     provider: str
     model: str
+
+
+# The Gemini embedding API takes at most 100 texts per batch request.
+MAX_EMBED_BATCH = 100
+
+
+class EmbedBatchRequest(BaseModel):
+    """Several texts embedded in one provider call — apps/api indexes
+    synced email for "Ask your inbox" in batches with this."""
+
+    texts: list[str] = Field(min_length=1, max_length=MAX_EMBED_BATCH)
+
+
+class EmbedBatchResponse(BaseModel):
+    # Same order as the request's texts.
+    embeddings: list[list[float]]
+    provider: str
+    model: str

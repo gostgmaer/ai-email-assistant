@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.capabilities.answer.schemas import AnswerRequest, AnswerResponse
 from app.capabilities.classify.schemas import ClassifyRequest, ClassifyResponse
 from app.capabilities.extract.schemas import ExtractRequest, ExtractResponse
 from app.capabilities.rewrite.schemas import RewriteRequest, RewriteResponse
@@ -100,3 +101,16 @@ async def validate_reply(
     off-topic/unsupported by anything in it."""
 
     return await email_ai_service.validate_reply(request)
+
+
+@router.post(
+    "/answer",
+    response_model=AnswerResponse,
+)
+async def answer_question(
+    request: AnswerRequest,
+) -> AnswerResponse:
+    """"Ask your inbox": answers a question from the numbered emails apps/api
+    found for it, citing them as [n]."""
+
+    return await email_ai_service.answer(request)

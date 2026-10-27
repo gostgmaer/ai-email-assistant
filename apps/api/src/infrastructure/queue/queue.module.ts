@@ -56,6 +56,9 @@ import { QueueService } from './queue.service';
       {
         name: QueueNames.Automation,
       },
+      {
+        name: QueueNames.SearchIndex,
+      },
     ),
   ],
 

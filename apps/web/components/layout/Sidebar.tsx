@@ -11,11 +11,13 @@ import {
   HelpIcon,
   InboxIcon,
   PlusIcon,
+  SparklesIcon,
   TaskIcon,
 } from "@/components/icons";
 
 const NAV_ITEMS = [
   { href: "/inbox", label: "Inbox", icon: InboxIcon },
+  { href: "/ask", label: "Ask", icon: SparklesIcon },
   { href: "/waiting", label: "Waiting", icon: ClockIcon },
   { href: "/tasks", label: "Tasks", icon: TaskIcon },
   { href: "/approvals", label: "Approvals", icon: ApprovalIcon },

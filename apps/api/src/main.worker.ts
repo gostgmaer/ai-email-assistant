@@ -13,7 +13,7 @@ async function bootstrap() {
   const logger = app.get(Logger);
   // AppModule registers every queue processor, so this lists them all.
   logger.log(
-    'worker running, processing BullMQ queues (email-sync, ai, notification, documents, digest, approvals, automation)',
+    'worker running, processing BullMQ queues (email-sync, ai, notification, documents, digest, approvals, automation, search-index)',
   );
 }
 

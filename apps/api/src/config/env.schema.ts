@@ -85,6 +85,11 @@ export const envSchema = z.object({
   // Default lifetime of a pending approval chain (a REQUIRE_APPROVAL_CHAIN
   // action's expiresInHours overrides it). The approver is reminded halfway.
   APPROVAL_CHAIN_TTL_HOURS: z.coerce.number().positive().default(72),
+  // "Ask your inbox": mail older than this many days isn't indexed (each
+  // indexed message costs an embedding call), and how many messages one
+  // indexing pass embeds before writing them.
+  ASK_INDEX_DAYS: z.coerce.number().int().positive().default(365),
+  SEARCH_INDEX_BATCH_SIZE: z.coerce.number().int().min(1).max(200).default(50),
 
   // File Upload Service (@easydev_org/file-upload-sdk) — document uploads go
   // here instead of being held in memory; the AI service downloads directly
@@ -99,7 +104,11 @@ export const envSchema = z.object({
   // console instead of sending, so auth flows still work in local dev.
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().default(587),
-  SMTP_SECURE: z.coerce.boolean().default(false),
+  // An enum, not z.coerce.boolean() — coerce treats the string "false" as true.
+  SMTP_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   MAIL_FROM: z.string().default('AI Email Assistant <no-reply@localhost>'),

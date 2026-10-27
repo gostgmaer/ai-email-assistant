@@ -957,6 +957,14 @@ model EmailMessage {
 
   tasks Task[]
 
+  // "Ask your inbox": when this message's text was split into EmailChunk
+  // rows and embedded. Null means not indexed yet — the search-index job
+  // picks those up newest first, so one code path covers the backfill,
+  // newly synced mail and sent mail. Set even when nothing was indexable
+  // (empty body), so such a message isn't retried forever.
+  searchIndexedAt DateTime?
+  searchChunks    EmailChunk[]
+
   // Set only when this (draft) message was created by a rule with a
   // REQUIRE_APPROVAL_CHAIN action — see ApprovalChain's schema comment.
   approvalChain ApprovalChain?
@@ -971,6 +979,47 @@ model EmailMessage {
   // Graph delta) and must find the local row without knowing its thread.
   @@index([providerMessageId])
   @@index([priority])
+  @@index([searchIndexedAt, receivedAt])
+}
+
+/**
+ * "Ask your inbox" (docs/ai-features-implementation-plan.md, Phase 1): an
+ * email's text in embedded pieces, searched by meaning (pgvector) and by
+ * keyword (Postgres full-text). Built by EmailIndexService from the
+ * message's own text with quoted history stripped, each chunk prefixed
+ * with the subject/sender/date so it stands on its own.
+ *
+ * accountId is copied from the thread so a search can be scoped to the
+ * accounts a user belongs to without joining through the thread. Every
+ * query on this table MUST be scoped that way.
+ */
+model EmailChunk {
+  id String @id @default(uuid())
+
+  messageId String
+  message   EmailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  accountId String
+
+  chunkIndex Int
+  content    String
+
+  /// Same model and width as DocumentChunk.embedding (Google
+  /// gemini-embedding-001, 768 dims). No typed accessor in Prisma Client —
+  /// reads and writes go through $queryRaw/$executeRaw.
+  embedding      Unsupported("vector(768)")?
+  embeddingModel String?
+
+  createdAt DateTime @default(now())
+
+  // The HNSW index on `embedding` and the GIN full-text index on
+  // `content` are hand-written SQL in migration
+  // 20261027090000_ask_inbox_email_chunks, invisible to Prisma. Like
+  // DocumentChunk's, `prisma migrate diff`/`migrate dev` will propose
+  // dropping them — never apply those lines.
+
+  @@unique([messageId, chunkIndex])
+  @@index([accountId])
 }
 
 enum AutomationEffectKind {

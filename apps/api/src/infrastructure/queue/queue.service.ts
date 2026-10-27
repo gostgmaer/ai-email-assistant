@@ -10,6 +10,7 @@ import {
   DocumentJobs,
   EmailSyncJobs,
   NotificationJobs,
+  SearchIndexJobs,
 } from './constants/job.constants';
 import { QueueNames } from './constants/queue.constants';
 import {
@@ -25,6 +26,8 @@ const DAILY_DIGEST_CRON = '0 * * * *';
 const APPROVAL_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 const RULE_EXECUTION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const FOLLOW_UP_SCAN_INTERVAL_MS = 60 * 60 * 1000;
+// New mail is searchable in "Ask your inbox" within about a minute.
+const SEARCH_INDEX_SCAN_INTERVAL_MS = 60 * 1000;
 
 /** Everything DocumentsProcessingProcessor needs to call the AI service and
  * update the Document row, without re-querying the DB or re-deriving the
@@ -74,6 +77,8 @@ export class QueueService {
     private readonly approvalsQueue: Queue,
     @InjectQueue(QueueNames.Automation)
     private readonly automationQueue: Queue,
+    @InjectQueue(QueueNames.SearchIndex)
+    private readonly searchIndexQueue: Queue,
   ) {}
 
   async enqueueInitialSync(accountId: string): Promise<void> {
@@ -277,6 +282,15 @@ export class QueueService {
     );
   }
 
+  /** Idempotent: registers the recurring "Ask your inbox" indexing scan. */
+  async scheduleSearchIndexScan(): Promise<void> {
+    await this.searchIndexQueue.upsertJobScheduler(
+      'search-index-scan',
+      { every: SEARCH_INDEX_SCAN_INTERVAL_MS },
+      { name: SearchIndexJobs.Scan, data: {} },
+    );
+  }
+
   /** Idempotent: registers the daily RuleExecution retention cleanup. */
   async scheduleRuleExecutionCleanup(): Promise<void> {
     await this.automationQueue.upsertJobScheduler(
@@ -310,6 +324,8 @@ export class QueueService {
         return this.approvalsQueue;
       case QueueNames.Automation:
         return this.automationQueue;
+      case QueueNames.SearchIndex:
+        return this.searchIndexQueue;
     }
   }
 }

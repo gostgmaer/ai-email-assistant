@@ -31,11 +31,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         : 'Internal server error';
 
     if (!(exception instanceof HttpException)) {
+      // As an object, not (message, stack): nestjs-pino drops a second
+      // string argument unless it looks like a stack trace, so anything
+      // thrown that isn't a plain Error was logged with no cause at all.
       this.logger.error(
+        { err: exception },
         `Unhandled exception on ${request.method} ${request.url}`,
-        exception instanceof Error
-          ? exception.stack
-          : JSON.stringify(exception),
       );
     }
 

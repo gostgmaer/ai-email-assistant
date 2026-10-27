@@ -1,6 +1,8 @@
 import {
   BadGatewayException,
   GatewayTimeoutException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   UnprocessableEntityException,
@@ -138,6 +140,15 @@ function mapUsage(usage: RawUsage): TokenUsage {
     outputTokens: usage.output_tokens,
     totalTokens: usage.total_tokens,
   };
+}
+
+interface RawAnswerResponse {
+  answer: string;
+  citations: number[];
+  found: boolean;
+  provider: string;
+  model: string;
+  usage: RawUsage;
 }
 
 interface RawSummarizeResponse {
@@ -295,6 +306,30 @@ interface RawProcessDocumentResponse {
 
 export interface EmbedQueryResponse {
   embedding: number[];
+  provider: string;
+  model: string;
+}
+
+export interface AnswerSource {
+  n: number;
+  subject: string;
+  sender: string;
+  /** YYYY-MM-DD */
+  date: string;
+  content: string;
+}
+
+export interface AnswerResponse {
+  answer: string;
+  citations: number[];
+  found: boolean;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
+export interface EmbedBatchResponse {
+  embeddings: number[][];
   provider: string;
   model: string;
 }
@@ -551,6 +586,28 @@ export class AiClientService {
     return this.post<EmbedQueryResponse>('/documents/embed', { text });
   }
 
+  /** "Ask your inbox": answers `question` from numbered search hits,
+   * citing them as [n]. */
+  async answer(
+    question: string,
+    today: string,
+    sources: AnswerSource[],
+  ): Promise<AnswerResponse> {
+    const res = await this.post<RawAnswerResponse>('/email/answer', {
+      question,
+      today,
+      sources,
+    });
+
+    return { ...res, usage: mapUsage(res.usage) };
+  }
+
+  /** Several texts in one provider call (at most 100 — the AI service's
+   * MAX_EMBED_BATCH); embeddings come back in the same order. */
+  async embedBatch(texts: string[]): Promise<EmbedBatchResponse> {
+    return this.post<EmbedBatchResponse>('/documents/embed-batch', { texts });
+  }
+
   async suggestMeetingTime(
     description: string,
     referenceDate: string,
@@ -627,6 +684,18 @@ export class AiClientService {
       } | null;
       throw new UnprocessableEntityException(
         errorBody?.detail ?? 'Unprocessable request',
+      );
+    }
+
+    // The LLM/embedding provider's quota, passed through as 429 rather than
+    // a generic 502: callers that run in the background (search indexing)
+    // back off until their next run instead of retrying into the limit, and
+    // a user-facing call can say "try again shortly".
+    if (response.status === 429) {
+      this.logger.warn(`AI provider rate limit reached at ${path}`);
+      throw new HttpException(
+        'The AI provider is rate-limiting requests. Try again shortly.',
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 

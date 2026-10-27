@@ -3,6 +3,8 @@ from fastapi import APIRouter, HTTPException
 from file_upload_sdk import FileUploadError
 
 from app.capabilities.document_processing.schemas import (
+    EmbedBatchRequest,
+    EmbedBatchResponse,
     EmbedQueryRequest,
     EmbedQueryResponse,
     ProcessDocumentRequest,
@@ -71,10 +73,48 @@ async def process_document_route(
 async def embed_query_route(payload: EmbedQueryRequest) -> EmbedQueryResponse:
     """Embed a free-text query for similarity search against stored document chunks."""
 
-    embedding = embedding_manager.embed(payload.text)
+    try:
+        embedding = embedding_manager.embed(payload.text)
+    except Exception as error:
+        _raise_if_rate_limited(error)
+        raise
 
     return EmbedQueryResponse(
         embedding=embedding,
         provider=embedding_manager.provider,
         model=embedding_manager.model,
     )
+
+
+@router.post(
+    "/embed-batch",
+    response_model=EmbedBatchResponse,
+)
+async def embed_batch_route(payload: EmbedBatchRequest) -> EmbedBatchResponse:
+    """Embed several texts in one provider call, results in request order."""
+
+    try:
+        embeddings = embedding_manager.embed_batch(payload.texts)
+    except Exception as error:
+        _raise_if_rate_limited(error)
+        raise
+
+    return EmbedBatchResponse(
+        embeddings=embeddings,
+        provider=embedding_manager.provider,
+        model=embedding_manager.model,
+    )
+
+
+def _raise_if_rate_limited(error: Exception) -> None:
+    """The provider's quota is a "try again later", not a server fault:
+    report it as 429 so apps/api can back off instead of retrying into the
+    same limit. Matched on the message because langchain wraps the Google
+    error in its own (private) exception type."""
+
+    message = str(error)
+    if "RESOURCE_EXHAUSTED" in message or "429" in message:
+        raise HTTPException(
+            status_code=429,
+            detail="Embedding provider quota exceeded; try again shortly.",
+        ) from error

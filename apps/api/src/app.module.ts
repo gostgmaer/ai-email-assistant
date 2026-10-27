@@ -27,6 +27,7 @@ import { CrmModule } from './modules/crm';
 import { IntegrationModule } from './modules/integration';
 import { ApprovalModule } from './modules/approval';
 import { AutomationModule } from './modules/automation';
+import { AskModule } from './modules/ask';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { AutomationModule } from './modules/automation';
     IntegrationModule,
     ApprovalModule,
     AutomationModule,
+    AskModule,
   ],
 })
 export class AppModule {}

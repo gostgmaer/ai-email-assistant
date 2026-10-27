@@ -5,7 +5,7 @@ import { Suspense, useState, type FormEvent } from "react";
 
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Avatar } from "@/components/ui/Avatar";
-import { SearchIcon } from "@/components/icons";
+import { SearchIcon, SparklesIcon } from "@/components/icons";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export function Topbar() {
@@ -95,8 +95,24 @@ function SearchBox() {
           defaultValue={q}
           placeholder="Search email…"
           aria-label="Search email"
-          className="w-full rounded-full border border-transparent bg-zinc-100 py-2 pr-3 pl-9 text-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="w-full rounded-full border border-transparent bg-zinc-100 py-2 pr-24 pl-9 text-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
+        {/* type="button": Enter must keep searching the inbox, and a form's
+            first submit button is what Enter presses. */}
+        <button
+          type="button"
+          onClick={(event) => {
+            const value = String(
+              new FormData(event.currentTarget.form ?? undefined).get("q") ?? "",
+            ).trim();
+            router.push(value ? `/ask?q=${encodeURIComponent(value)}` : "/ask");
+          }}
+          title="Ask a question about your email"
+          className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 shadow-sm ring-1 ring-zinc-200 hover:bg-indigo-50"
+        >
+          <SparklesIcon className="h-3.5 w-3.5" />
+          Ask AI
+        </button>
       </div>
     </form>
   );
