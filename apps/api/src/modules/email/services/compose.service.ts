@@ -671,6 +671,8 @@ export class ComposeService {
         isRead: true,
         generationMetadata: generationMetadata as unknown as InputJsonValue,
         aiEdited,
+        // Read for promises the user made (CommitmentService).
+        commitmentScanPending: true,
       },
     });
   }

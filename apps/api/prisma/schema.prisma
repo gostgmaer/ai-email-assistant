@@ -157,6 +157,8 @@ enum NotificationEvent {
   DIGEST
   FOLLOW_UP
   SNOOZE_WAKE
+  // A commitment from the user's sent mail is due.
+  COMMITMENT_DUE
   // Auto-sends, scheduled sends, send limits — the automation itself.
   AUTOMATION
 }
@@ -1000,6 +1002,12 @@ model EmailMessage {
   searchIndexedAt DateTime?
   searchChunks    EmailChunk[]
 
+  // Commitments: true on the user's own sent mail until the commitment
+  // scan has read it for promises ("I'll send the deck by Friday"). Set by
+  // compose and sync for recent outbound mail only, so history is never
+  // scanned.
+  commitmentScanPending Boolean @default(false)
+
   // Set only when this (draft) message was created by a rule with a
   // REQUIRE_APPROVAL_CHAIN action — see ApprovalChain's schema comment.
   approvalChain ApprovalChain?
@@ -1015,6 +1023,7 @@ model EmailMessage {
   @@index([providerMessageId])
   @@index([priority])
   @@index([searchIndexedAt, receivedAt])
+  @@index([commitmentScanPending, receivedAt])
 }
 
 /**
@@ -1122,6 +1131,9 @@ enum TaskType {
   MEETING_REQUEST
   // A sent message nobody answered by the thread's followUpAt.
   FOLLOW_UP
+  // Something the user promised in a sent message; dueDate when it named
+  // a deadline.
+  COMMITMENT
 }
 
 /**
@@ -1228,10 +1240,15 @@ model Task {
   calendarEventId  String?
   calendarEventUrl String?
 
+  // COMMITMENT only: when the "it's due" reminder went out, so it goes
+  // out once.
+  remindedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId, status])
+  @@index([type, status, dueDate])
   @@index([emailMessageId])
   @@index([threadId])
 }

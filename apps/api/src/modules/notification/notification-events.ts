@@ -14,6 +14,7 @@ export const NOTIFICATION_EVENTS: {
   { event: 'DIGEST', label: 'Daily digest' },
   { event: 'FOLLOW_UP', label: 'No reply to a message you sent' },
   { event: 'SNOOZE_WAKE', label: 'A snoozed thread is back' },
+  { event: 'COMMITMENT_DUE', label: 'A promise you made is due' },
   { event: 'AUTOMATION', label: 'Auto-replies and other automation' },
 ];
 

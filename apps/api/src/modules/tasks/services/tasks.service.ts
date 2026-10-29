@@ -88,7 +88,13 @@ export class TasksService {
         ...this.accessibleTaskWhere(userId),
         ...(filters?.status ? { status: filters.status } : {}),
       },
-      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      // Tasks with a deadline (commitments) come first, soonest due; the
+      // rest stay newest first.
+      orderBy: [
+        { status: 'asc' },
+        { dueDate: { sort: 'asc', nulls: 'last' } },
+        { createdAt: 'desc' },
+      ],
     });
   }
 

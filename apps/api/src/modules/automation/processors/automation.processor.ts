@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 
 import { AutomationJobs, QueueNames } from '../../../infrastructure/queue';
+import { CommitmentService } from '../../ai/services/commitment.service';
 import { ThreadTriageService } from '../../email/services/thread-triage.service';
 import { AutomationService } from '../services/automation.service';
 
@@ -14,7 +15,8 @@ interface ScheduledSendJobData {
 }
 
 /** Scheduled auto-reply sends (delayed jobs), the daily RuleExecution
- * retention cleanup — see AutomationService — and the triage backfill. */
+ * retention cleanup — see AutomationService — the triage backfill and the
+ * commitment scan. */
 @Processor(QueueNames.Automation)
 export class AutomationProcessor extends WorkerHost {
   private readonly logger = new Logger(AutomationProcessor.name);
@@ -22,6 +24,7 @@ export class AutomationProcessor extends WorkerHost {
   constructor(
     private readonly automationService: AutomationService,
     private readonly threadTriageService: ThreadTriageService,
+    private readonly commitmentService: CommitmentService,
   ) {
     super();
   }
@@ -47,6 +50,18 @@ export class AutomationProcessor extends WorkerHost {
         const reminded = await this.automationService.runFollowUpScan();
         if (reminded > 0) {
           this.logger.log(`Created ${reminded} follow-up reminder(s).`);
+        }
+        const due = await this.automationService.runCommitmentReminders();
+        if (due > 0) {
+          this.logger.log(`Sent ${due} commitment reminder(s).`);
+        }
+        return;
+      }
+
+      case AutomationJobs.CommitmentScan: {
+        const read = await this.commitmentService.scanPending();
+        if (read > 0) {
+          this.logger.log(`Read ${read} sent message(s) for commitments.`);
         }
         return;
       }

@@ -103,3 +103,51 @@ export function quietHoursEnd(
   result.setUTCSeconds(0, 0);
   return result;
 }
+
+/** `at` on the local clock in `zone`: date (YYYY-MM-DD), time (HH:MM) and
+ * weekday name. An unknown zone falls back to UTC. */
+export function localDateTime(
+  at: Date,
+  zone: string,
+): { date: string; time: string; weekday: string } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: isValidTimeZone(zone) ? zone : 'UTC',
+    weekday: 'long',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(at);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value;
+
+  return {
+    date: `${get('year')}-${get('month')}-${get('day')}`,
+    time: `${get('hour')}:${get('minute')}`,
+    weekday: get('weekday') ?? '',
+  };
+}
+
+/**
+ * The instant a local date and time (YYYY-MM-DD, HH:MM) in `zone` stands
+ * for. Found by correcting a UTC guess with the zone's offset at that
+ * moment, twice so a DST change between the guess and the answer is
+ * accounted for. An unknown zone falls back to UTC.
+ */
+export function zonedTimeToUtc(date: string, time: string, zone: string): Date {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hours, minutes] = time.split(':').map(Number);
+  const wallClock = Date.UTC(year, month - 1, day, hours, minutes);
+
+  const offsetAt = (instant: number): number => {
+    const local = localDateTime(new Date(instant), zone);
+    const [y, m, d] = local.date.split('-').map(Number);
+    const [h, min] = local.time.split(':').map(Number);
+    return Date.UTC(y, m - 1, d, h, min) - instant;
+  };
+
+  let instant = wallClock - offsetAt(wallClock);
+  instant = wallClock - offsetAt(instant);
+  return new Date(instant);
+}

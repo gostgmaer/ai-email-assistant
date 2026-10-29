@@ -145,6 +145,8 @@ export interface FollowUpCandidate {
   waitingOn: { name?: string; address: string }[];
   account: { id: string; provider: string; email: string };
   relatedMeetingRequests: { id: string; description: string }[];
+  /** Open promises the user made on this thread (Tasks → commitments). */
+  openCommitments: { id: string; description: string; dueDate: string | null }[];
 }
 
 /** Threads where the user sent the last message and nobody has answered,

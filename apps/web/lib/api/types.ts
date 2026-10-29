@@ -331,6 +331,7 @@ export type NotificationEvent =
   | "DIGEST"
   | "FOLLOW_UP"
   | "SNOOZE_WAKE"
+  | "COMMITMENT_DUE"
   | "AUTOMATION";
 
 export type NotificationChannel = "IN_APP" | "EMAIL" | "SLACK";
@@ -530,7 +531,11 @@ export interface BusyInterval {
   end: string;
 }
 
-export type TaskType = "ACTION_ITEM" | "MEETING_REQUEST";
+export type TaskType =
+  | "ACTION_ITEM"
+  | "MEETING_REQUEST"
+  | "FOLLOW_UP"
+  | "COMMITMENT";
 export type TaskStatus = "PENDING" | "DONE" | "DISMISSED";
 
 export interface Task {

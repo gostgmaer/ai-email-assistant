@@ -34,6 +34,9 @@ const SYNC_FAILURE_NOTIFY_THRESHOLD = 3;
 const ALIAS_REFRESH_MS = 24 * 60 * 60 * 1000;
 const MAX_LIST_PAGE_SIZE = 100;
 const AI_ENQUEUE_DELAY_MS = 30 * 1000;
+// Sent mail older than this isn't read for commitments — the same window
+// as CommitmentService's COMMITMENT_MAX_AGE_DAYS.
+const COMMITMENT_SCAN_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class EmailSyncService {
@@ -659,6 +662,13 @@ export class EmailSyncService {
         bulkKind,
         listUnsubscribe: message.listUnsubscribe?.slice(0, 2000),
         listUnsubscribePost: message.listUnsubscribePost?.slice(0, 200),
+        // The user's own recent mail (sent from another client, or the
+        // provider's copy of app-sent mail) is read for commitments.
+        commitmentScanPending:
+          !isInbound &&
+          folder.type !== 'DRAFTS' &&
+          Date.now() - message.receivedAt.getTime() <
+            COMMITMENT_SCAN_MAX_AGE_MS,
         replyTo: message.replyTo?.length
           ? (message.replyTo as unknown as InputJsonValue)
           : undefined,

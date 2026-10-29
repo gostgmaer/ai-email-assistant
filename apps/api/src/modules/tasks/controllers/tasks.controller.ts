@@ -32,7 +32,7 @@ export class TasksController {
   @Get()
   @ApiOperation({
     summary:
-      "List action items and meeting requests extracted from the user's emails",
+      "List action items, meeting requests and commitments extracted from the user's emails",
   })
   @ApiResponse({ status: 200, description: "The user's tasks" })
   async list(@CurrentUser() user: JwtPayload, @Query() query: ListTasksDto) {

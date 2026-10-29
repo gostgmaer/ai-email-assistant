@@ -15,7 +15,7 @@ import {
   suggestMeeting,
   updateTaskStatus,
 } from "@/lib/services/tasks.service";
-import { formatRelativeDate } from "@/lib/utils/format";
+import { formatDateTime, formatRelativeDate } from "@/lib/utils/format";
 
 const STATUS_TABS: { value: TaskStatus | "ALL"; label: string }[] = [
   { value: "PENDING", label: "Pending" },
@@ -24,10 +24,32 @@ const STATUS_TABS: { value: TaskStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "All" },
 ];
 
-const TYPE_LABEL = {
+const TYPE_LABEL: Record<Task["type"], string> = {
   ACTION_ITEM: "Action item",
   MEETING_REQUEST: "Meeting request",
+  FOLLOW_UP: "Follow-up",
+  COMMITMENT: "You promised",
 };
+
+/** "Due …" for a task with a deadline; red once an open one is overdue. */
+function DueDate({ task }: { task: Task }) {
+  // Read once per mount: render must stay pure, and a minute's drift in
+  // "overdue" doesn't matter.
+  const [now] = useState(() => Date.now());
+  if (!task.dueDate) return null;
+  const overdue =
+    task.status === "PENDING" && new Date(task.dueDate).getTime() < now;
+  return (
+    <span
+      className={clsx(
+        "text-[11px] font-medium",
+        overdue ? "text-red-600" : "text-zinc-600",
+      )}
+    >
+      {overdue ? "Overdue since" : "Due"} {formatDateTime(task.dueDate)}
+    </span>
+  );
+}
 
 /** Converts an ISO datetime to the value a <input type="datetime-local">
  * expects (local time, no timezone/seconds), and back. */
@@ -229,7 +251,7 @@ function TasksTab() {
       {tasks && tasks.length === 0 && (
         <EmptyState
           title="Nothing here"
-          description="Extracted tasks and meeting requests will show up here as your emails are processed."
+          description="Extracted tasks, meeting requests and promises from your sent mail will show up here as your emails are processed."
         />
       )}
 
@@ -247,7 +269,9 @@ function TasksTab() {
                       "rounded-full px-2 py-0.5 text-[10px] font-medium",
                       task.type === "MEETING_REQUEST"
                         ? "bg-indigo-50 text-indigo-700"
-                        : "bg-zinc-100 text-zinc-600",
+                        : task.type === "COMMITMENT"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-zinc-100 text-zinc-600",
                     )}
                   >
                     {TYPE_LABEL[task.type]}
@@ -255,6 +279,7 @@ function TasksTab() {
                   <span className="text-[11px] text-zinc-400">
                     {formatRelativeDate(task.createdAt)}
                   </span>
+                  <DueDate task={task} />
                 </div>
                 <p
                   className={clsx(
@@ -334,8 +359,9 @@ export default function TasksPage() {
       <div>
         <h1 className="text-lg font-semibold text-zinc-900">Tasks</h1>
         <p className="text-sm text-zinc-500">
-          Action items and meeting requests — automatically surfaced from your
-          inbox. Emails awaiting a reply are under{" "}
+          Action items and meeting requests from your inbox, and promises you
+          made in sent mail (soonest due first). Emails awaiting a reply are
+          under{" "}
           <Link
             href="/waiting"
             className="font-medium text-indigo-600 hover:underline"

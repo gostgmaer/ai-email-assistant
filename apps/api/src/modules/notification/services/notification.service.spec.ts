@@ -90,7 +90,7 @@ describe('NotificationService', () => {
       const preferences = await service.getPreferences(userId);
       const digest = preferences.find((p) => p.event === 'DIGEST');
 
-      expect(preferences).toHaveLength(8);
+      expect(preferences).toHaveLength(9);
       expect(digest?.channels).toEqual([
         expect.objectContaining({ channel: 'IN_APP', enabled: true }),
         expect.objectContaining({ channel: 'EMAIL', enabled: true }),

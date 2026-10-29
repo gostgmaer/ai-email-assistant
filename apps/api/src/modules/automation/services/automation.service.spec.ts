@@ -319,4 +319,51 @@ describe('AutomationService', () => {
       );
     });
   });
+
+  describe('commitment reminders', () => {
+    it('reminds once about each open commitment past its due date', async () => {
+      const deps = buildDeps();
+      const now = new Date('2026-10-30T12:00:00Z');
+      const task = (id: string) => ({
+        id,
+        userId,
+        description: `Send the deck ${id}`,
+        threadId: `thread-${id}`,
+        thread: { subject: 'Deck' },
+      });
+      const findMany = jest.fn().mockResolvedValue([task('a'), task('b')]);
+      // b was claimed by another scan in the meantime.
+      const updateMany = jest
+        .fn()
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+      Object.assign(deps.prisma, { task: { findMany, updateMany } });
+
+      const reminded = await deps.service.runCommitmentReminders(now);
+
+      expect(reminded).toBe(1);
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            type: 'COMMITMENT',
+            status: 'PENDING',
+            dueDate: { lte: now },
+            remindedAt: null,
+          },
+        }),
+      );
+      expect(updateMany).toHaveBeenCalledWith({
+        where: { id: 'a', remindedAt: null },
+        data: { remindedAt: now },
+      });
+      expect(deps.notificationService.create).toHaveBeenCalledTimes(1);
+      expect(deps.notificationService.create).toHaveBeenCalledWith(
+        userId,
+        'A promise is due',
+        'You promised: "Send the deck a" (in "Deck").',
+        { threadId: 'thread-a', taskId: 'a' },
+        'COMMITMENT_DUE',
+      );
+    });
+  });
 });

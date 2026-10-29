@@ -2,6 +2,10 @@ from fastapi import APIRouter
 
 from app.capabilities.answer.schemas import AnswerRequest, AnswerResponse
 from app.capabilities.classify.schemas import ClassifyRequest, ClassifyResponse
+from app.capabilities.commitments.schemas import (
+    CommitmentsRequest,
+    CommitmentsResponse,
+)
 from app.capabilities.extract.schemas import ExtractRequest, ExtractResponse
 from app.capabilities.rewrite.schemas import RewriteRequest, RewriteResponse
 from app.capabilities.summarize.schemas import SummarizeRequest, SummarizeResponse
@@ -114,3 +118,16 @@ async def answer_question(
     found for it, citing them as [n]."""
 
     return await email_ai_service.answer(request)
+
+
+@router.post(
+    "/commitments",
+    response_model=CommitmentsResponse,
+)
+async def find_commitments(
+    request: CommitmentsRequest,
+) -> CommitmentsResponse:
+    """Promises the sender makes in one outgoing message ("I'll send the deck
+    by Friday"), with due dates resolved against when it was sent."""
+
+    return await email_ai_service.commitments(request)

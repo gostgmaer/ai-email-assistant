@@ -1,5 +1,10 @@
 from app.capabilities.answer.graph import answer_graph
 from app.capabilities.answer.schemas import AnswerRequest, AnswerResponse
+from app.capabilities.commitments.graph import commitments_graph
+from app.capabilities.commitments.schemas import (
+    CommitmentsRequest,
+    CommitmentsResponse,
+)
 from app.capabilities.reply.graph import reply_graph
 from app.capabilities.reply.schemas import (
     ReplyRequest,
@@ -70,6 +75,20 @@ class EmailAIService:
             answer=result["answer"],
             citations=result["citations"],
             found=result["found"],
+            provider=result["provider"],
+            model=result["model"],
+            usage=result["usage"],
+        )
+
+    async def commitments(
+        self,
+        request: CommitmentsRequest,
+    ) -> CommitmentsResponse:
+
+        result = await commitments_graph.ainvoke(request.model_dump())
+
+        return CommitmentsResponse(
+            commitments=result["commitments"],
             provider=result["provider"],
             model=result["model"],
             usage=result["usage"],

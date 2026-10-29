@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { QueueService } from '../../infrastructure/queue';
 // Leaf-file imports and forwardRef(AuthModule) — same reasoning as
 // ApprovalModule's comment.
+import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { EmailAccountModule } from '../email-account';
 import { EmailModule } from '../email/email.module';
@@ -21,6 +22,9 @@ import { AutomationService } from './services/automation.service';
     EmailModule,
     NotificationModule,
     forwardRef(() => AuthModule),
+    // CommitmentService, for the commitment scan; AiModule sits in the
+    // AuthModule -> CalendarModule -> AiModule cycle.
+    forwardRef(() => AiModule),
   ],
 
   controllers: [AutomationController, AnalyticsController],
@@ -36,5 +40,6 @@ export class AutomationModule implements OnApplicationBootstrap {
     await this.queueService.scheduleRuleExecutionCleanup();
     await this.queueService.scheduleFollowUpScan();
     await this.queueService.scheduleTriageScan();
+    await this.queueService.scheduleCommitmentScan();
   }
 }

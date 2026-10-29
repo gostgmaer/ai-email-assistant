@@ -14,6 +14,7 @@ import { WorkflowModule } from '../workflow';
 import { AiController } from './controllers/ai.controller';
 import { AiProcessingProcessor } from './processors/ai-processing.processor';
 import { AiClientService } from './services/ai-client.service';
+import { CommitmentService } from './services/commitment.service';
 import { ContactMemoryService } from './services/contact-memory.service';
 
 @Module({
@@ -54,8 +55,13 @@ import { ContactMemoryService } from './services/contact-memory.service';
 
   controllers: [AiController],
 
-  providers: [AiClientService, ContactMemoryService, AiProcessingProcessor],
+  providers: [
+    AiClientService,
+    ContactMemoryService,
+    CommitmentService,
+    AiProcessingProcessor,
+  ],
 
-  exports: [AiClientService, ContactMemoryService],
+  exports: [AiClientService, ContactMemoryService, CommitmentService],
 })
 export class AiModule {}

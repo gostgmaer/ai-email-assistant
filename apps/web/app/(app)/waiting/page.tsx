@@ -98,6 +98,12 @@ function WaitingRow({
           Meeting request: {item.relatedMeetingRequests[0].description}
         </p>
       )}
+      {item.openCommitments.map((commitment) => (
+        <p key={commitment.id} className="mt-1 text-xs text-amber-700">
+          You promised: {commitment.description}
+          {commitment.dueDate && ` (due ${formatDateTime(commitment.dueDate)})`}
+        </p>
+      ))}
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
         <Link

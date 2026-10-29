@@ -151,6 +151,20 @@ interface RawAnswerResponse {
   usage: RawUsage;
 }
 
+interface RawCommitment {
+  text: string;
+  due_date: string | null;
+  due_time: string | null;
+  confidence: number;
+}
+
+interface RawCommitmentsResponse {
+  commitments: RawCommitment[];
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
 interface RawSummarizeResponse {
   summary: string;
   key_points: string[];
@@ -323,6 +337,35 @@ export interface AnswerResponse {
   answer: string;
   citations: number[];
   found: boolean;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
+export interface CommitmentsInput {
+  subject: string;
+  senderName: string;
+  /** The user's own text, quoted history already stripped. */
+  content: string;
+  /** e.g. "Tuesday 2026-10-27 14:05", on the user's clock. */
+  sentAt: string;
+  /** YYYY-MM-DD of the same moment. */
+  sentDate: string;
+  timezone: string;
+}
+
+export interface Commitment {
+  text: string;
+  /** YYYY-MM-DD, never before sentDate; null when no deadline was named. */
+  dueDate: string | null;
+  /** HH:MM, only with a dueDate. */
+  dueTime: string | null;
+  /** 0..1 */
+  confidence: number;
+}
+
+export interface CommitmentsResponse {
+  commitments: Commitment[];
   provider: string;
   model: string;
   usage: TokenUsage;
@@ -600,6 +643,31 @@ export class AiClientService {
     });
 
     return { ...res, usage: mapUsage(res.usage) };
+  }
+
+  /** Promises the user makes in one sent message, with due dates resolved
+   * against when it was sent. */
+  async commitments(input: CommitmentsInput): Promise<CommitmentsResponse> {
+    const res = await this.post<RawCommitmentsResponse>('/email/commitments', {
+      subject: input.subject,
+      sender_name: input.senderName,
+      content: input.content,
+      sent_at: input.sentAt,
+      sent_date: input.sentDate,
+      timezone: input.timezone,
+    });
+
+    return {
+      commitments: res.commitments.map((commitment) => ({
+        text: commitment.text,
+        dueDate: commitment.due_date,
+        dueTime: commitment.due_time,
+        confidence: commitment.confidence,
+      })),
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
   }
 
   /** Several texts in one provider call (at most 100 — the AI service's

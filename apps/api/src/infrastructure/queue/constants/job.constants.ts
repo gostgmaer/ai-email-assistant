@@ -44,11 +44,14 @@ export const AutomationJobs = {
   /** Delayed job at a thread's snoozedUntil: notifies and unsnoozes. */
   SnoozeWake: 'snooze-wake',
   /** Repeatable job (hourly): turns due "remind me if no reply" threads
-   * into FOLLOW_UP tasks. */
+   * into FOLLOW_UP tasks, and reminds about commitments that fell due. */
   FollowUpScan: 'follow-up-scan',
   /** Repeatable job: sets EmailThread.triage on threads that never got
    * one (ThreadTriageService.backfill). */
   TriageScan: 'triage-scan',
+  /** Repeatable job: reads recent sent mail for promises the user made
+   * (CommitmentService.scanPending). */
+  CommitmentScan: 'commitment-scan',
 } as const;
 
 export const DocumentJobs = {

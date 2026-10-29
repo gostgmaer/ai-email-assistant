@@ -293,6 +293,55 @@ export class AutomationService {
     return reminded;
   }
 
+  /**
+   * Commitments that fell due: each open COMMITMENT task past its dueDate
+   * is claimed (remindedAt set in one conditional update, so it's
+   * reminded once) and its owner is notified. A commitment the user
+   * already marked done or dismissed isn't open, so it stays quiet.
+   */
+  async runCommitmentReminders(now = new Date()): Promise<number> {
+    const due = await this.prisma.task.findMany({
+      where: {
+        type: 'COMMITMENT',
+        status: 'PENDING',
+        dueDate: { lte: now },
+        remindedAt: null,
+      },
+      take: 200,
+      select: {
+        id: true,
+        userId: true,
+        description: true,
+        threadId: true,
+        thread: { select: { subject: true } },
+      },
+    });
+
+    let reminded = 0;
+    for (const task of due) {
+      const { count } = await this.prisma.task.updateMany({
+        where: { id: task.id, remindedAt: null },
+        data: { remindedAt: now },
+      });
+      if (count === 0) {
+        continue;
+      }
+
+      const subject = task.thread?.subject ?? '(no subject)';
+      await this.notificationService
+        .create(
+          task.userId,
+          'A promise is due',
+          `You promised: "${task.description}" (in "${subject}").`,
+          { threadId: task.threadId, taskId: task.id },
+          'COMMITMENT_DUE',
+        )
+        .catch(() => undefined);
+      reminded++;
+    }
+    return reminded;
+  }
+
   /** Deletes RuleExecution rows older than the retention window. */
   async cleanupRuleExecutions(): Promise<number> {
     const { count } = await this.prisma.ruleExecution.deleteMany({

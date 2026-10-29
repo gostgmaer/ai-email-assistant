@@ -1,8 +1,10 @@
 import {
   isValidTimeZone,
   isWithinBusinessHours,
+  localDateTime,
   localDayAndMinutes,
   quietHoursEnd,
+  zonedTimeToUtc,
 } from './local-time.util';
 
 describe('local-time.util', () => {
@@ -54,5 +56,41 @@ describe('local-time.util', () => {
         quietHoursEnd(at, 'Europe/Berlin', { start: null, end: null }),
       ).toBeNull();
     });
+  });
+
+  it('formats a moment on the local clock', () => {
+    expect(localDateTime(at, 'Europe/Berlin')).toEqual({
+      date: '2026-10-20',
+      time: '23:30',
+      weekday: 'Tuesday',
+    });
+    // Past midnight in Kolkata (UTC+5:30), so the date moves on.
+    expect(localDateTime(at, 'Asia/Kolkata')).toEqual({
+      date: '2026-10-21',
+      time: '03:00',
+      weekday: 'Wednesday',
+    });
+  });
+
+  it('turns a local date and time into the instant it stands for', () => {
+    expect(zonedTimeToUtc('2026-10-30', '17:00', 'Asia/Kolkata')).toEqual(
+      new Date('2026-10-30T11:30:00Z'),
+    );
+    expect(zonedTimeToUtc('2026-10-30', '17:00', 'UTC')).toEqual(
+      new Date('2026-10-30T17:00:00Z'),
+    );
+    expect(zonedTimeToUtc('2026-10-30', '17:00', 'Not/AZone')).toEqual(
+      new Date('2026-10-30T17:00:00Z'),
+    );
+  });
+
+  it('uses the offset in force on that day across a DST change', () => {
+    // Berlin is UTC+2 until 25 Oct 2026, then UTC+1.
+    expect(zonedTimeToUtc('2026-10-24', '09:00', 'Europe/Berlin')).toEqual(
+      new Date('2026-10-24T07:00:00Z'),
+    );
+    expect(zonedTimeToUtc('2026-10-26', '09:00', 'Europe/Berlin')).toEqual(
+      new Date('2026-10-26T08:00:00Z'),
+    );
   });
 });

@@ -469,8 +469,12 @@ export class InboxService {
           select: { id: true, provider: true, email: true, aliases: true },
         },
         tasks: {
-          where: { type: 'MEETING_REQUEST', status: 'PENDING' },
-          select: { id: true, description: true },
+          where: {
+            type: { in: ['MEETING_REQUEST', 'COMMITMENT'] },
+            status: 'PENDING',
+          },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, type: true, description: true, dueDate: true },
         },
         // The user's own last message — its recipients are who the
         // thread is waiting on.
@@ -499,7 +503,13 @@ export class InboxService {
         ...aliases,
       ]),
       account,
-      relatedMeetingRequests: thread.tasks,
+      relatedMeetingRequests: thread.tasks
+        .filter((task) => task.type === 'MEETING_REQUEST')
+        .map(({ id, description }) => ({ id, description })),
+      // "You promised: …" — the user's own open commitments on the thread.
+      openCommitments: thread.tasks
+        .filter((task) => task.type === 'COMMITMENT')
+        .map(({ id, description, dueDate }) => ({ id, description, dueDate })),
     }));
   }
 
