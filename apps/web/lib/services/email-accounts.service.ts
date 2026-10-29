@@ -5,6 +5,8 @@ import type {
   AutomationLogEntry,
   AutomationMetrics,
   EmailAccount,
+  WritingStyle,
+  WritingStyleView,
 } from "../api/types";
 
 export async function listEmailAccounts(): Promise<EmailAccount[]> {
@@ -132,4 +134,36 @@ export async function removeAccountMember(
   await apiFetch(`/email-accounts/${accountId}/members/${userId}`, {
     method: "DELETE",
   });
+}
+
+/** The account's writing style, or null until it has been built. */
+export async function getWritingStyle(
+  accountId: string,
+): Promise<WritingStyleView | null> {
+  const { style } = await apiFetch<{ style: WritingStyleView | null }>(
+    `/email-accounts/${accountId}/writing-style`,
+  );
+  return style;
+}
+
+/** Edit the profile (the weekly rebuild then leaves it alone) or turn it
+ * on or off. Owner only. */
+export async function updateWritingStyle(
+  accountId: string,
+  changes: { enabled?: boolean; profile?: Partial<WritingStyle> },
+): Promise<WritingStyleView> {
+  return apiFetch<WritingStyleView>(
+    `/email-accounts/${accountId}/writing-style`,
+    { method: "PATCH", body: changes },
+  );
+}
+
+/** Learn the profile again from the latest sent mail, replacing edits. */
+export async function rebuildWritingStyle(
+  accountId: string,
+): Promise<WritingStyleView> {
+  return apiFetch<WritingStyleView>(
+    `/email-accounts/${accountId}/writing-style/rebuild`,
+    { method: "POST" },
+  );
 }

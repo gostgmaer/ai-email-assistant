@@ -28,6 +28,7 @@ const RULE_EXECUTION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const FOLLOW_UP_SCAN_INTERVAL_MS = 60 * 60 * 1000;
 const TRIAGE_SCAN_INTERVAL_MS = 5 * 60 * 1000;
 const COMMITMENT_SCAN_INTERVAL_MS = 5 * 60 * 1000;
+const WRITING_STYLE_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 // New mail is searchable in "Ask your inbox" within about a minute.
 const SEARCH_INDEX_SCAN_INTERVAL_MS = 60 * 1000;
 
@@ -299,6 +300,15 @@ export class QueueService {
       'commitment-scan',
       { every: COMMITMENT_SCAN_INTERVAL_MS },
       { name: AutomationJobs.CommitmentScan, data: {} },
+    );
+  }
+
+  /** Idempotent: registers the daily writing-style refresh. */
+  async scheduleWritingStyleRefresh(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'writing-style-refresh',
+      { every: WRITING_STYLE_REFRESH_INTERVAL_MS },
+      { name: AutomationJobs.WritingStyleRefresh, data: {} },
     );
   }
 

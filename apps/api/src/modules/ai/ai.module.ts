@@ -11,10 +11,13 @@ import { EmailModule } from '../email';
 import { NotificationModule } from '../notification';
 import { TasksModule } from '../tasks';
 import { WorkflowModule } from '../workflow';
+import { EmailAccountModule } from '../email-account/email-account.module';
 import { AiController } from './controllers/ai.controller';
+import { WritingStyleController } from './controllers/writing-style.controller';
 import { AiProcessingProcessor } from './processors/ai-processing.processor';
 import { AiClientService } from './services/ai-client.service';
 import { CommitmentService } from './services/commitment.service';
+import { WritingStyleService } from './services/writing-style.service';
 import { ContactMemoryService } from './services/contact-memory.service';
 
 @Module({
@@ -51,17 +54,26 @@ import { ContactMemoryService } from './services/contact-memory.service';
     // fourth time, for AiProcessingProcessor's REQUIRE_APPROVAL_CHAIN
     // handling (v3.0, see docs/MVP.md).
     forwardRef(() => ApprovalModule),
+    // WritingStyleController's account access checks; EmailAccountModule
+    // -> AuthModule -> CalendarModule -> AiModule closes the same cycle.
+    forwardRef(() => EmailAccountModule),
   ],
 
-  controllers: [AiController],
+  controllers: [AiController, WritingStyleController],
 
   providers: [
     AiClientService,
     ContactMemoryService,
     CommitmentService,
+    WritingStyleService,
     AiProcessingProcessor,
   ],
 
-  exports: [AiClientService, ContactMemoryService, CommitmentService],
+  exports: [
+    AiClientService,
+    ContactMemoryService,
+    CommitmentService,
+    WritingStyleService,
+  ],
 })
 export class AiModule {}

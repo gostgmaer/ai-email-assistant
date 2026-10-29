@@ -21,6 +21,8 @@ const DEFAULT_AI_REQUEST_TIMEOUT_MS = 60_000;
 // chunks and embeds a whole file.
 const TIMEOUT_MULTIPLIER: Record<string, number> = {
   '/email/reply': 2,
+  // Up to 50 emails in one prompt.
+  '/email/style-profile': 2,
   '/documents/process': 10,
 };
 
@@ -160,6 +162,23 @@ interface RawCommitment {
 
 interface RawCommitmentsResponse {
   commitments: RawCommitment[];
+  provider: string;
+  model: string;
+  usage: RawUsage;
+}
+
+interface RawStyleProfile {
+  greeting: string | null;
+  sign_off: string | null;
+  formality: WritingStyle['formality'];
+  length: WritingStyle['length'];
+  language: string | null;
+  common_phrases: string[];
+  notes: string | null;
+}
+
+interface RawStyleProfileResponse {
+  profile: RawStyleProfile;
   provider: string;
   model: string;
   usage: RawUsage;
@@ -371,6 +390,28 @@ export interface CommitmentsResponse {
   usage: TokenUsage;
 }
 
+/** How the user writes — WritingStyleProfile.profile. No names, numbers or
+ * other details from the mail it was learned from. */
+export interface WritingStyle {
+  /** e.g. "Hi {name}," — {name} is the recipient. */
+  greeting: string | null;
+  signOff: string | null;
+  formality: 'casual' | 'neutral' | 'formal';
+  length: 'short' | 'medium' | 'long';
+  /** Median word count of the samples (computed by apps/api). */
+  medianWords: number | null;
+  language: string | null;
+  commonPhrases: string[];
+  notes: string | null;
+}
+
+export interface StyleProfileResponse {
+  profile: Omit<WritingStyle, 'medianWords'>;
+  provider: string;
+  model: string;
+  usage: TokenUsage;
+}
+
 export interface EmbedBatchResponse {
   embeddings: number[][];
   provider: string;
@@ -437,6 +478,9 @@ export class AiClientService {
     // whether a signature will be appended afterwards — see
     // ReplyRequest.sender_profile.
     senderProfile?: SenderProfile,
+    // How the user writes (WritingStyleProfile). Ignored by apps/ai when
+    // systemPromptOverride is set — a persona defines its own voice.
+    writingStyle?: WritingStyle,
   ): Promise<GenerateReplyResponse> {
     const res = await this.post<RawReplyResponse>('/email/reply', {
       subject,
@@ -451,6 +495,7 @@ export class AiClientService {
             has_signature: senderProfile.hasSignature,
           }
         : undefined,
+      writing_style: toRawWritingStyle(writingStyle),
     });
 
     return {
@@ -465,10 +510,12 @@ export class AiClientService {
     draft: string,
     instruction?: string,
     style?: RewriteStyle,
+    writingStyle?: WritingStyle,
   ): Promise<RewriteResponse> {
     const res = await this.post<RawRewriteResponse>('/email/rewrite', {
       draft,
       ...resolveRewriteStyle(style, instruction),
+      writing_style: toRawWritingStyle(writingStyle),
     });
 
     return {
@@ -645,6 +692,33 @@ export class AiClientService {
     return { ...res, usage: mapUsage(res.usage) };
   }
 
+  /** How the user writes, from samples of their own sent mail; `names`
+   * (theirs and their recipients') are scrubbed from the result. */
+  async styleProfile(
+    samples: string[],
+    names: string[],
+  ): Promise<StyleProfileResponse> {
+    const res = await this.post<RawStyleProfileResponse>(
+      '/email/style-profile',
+      { samples, names },
+    );
+
+    return {
+      profile: {
+        greeting: res.profile.greeting,
+        signOff: res.profile.sign_off,
+        formality: res.profile.formality,
+        length: res.profile.length,
+        language: res.profile.language,
+        commonPhrases: res.profile.common_phrases,
+        notes: res.profile.notes,
+      },
+      provider: res.provider,
+      model: res.model,
+      usage: mapUsage(res.usage),
+    };
+  }
+
   /** Promises the user makes in one sent message, with due dates resolved
    * against when it was sent. */
   async commitments(input: CommitmentsInput): Promise<CommitmentsResponse> {
@@ -777,4 +851,19 @@ export class AiClientService {
 
     return (await response.json()) as T;
   }
+}
+
+function toRawWritingStyle(style?: WritingStyle) {
+  return style
+    ? {
+        greeting: style.greeting ?? undefined,
+        sign_off: style.signOff ?? undefined,
+        formality: style.formality,
+        length: style.length,
+        median_words: style.medianWords ?? undefined,
+        language: style.language ?? undefined,
+        common_phrases: style.commonPhrases,
+        notes: style.notes ?? undefined,
+      }
+    : undefined;
 }

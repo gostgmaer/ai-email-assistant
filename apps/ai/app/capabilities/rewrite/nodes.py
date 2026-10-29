@@ -3,6 +3,7 @@ from app.core.workflow.executor import llm_executor
 from app.core.workflow.message_builder import MessageBuilder
 from app.core.workflow.prompt_loader import prompt_loader
 from app.core.workflow.response_parser import ResponseParser
+from app.core.workflow.writing_style import writing_style_instruction
 
 from .state import RewriteState
 
@@ -18,8 +19,13 @@ def load_prompt(state: RewriteState) -> RewriteState:
 def build_messages(state: RewriteState) -> RewriteState:
     """Build rewrite messages."""
 
+    system_prompt = state["system_prompt"]
+    style = writing_style_instruction(state.get("writing_style"))
+    if style:
+        system_prompt += f"\n\n## The author's own style\n\n{style}"
+
     state["messages"] = MessageBuilder.rewrite(
-        system_prompt=state["system_prompt"],
+        system_prompt=system_prompt,
         draft=state["draft"],
         tone=state["tone"],
         language=state["language"],

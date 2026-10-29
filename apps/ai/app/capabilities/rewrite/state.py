@@ -15,6 +15,7 @@ class RewriteState(TypedDict):
     tone: str | None
     language: str | None
     instruction: NotRequired[str | None]
+    writing_style: NotRequired[dict | None]
 
     # Runtime
     system_prompt: NotRequired[str]

@@ -1,6 +1,11 @@
 from app.capabilities.answer.graph import answer_graph
 from app.capabilities.answer.schemas import AnswerRequest, AnswerResponse
 from app.capabilities.commitments.graph import commitments_graph
+from app.capabilities.style_profile.graph import style_profile_graph
+from app.capabilities.style_profile.schemas import (
+    StyleProfileRequest,
+    StyleProfileResponse,
+)
 from app.capabilities.commitments.schemas import (
     CommitmentsRequest,
     CommitmentsResponse,
@@ -75,6 +80,20 @@ class EmailAIService:
             answer=result["answer"],
             citations=result["citations"],
             found=result["found"],
+            provider=result["provider"],
+            model=result["model"],
+            usage=result["usage"],
+        )
+
+    async def style_profile(
+        self,
+        request: StyleProfileRequest,
+    ) -> StyleProfileResponse:
+
+        result = await style_profile_graph.ainvoke(request.model_dump())
+
+        return StyleProfileResponse(
+            profile=result["profile"],
             provider=result["provider"],
             model=result["model"],
             usage=result["usage"],

@@ -5,6 +5,7 @@ import {
   IsArray,
   IsOptional,
   IsString,
+  IsUUID,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -30,4 +31,12 @@ export class GenerateReplyDto {
   @IsOptional()
   @IsString()
   instruction?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "The email account it's for: its writing style is used when it has one switched on.",
+  })
+  @IsOptional()
+  @IsUUID()
+  accountId?: string;
 }

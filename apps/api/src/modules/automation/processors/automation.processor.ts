@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 
 import { AutomationJobs, QueueNames } from '../../../infrastructure/queue';
 import { CommitmentService } from '../../ai/services/commitment.service';
+import { WritingStyleService } from '../../ai/services/writing-style.service';
 import { ThreadTriageService } from '../../email/services/thread-triage.service';
 import { AutomationService } from '../services/automation.service';
 
@@ -15,8 +16,8 @@ interface ScheduledSendJobData {
 }
 
 /** Scheduled auto-reply sends (delayed jobs), the daily RuleExecution
- * retention cleanup — see AutomationService — the triage backfill and the
- * commitment scan. */
+ * retention cleanup — see AutomationService — the triage backfill, the
+ * commitment scan and the writing-style refresh. */
 @Processor(QueueNames.Automation)
 export class AutomationProcessor extends WorkerHost {
   private readonly logger = new Logger(AutomationProcessor.name);
@@ -25,6 +26,7 @@ export class AutomationProcessor extends WorkerHost {
     private readonly automationService: AutomationService,
     private readonly threadTriageService: ThreadTriageService,
     private readonly commitmentService: CommitmentService,
+    private readonly writingStyleService: WritingStyleService,
   ) {
     super();
   }
@@ -62,6 +64,14 @@ export class AutomationProcessor extends WorkerHost {
         const read = await this.commitmentService.scanPending();
         if (read > 0) {
           this.logger.log(`Read ${read} sent message(s) for commitments.`);
+        }
+        return;
+      }
+
+      case AutomationJobs.WritingStyleRefresh: {
+        const built = await this.writingStyleService.refreshStale();
+        if (built > 0) {
+          this.logger.log(`Built ${built} writing style profile(s).`);
         }
         return;
       }

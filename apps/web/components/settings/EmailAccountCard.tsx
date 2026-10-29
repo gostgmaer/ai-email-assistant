@@ -16,6 +16,7 @@ import { ContactsPanel } from "./ContactsPanel";
 import { IntegrationsPanel } from "./IntegrationsPanel";
 import { MembersPanel } from "./MembersPanel";
 import { WorkflowRulesPanel } from "./WorkflowRulesPanel";
+import { WritingStylePanel } from "./WritingStylePanel";
 
 const STATUS_STYLE: Record<EmailAccount["syncStatus"], string> = {
   IDLE: "bg-emerald-50 text-emerald-700",
@@ -81,6 +82,7 @@ export function EmailAccountCard({
   const [showMembers, setShowMembers] = useState(false);
   const [showAgents, setShowAgents] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  const [showStyle, setShowStyle] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(
     () => autoExpandIntegrations ?? false,
   );
@@ -177,6 +179,13 @@ export function EmailAccountCard({
             onClick={() => setShowContacts((v) => !v)}
           >
             Contacts
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowStyle((v) => !v)}
+          >
+            Writing style
           </Button>
           {isOwner && (
             <>
@@ -367,6 +376,10 @@ export function EmailAccountCard({
       )}
 
       {showContacts && <ContactsPanel accountId={account.id} />}
+
+      {showStyle && (
+        <WritingStylePanel accountId={account.id} isOwner={isOwner} />
+      )}
     </div>
   );
 }

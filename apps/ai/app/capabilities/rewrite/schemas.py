@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.capabilities.reply.schemas import WritingStyle
+
 
 class RewriteRequest(BaseModel):
     draft: str
@@ -9,6 +11,8 @@ class RewriteRequest(BaseModel):
     tone: str | None = None
     language: str | None = None
     instruction: str | None = None
+    # The user's own style; a requested tone or instruction wins over it.
+    writing_style: WritingStyle | None = None
 
 
 class TokenUsageSchema(BaseModel):

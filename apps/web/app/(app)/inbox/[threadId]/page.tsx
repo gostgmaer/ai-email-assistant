@@ -436,6 +436,7 @@ export default function ThreadPage() {
       {lastMessage && (
         <ReplyBox
           threadId={thread.id}
+          accountId={thread.account.id}
           subject={thread.subject ?? ""}
           messages={thread.messages}
           lastMessage={lastMessage}

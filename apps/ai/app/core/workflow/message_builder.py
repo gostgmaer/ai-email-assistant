@@ -31,6 +31,10 @@ def _defuse(text: str) -> str:
     return _TAG_PATTERN.sub(lambda m: "‹" + m.group(0)[1:], text)
 
 
+# For capabilities that build their own <email> blocks.
+defuse = _defuse
+
+
 def _attr(value: str) -> str:
     return _defuse(value).replace('"', "'").replace("\n", " ")
 

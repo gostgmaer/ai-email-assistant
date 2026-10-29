@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 import { REWRITE_STYLES, RewriteStyle } from '../utils/rewrite-styles.util';
 
@@ -24,4 +24,12 @@ export class RewriteDto {
   @IsOptional()
   @IsIn(REWRITE_STYLES)
   style?: RewriteStyle;
+
+  @ApiPropertyOptional({
+    description:
+      "The email account it's for: its writing style is used when it has one switched on.",
+  })
+  @IsOptional()
+  @IsUUID()
+  accountId?: string;
 }

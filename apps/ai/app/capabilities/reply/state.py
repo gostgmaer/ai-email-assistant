@@ -28,6 +28,7 @@ class ReplyState(TypedDict):
     instruction: NotRequired[str]
     system_prompt_override: NotRequired[str]
     sender_profile: NotRequired[dict | None]
+    writing_style: NotRequired[dict | None]
 
     # Runtime
     system_prompt: NotRequired[str]

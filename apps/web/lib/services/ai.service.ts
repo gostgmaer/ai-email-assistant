@@ -58,14 +58,17 @@ export interface GenerateReplyResult {
   unsupportedClaims?: string[];
 }
 
+/** `accountId` is the account the reply goes out from: its writing style
+ * (Settings → Accounts) is used when switched on. */
 export async function generateReply(
   subject: string,
   thread: AiThreadMessage[],
   instruction?: string,
+  accountId?: string,
 ): Promise<GenerateReplyResult> {
   return apiFetch("/ai/reply", {
     method: "POST",
-    body: { subject, thread, instruction },
+    body: { subject, thread, instruction, accountId },
   });
 }
 
@@ -83,10 +86,11 @@ export type RewriteStyle = "shorter" | "formal" | "friendly" | "grammar";
 export async function rewrite(
   draft: string,
   style?: RewriteStyle,
+  accountId?: string,
 ): Promise<RewriteResult> {
   return apiFetch("/ai/rewrite", {
     method: "POST",
-    body: { draft, style },
+    body: { draft, style, accountId: accountId || undefined },
   });
 }
 

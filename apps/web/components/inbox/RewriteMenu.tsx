@@ -23,10 +23,13 @@ export function RewriteMenu({
   text,
   onChange,
   onError,
+  accountId,
 }: {
   text: string;
   onChange: (text: string) => void;
   onError: (message: string | null) => void;
+  /** The sending account: its writing style is kept when it has one. */
+  accountId?: string;
 }) {
   const [loading, setLoading] = useState(false);
   // The text before the last rewrite, and what that rewrite produced. Undo
@@ -41,7 +44,7 @@ export function RewriteMenu({
     onError(null);
     try {
       const style = value === "improve" ? undefined : (value as RewriteStyle);
-      const result = await rewrite(text, style);
+      const result = await rewrite(text, style, accountId);
       setUndo({ before: text, after: result.text });
       onChange(result.text);
     } catch (error) {

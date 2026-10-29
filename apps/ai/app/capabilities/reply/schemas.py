@@ -19,6 +19,21 @@ class SenderProfile(BaseModel):
     has_signature: bool = False
 
 
+class WritingStyle(BaseModel):
+    """How the mailbox owner writes (apps/api's WritingStyleProfile): learned
+    from their sent mail, possibly edited by them. Ignored when an agent
+    persona (system_prompt_override) is set."""
+
+    greeting: str | None = Field(None, max_length=120)
+    sign_off: str | None = Field(None, max_length=120)
+    formality: str | None = Field(None, max_length=20)
+    length: str | None = Field(None, max_length=20)
+    median_words: int | None = None
+    language: str | None = Field(None, max_length=60)
+    common_phrases: list[str] = Field(default=[], max_length=8)
+    notes: str | None = Field(None, max_length=500)
+
+
 class ReplyRequest(BaseModel):
     subject: str
     thread: list[EmailMessageSchema]
@@ -31,6 +46,7 @@ class ReplyRequest(BaseModel):
     # replies, not layer on top of the generic one.
     system_prompt_override: str | None = None
     sender_profile: SenderProfile | None = None
+    writing_style: WritingStyle | None = None
 
 
 class TokenUsageResponse(BaseModel):

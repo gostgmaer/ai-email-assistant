@@ -41,5 +41,6 @@ export class AutomationModule implements OnApplicationBootstrap {
     await this.queueService.scheduleFollowUpScan();
     await this.queueService.scheduleTriageScan();
     await this.queueService.scheduleCommitmentScan();
+    await this.queueService.scheduleWritingStyleRefresh();
   }
 }

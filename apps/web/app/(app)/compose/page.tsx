@@ -93,6 +93,7 @@ function ComposeContent() {
     defaultValues: { accountId: "", to: "", cc: "", bcc: "", subject: "", body: "" },
   });
   const body = useWatch({ control, name: "body" });
+  const accountId = useWatch({ control, name: "accountId" });
 
   useEffect(() => {
     if (!draftMessage) return;
@@ -334,6 +335,7 @@ function ComposeContent() {
                 setValue("body", text, { shouldDirty: true, shouldValidate: true })
               }
               onError={setRewriteError}
+              accountId={accountId}
             />
           </div>
           <textarea

@@ -24,6 +24,7 @@ const FOLLOW_UP_INSTRUCTION =
 
 export function ReplyBox({
   threadId,
+  accountId,
   subject,
   messages,
   lastMessage,
@@ -31,6 +32,8 @@ export function ReplyBox({
   autoDraftFollowUp = false,
 }: {
   threadId: string;
+  /** The thread's account: AI replies and rewrites use its writing style. */
+  accountId: string;
   subject: string;
   messages: EmailMessage[];
   lastMessage: EmailMessage;
@@ -80,6 +83,7 @@ export function ReplyBox({
         subject,
         messages.map(toAiThreadMessage),
         waitingForReply ? FOLLOW_UP_INSTRUCTION : undefined,
+        accountId,
       );
       setBody(reply);
       setAiClaims(unsupportedClaims ?? []);
@@ -131,7 +135,12 @@ export function ReplyBox({
               <SparklesIcon className="h-4 w-4" />
               {waitingForReply ? "Draft follow-up" : "AI Reply"}
             </Button>
-            <RewriteMenu text={body} onChange={setBody} onError={setAiError} />
+            <RewriteMenu
+              text={body}
+              onChange={setBody}
+              onError={setAiError}
+              accountId={accountId}
+            />
           </div>
           <div className="flex items-center gap-3">
             {hasOtherRecipients && (

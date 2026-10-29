@@ -34,6 +34,8 @@ export interface GenerationMetadata {
   contactMemoryUsed: boolean;
   crmContactUsed: boolean;
   calendarAgentUsed: boolean;
+  // Optional: drafts made before writing styles existed don't have it.
+  writingStyleUsed?: boolean;
   provider: string;
   model: string;
   usage: { inputTokens: number; outputTokens: number; totalTokens: number };

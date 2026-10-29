@@ -16,6 +16,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
+import { EmailAccountService } from '../../email-account/services/email-account.service';
 import { InboxService } from '../../email/services/inbox.service';
 import {
   ClassifyDto,
@@ -23,7 +24,8 @@ import {
   RewriteDto,
   SummarizeDto,
 } from '../dto';
-import { AiClientService } from '../services/ai-client.service';
+import { AiClientService, WritingStyle } from '../services/ai-client.service';
+import { WritingStyleService } from '../services/writing-style.service';
 import { scanOutputForActionClaims } from '../utils/action-claim-scan.util';
 import {
   buildThreadContext,
@@ -38,6 +40,8 @@ export class AiController {
   constructor(
     private readonly aiClientService: AiClientService,
     private readonly inboxService: InboxService,
+    private readonly emailAccountService: EmailAccountService,
+    private readonly writingStyleService: WritingStyleService,
   ) {}
 
   @Post('summarize')
@@ -89,11 +93,14 @@ export class AiController {
     status: 502,
     description: 'The AI service failed or is unreachable',
   })
-  async reply(@Body() dto: GenerateReplyDto) {
+  async reply(@CurrentUser() user: JwtPayload, @Body() dto: GenerateReplyDto) {
     const result = await this.aiClientService.generateReply(
       dto.subject,
       dto.thread,
       dto.instruction,
+      undefined,
+      undefined,
+      await this.writingStyleFor(user.sub, dto.accountId),
     );
     // Same deterministic check the auto-send path runs: the user is about
     // to send this themselves, so flag "already done / attached" claims
@@ -109,8 +116,29 @@ export class AiController {
     status: 502,
     description: 'The AI service failed or is unreachable',
   })
-  async rewrite(@Body() dto: RewriteDto) {
-    return this.aiClientService.rewrite(dto.draft, dto.instruction, dto.style);
+  async rewrite(@CurrentUser() user: JwtPayload, @Body() dto: RewriteDto) {
+    return this.aiClientService.rewrite(
+      dto.draft,
+      dto.instruction,
+      dto.style,
+      await this.writingStyleFor(user.sub, dto.accountId),
+    );
+  }
+
+  /** The account's writing style, when the caller names an account they
+   * can use and it has one switched on. */
+  private async writingStyleFor(
+    userId: string,
+    accountId?: string,
+  ): Promise<WritingStyle | undefined> {
+    if (!accountId) {
+      return undefined;
+    }
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      accountId,
+    );
+    return this.writingStyleService.forAccountQuietly(accountId);
   }
 
   @Post('classify')

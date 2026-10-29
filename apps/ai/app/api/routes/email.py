@@ -8,6 +8,10 @@ from app.capabilities.commitments.schemas import (
 )
 from app.capabilities.extract.schemas import ExtractRequest, ExtractResponse
 from app.capabilities.rewrite.schemas import RewriteRequest, RewriteResponse
+from app.capabilities.style_profile.schemas import (
+    StyleProfileRequest,
+    StyleProfileResponse,
+)
 from app.capabilities.summarize.schemas import SummarizeRequest, SummarizeResponse
 from app.capabilities.reply.schemas import ReplyRequest, ReplyResponse
 from app.capabilities.contact_memory.schemas import (
@@ -131,3 +135,17 @@ async def find_commitments(
     by Friday"), with due dates resolved against when it was sent."""
 
     return await email_ai_service.commitments(request)
+
+
+@router.post(
+    "/style-profile",
+    response_model=StyleProfileResponse,
+)
+async def build_style_profile(
+    request: StyleProfileRequest,
+) -> StyleProfileResponse:
+    """How the user writes (greeting, sign-off, length, formality, common
+    phrases), learned from their own sent mail, with names and numbers
+    removed."""
+
+    return await email_ai_service.style_profile(request)

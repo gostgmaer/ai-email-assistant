@@ -402,6 +402,8 @@ export class EmailAccountService {
         data: { deletedAt: new Date(), syncEnabled: false },
       }),
       this.prisma.emailCredential.deleteMany({ where: { accountId } }),
+      // Learned from the account's mail, so it goes with it.
+      this.prisma.writingStyleProfile.deleteMany({ where: { accountId } }),
     ]);
   }
 

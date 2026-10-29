@@ -347,6 +347,8 @@ model EmailAccount {
   approvalChains ApprovalChain[]
   ruleExecutions RuleExecution[]
 
+  writingStyleProfile WritingStyleProfile?
+
   @@unique([provider, email])
   @@index([userId])
 }
@@ -1170,6 +1172,40 @@ enum AiDraftOutcomeKind {
   DISCARDED
   // It went out without review (auto-send, scheduled send).
   AUTO_SENT
+}
+
+/**
+ * How the account's owner writes (greeting, sign-off, length, formality,
+ * common phrases), learned from their own sent mail by the AI service's
+ * style_profile capability and passed to the reply and rewrite prompts.
+ * One per account; rebuilt weekly unless the user edited it, deleted when
+ * the account is disconnected.
+ */
+model WritingStyleProfile {
+  id String @id @default(uuid())
+
+  accountId String       @unique
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // { greeting, signOff, formality, length, medianWords, language,
+  //   commonPhrases, notes } — see WritingStyle in ai-client.service.ts.
+  profile Json
+
+  // How many sent messages it was learned from.
+  sampleCount Int
+
+  // Off: replies and rewrites don't use it (it's kept, not deleted).
+  enabled Boolean @default(true)
+
+  builtAt DateTime
+  // Set when the user changed the profile by hand; the weekly rebuild then
+  // leaves it alone. A manual rebuild clears it.
+  editedAt DateTime?
+
+  // When the account first got a profile — the before/after line for
+  // measuring how much AI drafts get edited.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /**

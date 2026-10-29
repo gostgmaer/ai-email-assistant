@@ -2,6 +2,7 @@ from app.core.workflow.executor import llm_executor
 from app.core.workflow.message_builder import MessageBuilder
 from app.core.workflow.prompt_loader import prompt_loader
 from app.core.workflow.response_parser import ResponseParser
+from app.core.workflow.writing_style import writing_style_instruction
 
 from .state import ReplyState
 
@@ -57,12 +58,22 @@ def sender_profile_instruction(profile: dict | None) -> str | None:
     return "\n".join(f"- {line}" for line in lines) if lines else None
 
 
+def reply_instruction(state: ReplyState) -> str | None:
+    """Sender identity, then the user's writing style — unless an agent
+    persona is set: a persona fully defines how that account replies."""
+    parts = [sender_profile_instruction(state.get("sender_profile"))]
+    if not state.get("system_prompt_override"):
+        parts.append(writing_style_instruction(state.get("writing_style")))
+    joined = "\n\n".join(part for part in parts if part)
+    return joined or None
+
+
 def build_messages(state: ReplyState):
     state["messages"] = MessageBuilder.reply(
         system_prompt=state["system_prompt"],
         subject=state["subject"],
         thread=state["thread"],
-        instruction=sender_profile_instruction(state.get("sender_profile")),
+        instruction=reply_instruction(state),
         # The API's "instruction" field carries reference material
         # (documents, contact facts, calendar notes), partly derived from
         # third-party email — so it's passed as delimited, untrusted context,

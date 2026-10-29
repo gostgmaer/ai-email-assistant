@@ -52,6 +52,9 @@ export const AutomationJobs = {
   /** Repeatable job: reads recent sent mail for promises the user made
    * (CommitmentService.scanPending). */
   CommitmentScan: 'commitment-scan',
+  /** Repeatable job (daily): builds writing-style profiles that are
+   * missing or a week old (WritingStyleService.refreshStale). */
+  WritingStyleRefresh: 'writing-style-refresh',
 } as const;
 
 export const DocumentJobs = {

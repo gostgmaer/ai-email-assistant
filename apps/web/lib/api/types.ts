@@ -357,6 +357,35 @@ export interface AgentTemplate {
   suggestedRules: { name: string }[];
 }
 
+/** How the account's owner writes, learned from their sent mail and used
+ * by AI replies and rewrites (GET /email-accounts/:id/writing-style). */
+export interface WritingStyle {
+  /** e.g. "Hi {name}," — {name} is the recipient. */
+  greeting: string | null;
+  signOff: string | null;
+  formality: "casual" | "neutral" | "formal";
+  length: "short" | "medium" | "long";
+  medianWords: number | null;
+  language: string | null;
+  commonPhrases: string[];
+  notes: string | null;
+}
+
+export interface WritingStyleView {
+  profile: WritingStyle;
+  sampleCount: number;
+  enabled: boolean;
+  builtAt: string;
+  editedAt: string | null;
+  createdAt: string;
+  /** Median edit distance of sent AI drafts (0 = unchanged, 1 = rewritten)
+   * in the 30 days before the profile existed and the 30 days since. */
+  editStats: {
+    before: { median: number | null; count: number };
+    after: { median: number | null; count: number };
+  };
+}
+
 export interface DraftQualityMetrics {
   reviewed: number;
   sent: number;

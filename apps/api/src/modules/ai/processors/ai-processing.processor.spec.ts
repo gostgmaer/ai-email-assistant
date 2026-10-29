@@ -263,6 +263,7 @@ describe('AiProcessingProcessor', () => {
       configService,
       queueService as never,
       { refreshQuietly: jest.fn().mockResolvedValue(undefined) } as never,
+      { forAccountQuietly: jest.fn().mockResolvedValue(undefined) } as never,
     );
 
     const run = () =>
@@ -1154,6 +1155,8 @@ describe('AiProcessingProcessor', () => {
           company: 'Acme',
           hasSignature: true,
         },
+        // No writing style built for the account.
+        undefined,
       );
       const [, sent] = deps.composeService.reply.mock.calls[0] as [
         string,

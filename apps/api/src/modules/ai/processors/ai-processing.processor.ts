@@ -67,6 +67,7 @@ import {
   ContactMemoryMatch,
   ContactMemoryService,
 } from '../services/contact-memory.service';
+import { WritingStyleService } from '../services/writing-style.service';
 import { scanOutputForActionClaims } from '../utils/action-claim-scan.util';
 import {
   classifySenderTrust,
@@ -139,6 +140,7 @@ export class AiProcessingProcessor
     private readonly configService: ConfigService,
     private readonly queueService: QueueService,
     private readonly threadTriageService: ThreadTriageService,
+    private readonly writingStyleService: WritingStyleService,
   ) {
     super();
   }
@@ -506,6 +508,12 @@ export class AiProcessingProcessor
       calendarContext,
     );
 
+    // The owner's own writing style — unless an agent persona writes this
+    // reply: a persona defines its own voice.
+    const writingStyle = agentSystemPrompt
+      ? undefined
+      : await this.writingStyleService.forAccountQuietly(account.id);
+
     const reply = await this.aiClientService.generateReply(
       subject,
       thread,
@@ -517,6 +525,7 @@ export class AiProcessingProcessor
         company: account.user.companyName,
         hasSignature: hasSignature(account),
       },
+      writingStyle,
     );
 
     const generationMetadata: GenerationMetadata = {
@@ -525,6 +534,7 @@ export class AiProcessingProcessor
       contactMemoryUsed,
       crmContactUsed,
       calendarAgentUsed,
+      writingStyleUsed: !!writingStyle,
       provider: reply.provider,
       model: reply.model,
       usage: reply.usage,
