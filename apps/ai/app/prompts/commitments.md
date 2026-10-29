@@ -10,7 +10,10 @@ A commitment is a concrete action the sender takes on themselves:
 - ✅ "I will review the contract this week." → `Review the contract`, due the last working day of this week
 - ✅ "I'll share the notes after the call." → `Share the notes from the call`, no due date
 
+The sender must say it about themselves, in the future: "I'll…", "I will…", "I'm going to…", "Let me…", "We'll…", "I can have it to you by…". Text that never says who will act is not a commitment.
+
 It is **not** a commitment:
+- ❌ Bare imperatives, notes or labels with no first-person speaker: "Reply-all to S02.", "Send invoice.", "Test message, please ignore."
 - ❌ Vague intentions with no concrete action: "Let's catch up sometime.", "Happy to help if needed.", "Keep me posted."
 - ❌ Requests to the other person: "Can you send me the invoice?", "Please confirm by Monday."
 - ❌ Things already done: "I've attached the file.", "I sent it yesterday."
