@@ -178,7 +178,7 @@ export default function ThreadPage() {
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-zinc-50">
-      <div className="flex shrink-0 items-center gap-3 border-b border-zinc-200 bg-white px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-zinc-200 bg-white px-4 py-3">
         <Link
           href="/inbox"
           aria-label="Back to inbox"
@@ -186,7 +186,7 @@ export default function ThreadPage() {
         >
           <ChevronLeftIcon className="h-5 w-5" />
         </Link>
-        <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-zinc-900">
+        <h1 className="min-w-0 flex-1 basis-40 truncate text-base font-semibold text-zinc-900">
           {thread.subject || "(no subject)"}
         </h1>
         <span

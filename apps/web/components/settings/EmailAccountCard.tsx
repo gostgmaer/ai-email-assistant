@@ -104,8 +104,8 @@ export function EmailAccountCard({
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1 basis-64">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-medium text-zinc-900">
               {account.email}
@@ -162,7 +162,7 @@ export function EmailAccountCard({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={onSyncNow} disabled={busy}>
             Sync now
           </Button>

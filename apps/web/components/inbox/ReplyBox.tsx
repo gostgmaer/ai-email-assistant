@@ -135,7 +135,7 @@ export function ReplyBox({
           <RemindSelect value={remindDays} onChange={setRemindDays} />
         </div>
 
-        <div className="flex items-center justify-between border-t border-zinc-100 px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 px-3 py-2">
           <div className="flex gap-2">
             <Button
               type="button"
@@ -154,7 +154,7 @@ export function ReplyBox({
               accountId={accountId}
             />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-3">
             {hasOtherRecipients && (
               <label className="flex items-center gap-1.5 text-xs text-zinc-600">
                 <input

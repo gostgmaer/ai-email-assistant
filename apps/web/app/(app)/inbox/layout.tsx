@@ -16,7 +16,12 @@ export default function InboxLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
-      <div className={clsx("h-full", threadActive ? "hidden lg:block" : "block")}>
+      <div
+        className={clsx(
+          "h-full w-full min-w-0 lg:w-auto lg:shrink-0",
+          threadActive ? "hidden lg:block" : "block",
+        )}
+      >
         <Suspense
           fallback={
             <div className="flex h-full w-full flex-col border-r border-zinc-200 bg-white lg:w-95 lg:shrink-0">

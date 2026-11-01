@@ -124,7 +124,7 @@ export default function DocumentsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Ask something covered by your documents…"
-              className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm"
             />
             <Button
               type="submit"
@@ -134,18 +134,18 @@ export default function DocumentsPage() {
               Search
             </Button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               placeholder="Filter by category (optional)"
-              className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 text-xs"
+              className="min-w-0 flex-1 basis-48 rounded-md border border-zinc-300 px-3 py-1.5 text-xs"
             />
             <input
               value={documentTypeFilter}
               onChange={(e) => setDocumentTypeFilter(e.target.value)}
               placeholder="Filter by file type, e.g. pdf (optional)"
-              className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 text-xs"
+              className="min-w-0 flex-1 basis-48 rounded-md border border-zinc-300 px-3 py-1.5 text-xs"
             />
           </div>
         </form>

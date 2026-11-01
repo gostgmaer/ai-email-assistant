@@ -78,7 +78,7 @@ export function MeetingCard({
 
   return (
     <Shell>
-      <div className="min-w-0 flex-1 space-y-2">
+      <div className="min-w-0 flex-1 basis-60 space-y-2">
         <p className="text-zinc-700">
           <span className="font-medium">Meeting request:</span>{" "}
           {task.description}
@@ -110,7 +110,7 @@ export function MeetingCard({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex shrink-0 items-start gap-3 border-b border-indigo-100 bg-indigo-50/60 px-4 py-2.5 text-xs">
+    <div className="flex shrink-0 flex-wrap items-start gap-3 border-b border-indigo-100 bg-indigo-50/60 px-4 py-2.5 text-xs">
       <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
       {children}
     </div>
@@ -184,8 +184,10 @@ function CreateEvent({
             checked={invite}
             onChange={(event) => setInvite(event.target.checked)}
           />
-          Invite {proposal.attendeeEmail} (sends them a calendar invite and a
-          short confirmation reply in this thread)
+          <span className="min-w-0 break-words">
+            Invite {proposal.attendeeEmail} (sends them a calendar invite and a
+            short confirmation reply in this thread)
+          </span>
         </label>
       )}
       {createMutation.isError && (

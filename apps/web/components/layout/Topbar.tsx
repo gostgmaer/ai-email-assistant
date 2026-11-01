@@ -5,10 +5,10 @@ import { Suspense, useState, type FormEvent } from "react";
 
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Avatar } from "@/components/ui/Avatar";
-import { SearchIcon, SparklesIcon } from "@/components/icons";
+import { MenuIcon, SearchIcon, SparklesIcon } from "@/components/icons";
 import { useAuth } from "@/lib/auth/auth-context";
 
-export function Topbar() {
+export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -21,12 +21,20 @@ export function Topbar() {
   const label = user?.displayName ?? user?.email ?? "?";
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-zinc-200 bg-white px-4">
-      <Suspense fallback={<div className="max-w-lg flex-1" />}>
+    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-zinc-200 bg-white px-4 sm:gap-4">
+      <button
+        type="button"
+        onClick={onOpenMenu}
+        aria-label="Open menu"
+        className="-ml-1 shrink-0 rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 sm:hidden"
+      >
+        <MenuIcon className="h-5 w-5" />
+      </button>
+      <Suspense fallback={<div className="max-w-lg min-w-0 flex-1" />}>
         <SearchBox />
       </Suspense>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <NotificationBell />
         <div className="relative">
           <button
@@ -86,7 +94,7 @@ function SearchBox() {
 
   return (
     // Keyed by the URL's query so the field resets whenever it changes.
-    <form key={q} onSubmit={handleSearchSubmit} className="max-w-lg flex-1">
+    <form key={q} onSubmit={handleSearchSubmit} className="max-w-lg min-w-0 flex-1">
       <div className="relative">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
         <input
@@ -95,7 +103,7 @@ function SearchBox() {
           defaultValue={q}
           placeholder="Search email…"
           aria-label="Search email"
-          className="w-full rounded-full border border-transparent bg-zinc-100 py-2 pr-24 pl-9 text-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="w-full rounded-full border border-transparent bg-zinc-100 py-2 pr-11 pl-9 text-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:pr-24"
         />
         {/* type="button": Enter must keep searching the inbox, and a form's
             first submit button is what Enter presses. */}
@@ -108,10 +116,11 @@ function SearchBox() {
             router.push(value ? `/ask?q=${encodeURIComponent(value)}` : "/ask");
           }}
           title="Ask a question about your email"
+          aria-label="Ask AI"
           className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 shadow-sm ring-1 ring-zinc-200 hover:bg-indigo-50"
         >
           <SparklesIcon className="h-3.5 w-3.5" />
-          Ask AI
+          <span className="hidden sm:inline">Ask AI</span>
         </button>
       </div>
     </form>

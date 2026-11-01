@@ -34,11 +34,33 @@ const SETTINGS_ITEMS = [
   { href: "/settings/security", label: "Security" },
 ];
 
-export function Sidebar() {
+export function Sidebar({
+  open,
+  onClose,
+}: {
+  // Below sm the sidebar is a drawer opened from the Topbar's menu button.
+  open: boolean;
+  onClose: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white sm:flex">
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/30 sm:hidden"
+          onClick={onClose}
+        />
+      )}
+      <nav
+        onClick={(event) => {
+          if ((event.target as HTMLElement).closest("a")) onClose();
+        }}
+        className={clsx(
+          "w-60 shrink-0 flex-col border-r border-zinc-200 bg-white sm:static sm:z-auto sm:flex",
+          open ? "fixed inset-y-0 left-0 z-40 flex" : "hidden",
+        )}
+      >
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-200 px-4">
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
           A
@@ -106,6 +128,7 @@ export function Sidebar() {
           </ul>
         </li>
       </ul>
-    </nav>
+      </nav>
+    </>
   );
 }
