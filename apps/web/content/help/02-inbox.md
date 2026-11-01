@@ -38,6 +38,8 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 
 **What happens:** each thread is grouped by its newest message and updates as new mail arrives. Sorting never moves or changes anything in your real mailbox.
 
+![The Inbox with the All, Needs reply, FYI and Notifications chips above a list of threads](/help-images/inbox-groups.png)
+
 ---
 
 ## Unsubscribe
@@ -76,6 +78,8 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 4. Check the time and title, then click **Create event**.
 
 If the app didn't recognise their answer, or they replied in a way it can't read, pick the time on the card yourself. **Propose new times** starts over with fresh times.
+
+![A Meeting request card with three times, the 2:00 PM one marked Their pick, an event title, the Invite option and a Create event button](/help-images/meeting-card.png)
 
 **Example:** Priya writes *"Can we talk Tuesday afternoon? I'm in Berlin."* **Propose times** writes:
 
@@ -201,6 +205,8 @@ If the app didn't recognise their answer, or they replied in a way it can't read
 ## Discarding an AI draft
 
 **How:** click **Discard** on a draft under a message, then say why: **Wrong facts**, **Wrong tone**, **Shouldn't reply**, **Too long** or **Other**. **Just discard** skips the question, and **Keep it** keeps the draft.
+
+![An AI draft after clicking Discard, showing the reason chips, Just discard and Keep it](/help-images/discard-reasons.png)
 
 **What happens:** the draft is deleted. Your reason helps the app find patterns and propose fixes on the [Suggestions](/help/13-suggestions) page.
 

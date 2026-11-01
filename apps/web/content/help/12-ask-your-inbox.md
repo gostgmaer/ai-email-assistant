@@ -6,6 +6,8 @@
 
 Ask a question in plain language and get a short answer taken from your own email, with links to the emails it came from. If your email doesn't answer the question, it says so instead of guessing.
 
+![Ask your inbox answering a question about an office move, with a numbered link to the email it came from](/help-images/ask.png)
+
 ## Where to find it
 
 **Ask** in the left sidebar, or type a question in the search box at the top of any page and click **Ask AI**.

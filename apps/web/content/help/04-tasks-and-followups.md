@@ -17,6 +17,8 @@ Two automatically-populated lists, pulled from your mail by AI — you never man
 
 ## Tasks
 
+![The Tasks page with a You promised task, an Action item and a Meeting request](/help-images/tasks.png)
+
 **Sub-filters:** **Pending** (default) / **Done** / **Dismissed** / **All**. Tasks with a due date come first, soonest due; the rest are newest first.
 
 Each task shows:
@@ -61,6 +63,8 @@ To offer the other person a choice of times instead, use [Propose times](/help/0
 ---
 
 ## Waiting
+
+![The Waiting page with a thread four days old, and Draft follow-up, Remind me and Not waiting controls](/help-images/waiting.png)
 
 **What it is:** a list of threads awaiting a reply — you sent the last message, and no one has responded since. The **All / 3+ days / 7+ days** filters narrow it by age.
 

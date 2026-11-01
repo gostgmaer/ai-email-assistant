@@ -251,7 +251,7 @@ export class InsightsService {
         where: { accountId },
         select: { id: true, name: true },
       }),
-      this.workload(accountId),
+      this.workload(accountId, now),
     ]);
 
     return {
@@ -325,15 +325,36 @@ export class InsightsService {
       .sort((a, b) => b.count - a.count);
   }
 
-  /** Inbox threads per assignee: ones needing a reply, and ones where the
-   * newest message is ours (the Waiting view's question). */
-  private async workload(accountId: string): Promise<InsightsData['workload']> {
+  /** Threads per assignee: inbox ones needing a reply, and the ones the
+   * Waiting view lists, which mostly sit in Sent rather than the inbox. */
+  private async workload(
+    accountId: string,
+    now: Date,
+  ): Promise<InsightsData['workload']> {
     const rows = await this.prisma.emailThread.groupBy({
       by: ['assignedToUserId', 'triage', 'lastMessageFromSelf'],
       where: {
         accountId,
-        folder: { type: 'INBOX' },
-        OR: [{ triage: 'NEEDS_REPLY' }, { lastMessageFromSelf: true }],
+        OR: [
+          { folder: { type: 'INBOX' }, triage: 'NEEDS_REPLY' },
+          {
+            lastMessageFromSelf: true,
+            folder: { type: { not: 'DRAFTS' } },
+            AND: [
+              { OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }] },
+              {
+                OR: [
+                  { waitingDismissedAt: null },
+                  {
+                    waitingDismissedAt: {
+                      lt: this.prisma.emailThread.fields.lastMessageAt,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
       _count: { _all: true },
     });

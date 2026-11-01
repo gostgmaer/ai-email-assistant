@@ -6,6 +6,8 @@
 
 When AI drafts keep getting discarded or heavily rewritten, the app works out what's going wrong and proposes a specific fix. You see the evidence and decide. **Nothing changes until the account's owner clicks Approve.**
 
+![The Suggestions page with two proposed rules, their evidence, and Approve and Reject buttons](/help-images/suggestions.png)
+
 ## Where to find it
 
 **Suggestions** in the left sidebar. If you have more than one account, choose it at the top of the page.

@@ -71,7 +71,10 @@ function buildDeps() {
     threadMetrics: { findMany: jest.fn().mockResolvedValue([]) },
     aiDraftOutcome: { findMany: jest.fn().mockResolvedValue([]) },
     agent: { findMany: jest.fn().mockResolvedValue([]) },
-    emailThread: { groupBy: jest.fn().mockResolvedValue([]) },
+    emailThread: {
+      groupBy: jest.fn().mockResolvedValue([]),
+      fields: { lastMessageAt: 'lastMessageAt' },
+    },
     user: { findMany: jest.fn().mockResolvedValue([]) },
     insightsSnapshot: {
       findUnique: jest.fn().mockResolvedValue(null),
@@ -210,6 +213,28 @@ describe('InsightsService', () => {
       { userId: 'u-1', name: 'Sam', openThreads: 4, waitingOnReply: 2 },
       { userId: null, name: 'Unassigned', openThreads: 1, waitingOnReply: 0 },
     ]);
+  });
+
+  it('counts waiting threads wherever they sit, like the Waiting view', async () => {
+    const { service, prisma } = buildDeps();
+
+    await service.refresh('acc-1', NOW);
+
+    const [{ where }] = prisma.emailThread.groupBy.mock.calls[0] as [
+      { where: { folder?: unknown; OR: { AND?: unknown[] }[] } },
+    ];
+    expect(where.folder).toBeUndefined();
+    expect(where.OR[0]).toEqual({
+      folder: { type: 'INBOX' },
+      triage: 'NEEDS_REPLY',
+    });
+    expect(where.OR[1]).toMatchObject({
+      lastMessageFromSelf: true,
+      folder: { type: { not: 'DRAFTS' } },
+    });
+    expect(where.OR[1].AND).toContainEqual({
+      OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: NOW } }],
+    });
   });
 
   it('one account failing does not stop the nightly run', async () => {

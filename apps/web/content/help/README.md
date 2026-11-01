@@ -8,8 +8,6 @@ This is a plain-language guide to every feature and setting in the app: what it'
 - **Example** — a concrete worked example with sample input/output.
 - **What happens** — the real effect (what gets saved, sent, or changed, and where).
 
-> Screenshots are not included in this pass — text and examples only. Images can be added later as a separate pass.
-
 ## Contents
 
 1. [Getting started — connecting an inbox](/help/01-getting-started)

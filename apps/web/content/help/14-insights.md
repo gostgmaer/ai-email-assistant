@@ -6,6 +6,8 @@
 
 One page showing how an inbox is doing: how fast people get a first response, who has open work, what the AI did, and what stopped it from auto-sending.
 
+![The Insights page with response times, open work per person, and AI replies per week and per agent](/help-images/insights.png)
+
 ## Where to find it
 
 **Insights** in the left sidebar. If you have more than one account, choose it at the top of the page. Any member of the account can see it.
@@ -19,7 +21,7 @@ The numbers are worked out overnight, and the top of the page says when they wer
 | Section | What it shows |
 |---|---|
 | **Last 7 days / The 7 days before** | The median time to a first response, plus how many threads were answered and how many weren't yet. Each thread counts in the week its first email arrived. |
-| **Open work per person** | Inbox threads per assignee: **Needs a reply**, and **Waiting on someone else** (you sent the last message). |
+| **Open work per person** | Threads per assignee: inbox threads that **Need a reply**, and **Waiting on someone else**, the same threads as the [Waiting](/help/04-tasks-and-followups#waiting) page shows with its **All** filter. |
 | **AI replies per week** | The last 4 weeks: **Auto-sent**, **Held, then sent**, **Held, then discarded**, and how much drafts were edited on average before sending. |
 | **AI replies per agent** | The same counts for each AI agent over the last 30 days. **Default assistant** means no agent wrote it. |
 | **What held replies back** | Which safety check stopped a reply that a rule wanted to auto-send, over the last 30 days. |
