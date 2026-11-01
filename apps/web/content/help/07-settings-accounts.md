@@ -49,6 +49,43 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 
 ---
 
+## Keep newsletters
+
+**What it is:** normally mailing-list and marketing mail is dropped before it reaches the app. Turn this on to keep it, in an Inbox **Newsletters** group where you can [unsubscribe](/help/02-inbox#unsubscribe) or [clean it up](/help/02-inbox#clean-up-newsletters).
+
+**Where:** in the account's **Sync filters**. Off by default.
+
+**What happens:** it applies to mail that arrives from now on. The AI never replies to this mail, and [Ask your inbox](/help/12-ask-your-inbox) doesn't search it.
+
+---
+
+## Writing style
+
+**What it is:** AI replies and rewrites for this account are written the way you write: your greeting, sign-off, length, formality and phrases you reuse. It's learned from your own sent mail, never from AI-written or automatic replies. An [agent persona](#ai-agents-personas), when a rule uses one, writes in its own voice instead.
+
+**Where:** the **Writing style** button on the account card. Any member can see it; only the owner can change it.
+
+**How to use it (owner):**
+- **Build from sent mail** or **Rebuild from sent mail** learns it now. It needs at least 5 sent emails and uses up to the latest 50.
+- **Edit** changes it by hand. Write `{name}` in the greeting for the recipient's name.
+- **Use my writing style** turns it on or off.
+
+**Example:**
+
+> Greeting: Hello {name},
+> Sign-off: Best regards,
+> Formality: neutral
+> Length: medium (about 83 words)
+> Phrases: "Thank you for reaching out", "Please let me know if you have any questions"
+
+**What happens:**
+- **Privacy:** names, email addresses, links and numbers are left out of the profile. Read it after building and edit out anything you'd rather not keep.
+- **Updates:** it's rebuilt weekly, unless you edited it or turned it off. A manual rebuild replaces your edits.
+- **Is it working?** The panel shows how much AI drafts were changed before sending, in the 30 days before the profile existed and since.
+- **Disconnecting the account** deletes the profile.
+
+---
+
 ## Policy
 
 **What it is:** a hard safety rail — a list of phrases that, if present in an AI-drafted reply, block it from auto-sending and hold it as a draft for human review instead. Empty by default; nothing is pre-populated, because every account's policy is different.

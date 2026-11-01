@@ -23,6 +23,9 @@ export const HELP_SLUGS = [
   "09-settings-profile",
   "10-settings-security",
   "11-approvals",
+  "12-ask-your-inbox",
+  "13-suggestions",
+  "14-insights",
 ] as const;
 
 export type HelpSlug = (typeof HELP_SLUGS)[number];

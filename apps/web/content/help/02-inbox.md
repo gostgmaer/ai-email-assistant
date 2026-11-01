@@ -22,6 +22,78 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 
 ---
 
+## Needs reply, FYI, Notifications and Newsletters
+
+**What it is:** the Inbox folder is split into groups, so what needs you stands out.
+
+**Where:** the chips under the folder tabs. They only show on **Inbox**.
+
+| Group | What's in it |
+|---|---|
+| **All** | Everything in the Inbox |
+| **Needs reply** | Someone is waiting on an answer from you |
+| **FYI** | Worth reading but no answer expected, such as mail you were only copied on, a "thanks", or a thread where you sent the last message |
+| **Notifications** | Automated mail, such as receipts and account alerts |
+| **Newsletters** | Mailing-list and marketing mail, only if [Keep newsletters](/help/07-settings-accounts#keep-newsletters) is on |
+
+**What happens:** each thread is grouped by its newest message and updates as new mail arrives. Sorting never moves or changes anything in your real mailbox.
+
+---
+
+## Unsubscribe
+
+**Where:** a newsletter thread shows an **Unsubscribe…** button above the messages.
+
+**How:** click **Unsubscribe…**, then pick from what the sender offers:
+- **Unsubscribe in one click**, then **Yes, unsubscribe**: the app does it for you.
+- **Open the sender's unsubscribe page**: opens their page, where you finish it.
+- **Email an unsubscribe request**: opens Compose with the request filled in. Nothing is sent until you click **Send**.
+
+**What happens:** this really does act on your behalf with the sender, so it always asks first. The sender may take a few days to stop. If they don't include a way to unsubscribe, the app tells you.
+
+---
+
+## Clean up newsletters
+
+**Where:** the **Newsletters** group in the Inbox.
+
+**How:** choose how old under **Clean up newsletters older than**. The app shows how many that matches. Click **Archive N** to confirm, or **Cancel**.
+
+**What happens:** those threads are archived in your real mailbox. They aren't deleted: you can still find them in your mailbox's archive.
+
+---
+
+## Meeting requests: Propose times
+
+**What it is:** when a thread has a meeting request, the app offers free times from your calendar in one click, then books the one the other person picks. It needs a connected [calendar](/help/08-settings-calendars).
+
+**Where:** a blue **Meeting request** card at the top of the thread.
+
+**How to use it:**
+1. Click **Propose times**. Free times are written into the reply box. Nothing is sent or booked.
+2. Edit the text if you like, then click **Send**.
+3. When they answer, the card marks the time they chose as **Their pick**, usually within a few minutes.
+4. Check the time and title, then click **Create event**.
+
+If the app didn't recognise their answer, or they replied in a way it can't read, pick the time on the card yourself. **Propose new times** starts over with fresh times.
+
+**Example:** Priya writes *"Can we talk Tuesday afternoon? I'm in Berlin."* **Propose times** writes:
+
+> Here are a few times that work for me:
+>
+> - Tuesday, Nov 3, 12:00 PM GMT+5:30 (Tue, 7:30 AM GMT+1)
+> - Tuesday, Nov 3, 2:00 PM GMT+5:30 (Tue, 9:30 AM GMT+1)
+> - Tuesday, Nov 3, 4:00 PM GMT+5:30 (Tue, 11:30 AM GMT+1)
+>
+> Let me know which suits you best.
+
+**What happens:**
+- **Which times:** only free time on your calendar, on weekdays between 9:00 and 17:00 on your clock, up to two weeks ahead, respecting the day and time they asked for where possible.
+- **Time zones:** your own are from your [Profile](/help/09-settings-profile), or your browser's if your profile is still on UTC. Theirs appears in brackets only if their email states it.
+- **Create event:** creates a real event on your calendar and marks the meeting request done. With **Invite** ticked, the person also gets a calendar invite and a short confirmation reply in this thread. Untick it to only block your own time.
+
+---
+
 ## Opening a thread
 
 **How:** click any row in the thread list.
@@ -123,4 +195,12 @@ A unified inbox across every connected mailbox, with an AI reply assistant, inte
 **How:** click **Cancel send** to keep it as an ordinary draft for review. Editing the draft, sending it yourself, or discarding it also cancels the automatic send — it can never go out twice.
 
 **What happens:** if you do nothing, it sends at the time shown. If auto-sending is switched off for the account before then, it isn't sent and you get a notification instead.
+
+---
+
+## Discarding an AI draft
+
+**How:** click **Discard** on a draft under a message, then say why: **Wrong facts**, **Wrong tone**, **Shouldn't reply**, **Too long** or **Other**. **Just discard** skips the question, and **Keep it** keeps the draft.
+
+**What happens:** the draft is deleted. Your reason helps the app find patterns and propose fixes on the [Suggestions](/help/13-suggestions) page.
 

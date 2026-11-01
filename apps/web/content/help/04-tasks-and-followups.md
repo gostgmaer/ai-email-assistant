@@ -1,27 +1,27 @@
 ← [Back to index](/help)
 
-# Tasks & Follow-ups
+# Tasks & Waiting
 
 ## What it is
 
-Two automatically-populated lists, pulled from your inbox by AI classification — you never manually create these, only act on them:
+Two automatically-populated lists, pulled from your mail by AI — you never manually create these, only act on them:
 
-- **Tasks** — action items and meeting requests the AI noticed inside your mail.
-- **Follow-ups** — threads where *you* sent the last message and haven't heard back yet.
+- **Tasks** — action items and meeting requests the AI noticed inside your mail, and promises you made in mail you sent.
+- **Waiting** — threads where *you* sent the last message and haven't heard back yet.
 
 ## Where to find it
 
-**Tasks** in the left sidebar. Two tabs at the top switch between the two views: **Tasks** and **Follow-ups**.
+**Tasks** and **Waiting** in the left sidebar.
 
 ---
 
-## Tasks tab
+## Tasks
 
-**Sub-filters:** **Pending** (default) / **Done** / **Dismissed** / **All**.
+**Sub-filters:** **Pending** (default) / **Done** / **Dismissed** / **All**. Tasks with a due date come first, soonest due; the rest are newest first.
 
 Each task shows:
-- A type pill — **Meeting request** or **Action item**.
-- The time it was extracted.
+- A type pill — **Meeting request**, **Action item**, **Follow-up** or **You promised**.
+- The time it was extracted, and the due date if it has one. An open task past its due date shows **Overdue since** in red.
 - A one-line description written by the AI (e.g. *"Interview on Monday, August 10, 2026, at 3:00 PM"*).
 - **View source email** — jumps to the exact thread it came from.
 - **Done** / **Dismiss** buttons (and **Reopen** once a task is Done or Dismissed).
@@ -33,7 +33,17 @@ Each task shows:
 
 **What happens:** `Task.status` updates to `DONE` or `DISMISSED`; `Done` also stamps `completedAt`. Both are reversible — open the **Done** or **Dismissed** tab and click **Reopen** to send it back to Pending.
 
+### You promised (commitments)
+
+**What it is:** when mail you send contains a clear promise, it becomes a task with its due date, so it doesn't get forgotten.
+
+**Example:** you write *"I'll send the deck by Friday."* A **You promised** task appears, due that Friday at 17:00 on your clock. A vague line like *"let's catch up sometime"* creates nothing, and neither does a request you make of someone else.
+
+**What happens:** your recent sent mail is read every few minutes, and only the last 14 days of it. When a promise falls due and the task is still pending, you get one **A promise is due** notification. Marking it **Done** or **Dismiss** stops the reminder. Due dates use the timezone in your [Profile](/help/09-settings-profile), so check it's set. The same promise shows as **You promised: …** on that thread in **Waiting**.
+
 ### Suggest a time (AI meeting scheduling)
+
+To offer the other person a choice of times instead, use [Propose times](/help/02-inbox#meeting-requests-propose-times) on the thread.
 
 **What it is:** turns a detected meeting request into a real calendar event, using your connected [Calendar](/help/08-settings-calendars) to avoid double-booking — nothing is created until you explicitly confirm.
 
@@ -50,14 +60,17 @@ Each task shows:
 
 ---
 
-## Follow-ups tab
+## Waiting
 
-**What it is:** a read-only list of threads awaiting a reply — you sent the last message, and no one has responded since.
+**What it is:** a list of threads awaiting a reply — you sent the last message, and no one has responded since. The **All / 3+ days / 7+ days** filters narrow it by age.
 
-Each row shows: how many days it's been waiting, the account it's on, the subject (click to open the thread), and — if relevant — a note about a related meeting request still pending.
+Each row shows: how long it's been waiting, who it's waiting on, the subject (click to open the thread), and — if relevant — a pending meeting request or a **You promised: …** line.
 
 **Example:** *"26 days waiting — Re: Agentic AI Development Training with LangGraph learning program"* tells you at a glance which outreach has gone cold and might need a nudge.
 
-**What happens when you click a row:** takes you straight into the [Inbox](/help/02-inbox) thread view so you can reply, snooze, or use AI Reply directly.
+**What you can do on a row:**
+- **Draft follow-up** opens the thread and has the AI write a short nudge in the reply box. Nothing is sent until you click **Send**.
+- **Remind me in…** sets a reminder for this thread.
+- **Not waiting** removes it from the list, with an **Undo**. If the thread gets a newer message, it can come back.
 
-**Reminders:** when you send with **Remind me if no reply in N days** ([Compose](/help/03-compose)), and nobody has replied by then, a **Follow up** task *"No reply yet: <subject>"* appears on the Tasks tab and you get a notification. A reply that arrives first cancels the reminder.
+**Reminders:** when you send with **Remind me if no reply in N days** ([Compose](/help/03-compose)), and nobody has replied by then, a **Follow up** task *"No reply yet: <subject>"* appears on the Tasks page and you get a notification. A reply that arrives first cancels the reminder.
