@@ -1,5 +1,10 @@
 import { apiFetch } from "../api/client";
-import type { MeetingTimeSuggestion, Task, TaskStatus } from "../api/types";
+import type {
+  MeetingProposal,
+  MeetingTimeSuggestion,
+  Task,
+  TaskStatus,
+} from "../api/types";
 
 export async function listTasks(status?: TaskStatus): Promise<Task[]> {
   const params = new URLSearchParams();
@@ -22,6 +27,15 @@ export async function suggestMeeting(
   taskId: string,
 ): Promise<MeetingTimeSuggestion> {
   return apiFetch(`/tasks/${taskId}/suggest-meeting`, { method: "POST" });
+}
+
+export async function proposeMeetingTimes(
+  taskId: string,
+): Promise<{ proposal: MeetingProposal; text: string }> {
+  return apiFetch(`/tasks/${taskId}/propose-times`, {
+    method: "POST",
+    body: { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+  });
 }
 
 export interface ScheduleMeetingInput {

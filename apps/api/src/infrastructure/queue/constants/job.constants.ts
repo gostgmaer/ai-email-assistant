@@ -52,9 +52,18 @@ export const AutomationJobs = {
   /** Repeatable job: reads recent sent mail for promises the user made
    * (CommitmentService.scanPending). */
   CommitmentScan: 'commitment-scan',
+  /** Repeatable job: reads replies to offered meeting times for the one
+   * that was accepted (MeetingProposalService.scanPicks). */
+  MeetingPickScan: 'meeting-pick-scan',
   /** Repeatable job (daily): builds writing-style profiles that are
    * missing or a week old (WritingStyleService.refreshStale). */
   WritingStyleRefresh: 'writing-style-refresh',
+  /** Repeatable job (weekly): looks for patterns in rejected AI drafts
+   * (ImprovementService.analyzeAll). */
+  ImprovementAnalysis: 'improvement-analysis',
+  /** Repeatable job (nightly): pre-computes the /insights numbers
+   * (InsightsService.refreshAll). */
+  InsightsRefresh: 'insights-refresh',
 } as const;
 
 export const DocumentJobs = {

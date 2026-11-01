@@ -1,5 +1,6 @@
 import { apiFetch, apiFetchBlob } from "../api/client";
 import type {
+  DraftDiscardReason,
   AttachmentInput,
   EmailMessage,
   EmailThreadDetail,
@@ -303,6 +304,10 @@ export async function listAccountFolders(
   return apiFetch<MailFolderSummary[]>(`/email/accounts/${accountId}/folders`);
 }
 
-export async function deleteDraft(id: string): Promise<void> {
-  await apiFetch(`/email/drafts/${id}`, { method: "DELETE" });
+export async function deleteDraft(
+  id: string,
+  reason?: DraftDiscardReason,
+): Promise<void> {
+  const query = reason ? `?reason=${reason}` : "";
+  await apiFetch(`/email/drafts/${id}${query}`, { method: "DELETE" });
 }

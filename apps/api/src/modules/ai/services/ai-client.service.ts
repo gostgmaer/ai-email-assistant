@@ -429,6 +429,36 @@ export interface MeetingTimeSuggestion {
   title: string;
 }
 
+export interface OutcomeGroup {
+  type: 'agent' | 'domain' | 'category';
+  label: string;
+  reviewed: number;
+  discarded: number;
+  heavilyEdited: number;
+  reasons: Record<string, number>;
+  examples: { draft: string; sent: string | null }[];
+}
+
+export interface ImprovementSuggestionResult {
+  /** 1-based number of the group it's about. */
+  group: number;
+  instruction: string;
+  rationale: string;
+}
+
+export interface MeetingPreferences {
+  title: string;
+  durationMinutes: number;
+  /** YYYY-MM-DD; null when the request names no day. */
+  earliestDate: string | null;
+  latestDate: string | null;
+  partOfDay: 'morning' | 'afternoon' | 'any';
+  /** "HH:MM"; null when the request names no time. */
+  preferredTime: string | null;
+  /** The requester's IANA zone, only when the email states it. */
+  otherTimezone: string | null;
+}
+
 export interface SuggestMeetingTimeResponse {
   suggestion: MeetingTimeSuggestion;
   provider: string;
@@ -766,6 +796,71 @@ export class AiClientService {
       model: res.model,
       usage: mapUsage(res.usage),
     };
+  }
+
+  /** Proposed changes from patterns in rejected AI drafts. */
+  async improvementSuggestions(
+    groups: OutcomeGroup[],
+  ): Promise<{ suggestions: ImprovementSuggestionResult[] }> {
+    const { suggestions } = await this.post<{
+      suggestions: ImprovementSuggestionResult[];
+    }>('/email/improvement-suggestions', {
+      groups: groups.map((group) => ({
+        type: group.type,
+        label: group.label,
+        reviewed: group.reviewed,
+        discarded: group.discarded,
+        heavily_edited: group.heavilyEdited,
+        reasons: group.reasons,
+        examples: group.examples,
+      })),
+    });
+    return { suggestions };
+  }
+
+  /** What a meeting request asks for; the free slots come from the calendar. */
+  async meetingPreferences(input: {
+    description: string;
+    content: string;
+    now: string;
+    today: string;
+    timezone: string;
+  }): Promise<{ preferences: MeetingPreferences }> {
+    const res = await this.post<{
+      preferences: {
+        title: string;
+        duration_minutes: number;
+        earliest_date: string | null;
+        latest_date: string | null;
+        part_of_day: MeetingPreferences['partOfDay'];
+        preferred_time: string | null;
+        other_timezone: string | null;
+      };
+    }>('/calendar/meeting-preferences', input);
+
+    const { preferences: raw } = res;
+    return {
+      preferences: {
+        title: raw.title,
+        durationMinutes: raw.duration_minutes,
+        earliestDate: raw.earliest_date,
+        latestDate: raw.latest_date,
+        partOfDay: raw.part_of_day,
+        preferredTime: raw.preferred_time,
+        otherTimezone: raw.other_timezone,
+      },
+    };
+  }
+
+  /** Which offered meeting time a reply accepts (1-based), if any. */
+  async meetingPick(
+    slots: string[],
+    content: string,
+  ): Promise<{ picked: number | null; confidence: number }> {
+    const { pick } = await this.post<{
+      pick: { picked: number | null; confidence: number };
+    }>('/calendar/meeting-pick', { slots, content });
+    return pick;
   }
 
   private async post<T>(

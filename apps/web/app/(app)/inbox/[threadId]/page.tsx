@@ -7,6 +7,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ChevronLeftIcon, ClockIcon, SparklesIcon } from "@/components/icons";
+import { MeetingCard } from "@/components/inbox/MeetingCard";
 import { MessageAttachments } from "@/components/inbox/MessageAttachments";
 import { PendingDraftCard } from "@/components/inbox/PendingDraftCard";
 import { ReplyBox } from "@/components/inbox/ReplyBox";
@@ -56,6 +57,11 @@ export default function ThreadPage() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [showNotes, setShowNotes] = useState(false);
   const [noteText, setNoteText] = useState("");
+  // "Propose times" text on its way to the reply box.
+  const [replyInsert, setReplyInsert] = useState<{
+    text: string;
+    key: number;
+  } | null>(null);
 
   const {
     data: thread,
@@ -266,6 +272,19 @@ export default function ThreadPage() {
         <UnsubscribeBar threadId={thread.id} accountId={thread.account.id} />
       )}
 
+      {thread.tasks[0] && (
+        <MeetingCard
+          task={thread.tasks[0]}
+          threadId={thread.id}
+          onProposal={(text) =>
+            setReplyInsert((current) => ({
+              text,
+              key: (current?.key ?? 0) + 1,
+            }))
+          }
+        />
+      )}
+
       {summaryError && (
         <p className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
           {summaryError}
@@ -442,6 +461,7 @@ export default function ThreadPage() {
           lastMessage={lastMessage}
           waitingForReply={thread.lastMessageFromSelf}
           autoDraftFollowUp={autoDraftFollowUp}
+          insert={replyInsert}
         />
       )}
     </div>

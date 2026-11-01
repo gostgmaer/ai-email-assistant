@@ -20,7 +20,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "rag:eval": "ts-node scripts/rag-eval.ts"
+    "rag:eval": "ts-node scripts/rag-eval.ts",
+    "ask:eval": "ts-node scripts/ask-eval.ts"
   },
   "dependencies": {
     "@easydev_org/file-upload-sdk": "^1.0.4",

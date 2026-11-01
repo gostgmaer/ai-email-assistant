@@ -5,7 +5,10 @@ import { Job } from 'bullmq';
 import { AutomationJobs, QueueNames } from '../../../infrastructure/queue';
 import { CommitmentService } from '../../ai/services/commitment.service';
 import { WritingStyleService } from '../../ai/services/writing-style.service';
+import { MeetingProposalService } from '../../calendar/services/meeting-proposal.service';
 import { ThreadTriageService } from '../../email/services/thread-triage.service';
+import { ImprovementService } from '../../improvements/services/improvement.service';
+import { InsightsService } from '../../insights/services/insights.service';
 import { AutomationService } from '../services/automation.service';
 
 // One triage scan's time budget; what's left waits for the next scan.
@@ -27,6 +30,9 @@ export class AutomationProcessor extends WorkerHost {
     private readonly threadTriageService: ThreadTriageService,
     private readonly commitmentService: CommitmentService,
     private readonly writingStyleService: WritingStyleService,
+    private readonly meetingProposalService: MeetingProposalService,
+    private readonly improvementService: ImprovementService,
+    private readonly insightsService: InsightsService,
   ) {
     super();
   }
@@ -65,6 +71,28 @@ export class AutomationProcessor extends WorkerHost {
         if (read > 0) {
           this.logger.log(`Read ${read} sent message(s) for commitments.`);
         }
+        return;
+      }
+
+      case AutomationJobs.MeetingPickScan: {
+        const read = await this.meetingProposalService.scanPicks();
+        if (read > 0) {
+          this.logger.log(`Read ${read} reply(ies) for a meeting pick.`);
+        }
+        return;
+      }
+
+      case AutomationJobs.ImprovementAnalysis: {
+        const created = await this.improvementService.analyzeAll();
+        if (created > 0) {
+          this.logger.log(`Added ${created} improvement suggestion(s).`);
+        }
+        return;
+      }
+
+      case AutomationJobs.InsightsRefresh: {
+        const refreshed = await this.insightsService.refreshAll();
+        this.logger.log(`Refreshed insights for ${refreshed} account(s).`);
         return;
       }
 

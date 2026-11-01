@@ -6,8 +6,11 @@ import { QueueService } from '../../infrastructure/queue';
 // ApprovalModule's comment.
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
+import { CalendarModule } from '../calendar/calendar.module';
 import { EmailAccountModule } from '../email-account';
 import { EmailModule } from '../email/email.module';
+import { ImprovementModule } from '../improvements/improvement.module';
+import { InsightsModule } from '../insights/insights.module';
 import { NotificationModule } from '../notification';
 import { AnalyticsController } from './controllers/analytics.controller';
 import { AutomationController } from './controllers/automation.controller';
@@ -25,6 +28,11 @@ import { AutomationService } from './services/automation.service';
     // CommitmentService, for the commitment scan; AiModule sits in the
     // AuthModule -> CalendarModule -> AiModule cycle.
     forwardRef(() => AiModule),
+    // MeetingProposalService, for the meeting pick scan; same cycle.
+    forwardRef(() => CalendarModule),
+    // ImprovementService and InsightsService, for their scheduled runs.
+    forwardRef(() => ImprovementModule),
+    InsightsModule,
   ],
 
   controllers: [AutomationController, AnalyticsController],
@@ -41,6 +49,9 @@ export class AutomationModule implements OnApplicationBootstrap {
     await this.queueService.scheduleFollowUpScan();
     await this.queueService.scheduleTriageScan();
     await this.queueService.scheduleCommitmentScan();
+    await this.queueService.scheduleMeetingPickScan();
     await this.queueService.scheduleWritingStyleRefresh();
+    await this.queueService.scheduleImprovementAnalysis();
+    await this.queueService.scheduleInsightsRefresh();
   }
 }

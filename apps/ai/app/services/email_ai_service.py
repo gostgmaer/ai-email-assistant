@@ -1,6 +1,13 @@
 from app.capabilities.answer.graph import answer_graph
 from app.capabilities.answer.schemas import AnswerRequest, AnswerResponse
 from app.capabilities.commitments.graph import commitments_graph
+from app.capabilities.improvement_suggestions.graph import (
+    improvement_suggestions_graph,
+)
+from app.capabilities.improvement_suggestions.schemas import (
+    ImprovementSuggestionsRequest,
+    ImprovementSuggestionsResponse,
+)
 from app.capabilities.style_profile.graph import style_profile_graph
 from app.capabilities.style_profile.schemas import (
     StyleProfileRequest,
@@ -108,6 +115,20 @@ class EmailAIService:
 
         return CommitmentsResponse(
             commitments=result["commitments"],
+            provider=result["provider"],
+            model=result["model"],
+            usage=result["usage"],
+        )
+
+    async def improvement_suggestions(
+        self,
+        request: ImprovementSuggestionsRequest,
+    ) -> ImprovementSuggestionsResponse:
+
+        result = await improvement_suggestions_graph.ainvoke(request.model_dump())
+
+        return ImprovementSuggestionsResponse(
+            suggestions=result["suggestions"],
             provider=result["provider"],
             model=result["model"],
             usage=result["usage"],

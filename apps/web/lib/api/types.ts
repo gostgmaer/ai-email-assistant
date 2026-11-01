@@ -501,6 +501,7 @@ export interface EmailThreadDetail {
   snippet: string | null;
   lastMessageAt: string | null;
   snoozedUntil: string | null;
+  tasks: ThreadMeetingTask[];
   account: { id: string; provider: EmailProvider; email: string; userId: string };
   folder: {
     id: string;
@@ -648,6 +649,93 @@ export interface ApprovalChain {
     threadId: string;
   } | null;
   account: { id: string; email: string };
+}
+
+/** The numbers /insights shows, pre-computed nightly. */
+export interface InsightsData {
+  responseTimes: {
+    lastWeek: ResponseTimeSummary;
+    previousWeek: ResponseTimeSummary;
+  };
+  workload: {
+    userId: string | null;
+    name: string;
+    openThreads: number;
+    waitingOnReply: number;
+  }[];
+  aiByWeek: (AiOutcomeSummary & { weekStart: string })[];
+  aiByAgent: (AiOutcomeSummary & { agentId: string | null; name: string })[];
+  safety: { check: string; count: number }[];
+}
+
+export interface ResponseTimeSummary {
+  medianMs: number | null;
+  answered: number;
+  unanswered: number;
+}
+
+export interface AiOutcomeSummary {
+  autoSent: number;
+  heldThenSent: number;
+  heldThenDiscarded: number;
+  averageEditDistance: number | null;
+}
+
+export interface InsightsView {
+  computedAt: string | null;
+  data: InsightsData | null;
+}
+
+export type DraftDiscardReason =
+  | "WRONG_FACTS"
+  | "WRONG_TONE"
+  | "SHOULD_NOT_REPLY"
+  | "TOO_LONG"
+  | "OTHER";
+
+export interface ImprovementSuggestion {
+  id: string;
+  accountId: string;
+  kind: "AGENT_INSTRUCTION" | "HOLD_DOMAIN" | "HOLD_CATEGORY";
+  target: string;
+  change: string;
+  rationale: string;
+  evidence: {
+    label: string;
+    reviewed: number;
+    discarded: number;
+    heavilyEdited: number;
+    reasons: Record<string, number>;
+    examples: { draft: string; sent: string | null }[];
+  };
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  decidedAt: string | null;
+  createdAt: string;
+}
+
+export interface MeetingSlot {
+  start: string;
+  end: string;
+}
+
+export interface MeetingProposal {
+  title: string;
+  slots: MeetingSlot[];
+  timezone: string;
+  otherTimezone: string | null;
+  calendarAccountId: string;
+  attendeeEmail: string | null;
+}
+
+/** A thread's meeting request, as the thread view's card shows it. */
+export interface ThreadMeetingTask {
+  id: string;
+  description: string;
+  status: TaskStatus;
+  meetingProposal: MeetingProposal | null;
+  proposedAt: string | null;
+  pickedSlotIndex: number | null;
+  calendarEventUrl: string | null;
 }
 
 export interface MeetingTimeSuggestion {

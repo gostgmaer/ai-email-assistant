@@ -132,6 +132,7 @@ export class TasksService {
         emailMessage: {
           select: { from: true, subject: true, bodyText: true },
         },
+        user: { select: { timezone: true } },
       },
     });
 

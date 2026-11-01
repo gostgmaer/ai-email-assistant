@@ -15,6 +15,7 @@ import { MicrosoftCalendarConnectGuard } from './guards/microsoft-calendar-conne
 import { CalendarAccountService } from './services/calendar-account.service';
 import { CalendarContextService } from './services/calendar-context.service';
 import { CalendarService } from './services/calendar.service';
+import { MeetingProposalService } from './services/meeting-proposal.service';
 import { MeetingSchedulingService } from './services/meeting-scheduling.service';
 import { GoogleCalendarConnectStrategy } from './strategies/google-calendar-connect.strategy';
 import { MicrosoftCalendarConnectStrategy } from './strategies/microsoft-calendar-connect.strategy';
@@ -47,6 +48,7 @@ import { MicrosoftCalendarConnectStrategy } from './strategies/microsoft-calenda
     CalendarAccountService,
     CalendarService,
     CalendarContextService,
+    MeetingProposalService,
     MeetingSchedulingService,
     GoogleCalendarConnectStrategy,
     MicrosoftCalendarConnectStrategy,
@@ -57,6 +59,7 @@ import { MicrosoftCalendarConnectStrategy } from './strategies/microsoft-calenda
   exports: [
     CalendarAccountService,
     CalendarContextService,
+    MeetingProposalService,
     MeetingSchedulingService,
   ],
 })

@@ -42,7 +42,10 @@ These are solo-developer estimates.
 | 2 | 🟡 Built and checked live (2026-10-27); unsubscribe and Clean up not yet tried on real mail (they act on the mailbox). Migration `20261027120000_smart_triage`. `EmailThread.triage` set by `ThreadTriageService` from the newest message (sync, AI pipeline, and a 5-minute backfill scan). Opt-in `EmailAccount.keepNewsletters` (off by default): newsletters are kept in a Newsletters group instead of dropped, never AI-processed or indexed for Ask. Unsubscribe: one-click POST (RFC 8058) from the server with a private-network guard; otherwise the sender's link, or a prefilled compose for `mailto:`. Clean up archives old newsletters in the mailbox after a preview and a second click. Fixed on the way: IMAP never read `List-*` headers (mailparser folds them into `list`). Live: the scan triaged all 228 threads in ~2s (inbox: 7 Needs reply / 29 FYI / 3 Notifications / 1 Newsletter); in Chrome every group's list matched its count, chips hide outside Inbox, the Keep newsletters switch renders. Checked with the API and web run natively: Docker builds currently fail on TLS errors inside Docker's network. API 64 suites, 642 tests. |
 | 3 | 🟡 Built and checked live (2026-10-29), reminder included; API and web were run natively because Docker builds of them still fail on TLS errors. Migration `20261027150000_commitments`. New AI capability `commitments` (`POST /email/commitments`): reads one sent message (quoted history stripped) with its sent time on the user's clock, returns `{text, due_date, due_time, confidence}`; the AI service drops bad or past dates. Compose and sync mark the user's recent sent mail `commitmentScanPending`; the `commitment-scan` job (automation queue, every 5 min, 20 per scan) turns confident ones (≥0.7) into `COMMITMENT` tasks with `dueDate` (17:00 local when only a date is named), never twice per thread and wording. The hourly follow-up scan sends a `COMMITMENT_DUE` notification once (`Task.remindedAt`). Tasks page sorts by due date and marks overdue; Waiting shows "You promised: …". Eval of 11 written cases: 11/11 (dates, vague lines, requests, hedges). Live: the 24 recent sent messages produced no commitments, which is right (they're test sends); "Reply-all to S02." was first read as a promise and fixed in the prompt. Checked with one test task: first on Tasks with "Overdue" in red, "You promised" on Waiting, one "A promise is due" notification from the hourly scan (test rows removed afterwards). API 65 suites, 658 tests; AI 81 tests. |
 | 4 | 🟡 Built and checked live on the backend (2026-10-29); settings panel not yet seen in Chrome (the extension wasn't connected); the edit-distance comparison needs a few weeks of AI drafts. Migration `20261029120000_writing_style`. New AI capability `style_profile` (`POST /email/style-profile`): greeting template, sign-off, formality, length, language, up to 8 phrases, notes; the AI service itself removes known names, email addresses, links, numbers, and any phrase that names someone or something (a capitalised word after the first). `WritingStyleProfile` per account, built from the owner's last 50 sent messages that they wrote themselves (no AI-written or automatic replies, quotes stripped); daily `writing-style-refresh` rebuilds missing or week-old profiles unless edited or off; deleted on disconnect. Used by the reply pipeline, `/ai/reply` and `/ai/rewrite` (now take `accountId`), never with an agent persona; `generationMetadata.writingStyleUsed` records it. Settings → account → Writing style: view, edit, on/off, rebuild, and AI-draft edit distance 30 days before and after. Live on the real account: built from 50 messages; the first two builds turned "Hello" into a name and kept a company name, both fixed. The final profile is generic ("Hello {name}," / "Best regards," / neutral / ~83 words). A reply to the same made-up email follows it. API 66 suites, 668 tests; AI 91 tests. |
-| 5–7 | Not started |
+| 1e | ✅ Done (2026-11-01). `npm run ask:eval` (apps/api): a made-up mailbox of 20 emails under a throwaway user (removed after each run), 20 questions through the real search and answer code. First run 20/20: answers, citations, all 4 "not found", and an injection email. Must stay at 85% or above. |
+| 5 | 🟡 Built and checked in Chrome (2026-11-01); the last step, creating a real calendar event, wasn't run because it writes to your real calendar and invites the attendee. Migration `20261101090000_meeting_proposals`. New AI capabilities `meeting_preferences` and `meeting_pick`. `POST /tasks/:id/propose-times`, `MeetingCard` in the thread view, `meeting-pick-scan` job (5 min). Real-model checks: 5/5 requests read correctly, 8/8 replies after one prompt fix (an order inside a reply counted as a pick). Live on a test thread with the real Google calendar: slots written into the reply box, test reply "the second one" preselected as "Their pick". Found live: a profile still on the default UTC offered evening times; fixed. |
+| 6 | 🟡 Built and checked in Chrome (2026-11-01) with test outcomes; no real drafts have been rejected yet, so no real suggestion exists. Migration `20261101100000_improvement_suggestions`. Discard reasons on held drafts, `AiDraftOutcome` keeps the sender domain, category and (for rejected drafts only) text, new AI capability `improvement_suggestions`, weekly `improvement-analysis` job, `/suggestions` page with Check now, Approve and Reject. Live: 4 test rows produced 3 suggestions; approving changed the test agent's prompt and added a rule at order 999 (ahead of the starter rule at 1000); rejecting changed nothing. |
+| 7 | ✅ Built and checked in Chrome (2026-11-01). Migration `20261101110000_team_insights`. `ThreadMetrics` and `InsightsSnapshot`, nightly `insights-refresh` job (01:30), `GET /insights` reads only the snapshot, `/insights` page with Update now. The auto-send path now records which check held a reply (`AiDraftOutcome.heldBy`). Live: real response times and workload on the real account. API 70 suites, 713 tests; AI 105 tests. |
 
 ## What the plan reuses
 
@@ -228,6 +231,13 @@ These pieces already exist. The phases below build on them rather than adding pa
 
 **Done when:** request, proposed times, pick, and a created event all work on a connected Google calendar without retyping anything.
 
+**Decisions made while building (2026-11-01):**
+- The AI doesn't choose times. It reads what the request asks for (dates, part of day, length, the requester's stated time zone) and code picks free slots from the real calendar, so an offer can't land on a busy interval. If the AI is unavailable, the next free working-hours slots are offered anyway.
+- Slots are weekdays 9:00–17:00 on the user's clock. A profile still on the default UTC uses the browser's zone, because UTC working hours are the evening in India. The zone is stored with the proposal so the card, the reply text and the confirmation agree.
+- Replies are read only after the offer has really gone out (a message from the user's own address after `proposedAt`). A separate `meeting_pick` capability does this instead of `extract`, which only runs inside the reply pipeline.
+- The other person's time zone is shown only when their email states it; it's never guessed.
+- `schedule` refuses a task that already has an event, so a second click can't double-book. "Invite" still sends the existing calendar invite and confirmation reply, and the card says so.
+
 ---
 
 ## Phase 6: learning from corrections
@@ -247,6 +257,13 @@ These pieces already exist. The phases below build on them rather than adding pa
 
 **Done when:** a pattern of discarded drafts produces a matching suggestion, and approving it changes the agent or rule.
 
+**Decisions made while building (2026-11-01):**
+- A pattern needs at least 3 rejected drafts (discarded, or sent with edit distance ≥ 0.3) making up at least half of those reviewed, in the last 30 days. No pattern means no AI call.
+- Two kinds of change. An agent gets one instruction line, written by the AI and shown word for word before approval. A sender domain or category gets a `REQUIRE_APPROVAL` rule built by code, never by the AI, and offered only where replies actually auto-send, because every other draft is already held.
+- The first matching rule decides the reply, so an approved hold rule is ordered ahead of the existing rules.
+- A suggestion isn't offered again for 90 days after it was made, whatever was decided.
+- Draft text is kept only for discarded and heavily edited drafts, is cleared after 90 days, and is cleared when the account is disconnected.
+
 ---
 
 ## Phase 7: team insights
@@ -262,6 +279,11 @@ These pieces already exist. The phases below build on them rather than adding pa
 Charts follow the existing web UI style. The page loads in one request and reads only pre-computed numbers.
 
 **Done when:** an admin on a shared inbox can see last week's response times and AI outcomes on one page.
+
+**Decisions made while building (2026-11-01):**
+- Besides `ThreadMetrics`, one `InsightsSnapshot` per account holds the page's numbers, so the page reads a single row. Update now recomputes on demand for any account member, the same access as the existing analytics.
+- Newsletters and notifications don't count toward response times. An auto-sent reply counts as a response.
+- Tables and stat tiles instead of charts: each number is a headline or a short breakdown.
 
 ---
 

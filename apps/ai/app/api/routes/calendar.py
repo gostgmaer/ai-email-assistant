@@ -1,5 +1,13 @@
 from fastapi import APIRouter
 
+from app.capabilities.meeting_pick.schemas import (
+    MeetingPickRequest,
+    MeetingPickResponse,
+)
+from app.capabilities.meeting_preferences.schemas import (
+    MeetingPreferencesRequest,
+    MeetingPreferencesResponse,
+)
 from app.capabilities.meeting_time.schemas import (
     SuggestMeetingTimeRequest,
     SuggestMeetingTimeResponse,
@@ -24,3 +32,26 @@ async def suggest_meeting_time(
     whether/when to actually write it to a calendar."""
 
     return await calendar_ai_service.suggest_meeting_time(request)
+
+
+@router.post(
+    "/meeting-preferences",
+    response_model=MeetingPreferencesResponse,
+)
+async def meeting_preferences(
+    request: MeetingPreferencesRequest,
+) -> MeetingPreferencesResponse:
+    """Read what a meeting request asks for (dates, part of day, length).
+    apps/api picks the free slots from the real calendar."""
+
+    return await calendar_ai_service.meeting_preferences(request)
+
+
+@router.post(
+    "/meeting-pick",
+    response_model=MeetingPickResponse,
+)
+async def meeting_pick(request: MeetingPickRequest) -> MeetingPickResponse:
+    """Read whether a reply accepts one of the meeting times offered."""
+
+    return await calendar_ai_service.meeting_pick(request)

@@ -535,6 +535,8 @@ export class AiProcessingProcessor
       crmContactUsed,
       calendarAgentUsed,
       writingStyleUsed: !!writingStyle,
+      senderDomain: sender.address.split('@')[1]?.toLowerCase(),
+      category: classification.category,
       provider: reply.provider,
       model: reply.model,
       usage: reply.usage,
@@ -703,6 +705,25 @@ export class AiProcessingProcessor
         passesActionClaimRail &&
         passesGroundingRail &&
         passesValidationRail;
+
+      // For team insights: which checks stopped a reply a rule wanted sent.
+      // The validation check only runs once the others pass, so it can only
+      // be named on its own.
+      if (autoReply) {
+        const failed = [
+          !passesUrgentRail && 'URGENT',
+          !passesPiiRail && 'PERSONAL_DATA',
+          !passesPolicyRail && 'PROHIBITED_PHRASE',
+          !passesActionClaimRail && 'ACTION_CLAIM',
+          !passesGroundingRail && 'GROUNDING',
+        ].filter((check): check is string => Boolean(check));
+        generationMetadata.heldBy =
+          failed.length > 0 || passesValidationRail ? failed : ['VALIDATION'];
+      }
+    }
+
+    if (autoSendBlocker) {
+      generationMetadata.heldBy = ['SEND_LIMIT'];
     }
 
     if (actionClaimScan.detected) {
@@ -869,6 +890,8 @@ export class AiProcessingProcessor
             accountId: account.id,
             agentId: generationMetadata.agentId,
             outcome: 'AUTO_SENT',
+            senderDomain: generationMetadata.senderDomain,
+            category: generationMetadata.category,
           },
         })
         .catch(() => undefined);

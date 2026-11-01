@@ -1,4 +1,11 @@
-import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -11,7 +18,8 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
-import { ScheduleMeetingDto } from '../dto';
+import { ProposeTimesDto, ScheduleMeetingDto } from '../dto';
+import { MeetingProposalService } from '../services/meeting-proposal.service';
 import { MeetingSchedulingService } from '../services/meeting-scheduling.service';
 
 /**
@@ -32,6 +40,7 @@ import { MeetingSchedulingService } from '../services/meeting-scheduling.service
 export class MeetingSchedulingController {
   constructor(
     private readonly meetingSchedulingService: MeetingSchedulingService,
+    private readonly meetingProposalService: MeetingProposalService,
   ) {}
 
   @Post(':id/suggest-meeting')
@@ -50,6 +59,29 @@ export class MeetingSchedulingController {
     @Param('id') id: string,
   ) {
     return this.meetingSchedulingService.suggestTime(user.sub, id);
+  }
+
+  @Post(':id/propose-times')
+  @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Offer free slots from the primary connected calendar for a MEETING_REQUEST task, as text for the reply box — nothing is sent or booked',
+  })
+  @ApiResponse({ status: 200, description: 'The proposal and its text' })
+  @ApiResponse({
+    status: 400,
+    description: 'Not a meeting request, or no free time',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found, or no calendar connected',
+  })
+  async proposeTimes(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: ProposeTimesDto,
+  ) {
+    return this.meetingProposalService.propose(user.sub, id, dto.timezone);
   }
 
   @Post(':id/schedule-meeting')

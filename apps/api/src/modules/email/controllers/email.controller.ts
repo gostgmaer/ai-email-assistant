@@ -31,6 +31,7 @@ import {
   ComposeEmailDto,
   CreateDraftDto,
   CreateNoteDto,
+  DeleteDraftQueryDto,
   ListFollowUpsDto,
   ListThreadsDto,
   ReplyEmailDto,
@@ -377,7 +378,13 @@ export class EmailController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a draft' })
   @ApiResponse({ status: 204, description: 'Draft deleted' })
-  async deleteDraft(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    await this.composeService.deleteDraft(user.sub, id);
+  async deleteDraft(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Query() query: DeleteDraftQueryDto,
+  ) {
+    await this.composeService.deleteDraft(user.sub, id, {
+      discardReason: query.reason,
+    });
   }
 }

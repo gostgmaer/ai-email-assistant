@@ -32,12 +32,28 @@ function firstParticipant(from: unknown): EmailParticipant | undefined {
   return Array.isArray(list) ? list[0] : undefined;
 }
 
-function formatEventTime(startIso: string, endIso: string): string {
+function formatEventTime(
+  startIso: string,
+  endIso: string,
+  timeZone?: string,
+): string {
   const start = new Date(startIso);
   const end = new Date(endIso);
-  const dateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: 'full' });
-  const timeFmt = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' });
-  return `${dateFmt.format(start)}, ${timeFmt.format(start)} – ${timeFmt.format(end)}`;
+  const dateFmt = new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'full',
+    timeZone,
+  });
+  const timeFmt = new Intl.DateTimeFormat('en-US', {
+    timeStyle: 'short',
+    timeZone,
+  });
+  const zoneName = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    timeZoneName: 'short',
+  })
+    .formatToParts(start)
+    .find((part) => part.type === 'timeZoneName')?.value;
+  return `${dateFmt.format(start)}, ${timeFmt.format(start)} – ${timeFmt.format(end)} ${zoneName ?? ''}`.trim();
 }
 
 export interface ScheduleMeetingInput {
@@ -119,6 +135,10 @@ export class MeetingSchedulingService {
       userId,
       taskId,
     );
+    // A second click must not put a second event on the calendar.
+    if (originalTask.calendarEventId) {
+      throw new BadRequestException('This meeting already has an event');
+    }
     const account = await this.calendarAccountService.getOwnedAccountOrThrow(
       userId,
       dto.calendarAccountId,
@@ -160,7 +180,7 @@ export class MeetingSchedulingService {
         const { reply } = await this.aiClientService.generateReply(
           subject,
           [originalMessage],
-          `Write a short reply confirming the meeting "${dto.title}" has been scheduled for ${formatEventTime(dto.start, dto.end)}. Mention that a calendar invite has been sent separately — do not invent or restate a link yourself, one is appended after your reply automatically. 2-3 sentences, no restating the original request.`,
+          `Write a short reply confirming the meeting "${dto.title}" has been scheduled for ${formatEventTime(dto.start, dto.end, (originalTask.meetingProposal as { timezone?: string } | null)?.timezone ?? originalTask.user?.timezone)}. Mention that a calendar invite has been sent separately — do not invent or restate a link yourself, one is appended after your reply automatically. 2-3 sentences, no restating the original request.`,
         );
 
         // The link is appended here, deterministically, rather than left to

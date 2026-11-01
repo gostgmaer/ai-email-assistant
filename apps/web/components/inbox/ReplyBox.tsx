@@ -30,6 +30,7 @@ export function ReplyBox({
   lastMessage,
   waitingForReply = false,
   autoDraftFollowUp = false,
+  insert = null,
 }: {
   threadId: string;
   /** The thread's account: AI replies and rewrites use its writing style. */
@@ -41,8 +42,19 @@ export function ReplyBox({
   waitingForReply?: boolean;
   /** Start drafting the nudge on load (the Waiting view's link). */
   autoDraftFollowUp?: boolean;
+  /** Text to add below what's already written; a new key adds it again. */
+  insert?: { text: string; key: number } | null;
 }) {
   const [body, setBody] = useState("");
+  // Adjusted during render, not in an effect (React's "storing information
+  // from previous renders"): keeps one insert from running twice.
+  const [insertedKey, setInsertedKey] = useState<number | null>(null);
+  if (insert && insert.key !== insertedKey) {
+    setInsertedKey(insert.key);
+    setBody((current) =>
+      current.trim() ? `${current}\n\n${insert.text}` : insert.text,
+    );
+  }
   const [replyAll, setReplyAll] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentInput[]>([]);
   const [remindDays, setRemindDays] = useState<number | undefined>();

@@ -21,6 +21,8 @@ const NAV_ITEMS = [
   { href: "/waiting", label: "Waiting", icon: ClockIcon },
   { href: "/tasks", label: "Tasks", icon: TaskIcon },
   { href: "/approvals", label: "Approvals", icon: ApprovalIcon },
+  { href: "/suggestions", label: "Suggestions", icon: SparklesIcon },
+  { href: "/insights", label: "Insights", icon: TaskIcon },
   { href: "/documents", label: "Documents", icon: DocumentIcon },
   { href: "/help", label: "Help", icon: HelpIcon },
 ];

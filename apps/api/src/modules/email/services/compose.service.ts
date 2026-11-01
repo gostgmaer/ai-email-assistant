@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../../../database';
+import type { AiDraftDiscardReason } from '../../../generated/prisma/client';
 import type { InputJsonValue } from '../../../generated/prisma/internal/prismaNamespace';
 import { EmailAccountService } from '../../email-account';
 import {
@@ -29,6 +30,10 @@ import { InboxService } from './inbox.service';
 
 /** Provenance of an AI-generated reply — set only by the autonomous
  * pipeline, never by manual compose/send. */
+// From here on a sent draft counts as rewritten, not touched up.
+export const HEAVY_EDIT_DISTANCE = 0.3;
+const OUTCOME_TEXT_LENGTH = 4000;
+
 export interface GenerationMetadata {
   ragUsed: boolean;
   contactMemoryUsed: boolean;
@@ -55,6 +60,11 @@ export interface GenerationMetadata {
    * by the thread or context (possible invented facts), shown to the
    * reviewer. */
   unsupportedClaims?: string[];
+  /** What it answered and which safety checks held it back from
+   * auto-sending, copied to AiDraftOutcome. */
+  senderDomain?: string;
+  category?: string;
+  heldBy?: string[];
 }
 
 /** Headers set on every autonomous (unreviewed) reply — RFC 3834 asks
@@ -404,6 +414,7 @@ export class ComposeService {
       generationMetadata: unknown;
     },
     outcome: 'SENT' | 'DISCARDED' | 'AUTO_SENT',
+    discardReason?: AiDraftDiscardReason,
   ): Promise<void> {
     const metadata = draft.generationMetadata as GenerationMetadata | null;
     if (metadata?.draftText === undefined) {
@@ -414,6 +425,10 @@ export class ComposeService {
     const editDistance = sentByHuman
       ? normalizedEditDistance(metadata.draftText, draft.bodyText ?? '')
       : undefined;
+    // Only what the weekly analysis learns from keeps its text.
+    const heavilyEdited =
+      editDistance !== undefined && editDistance >= HEAVY_EDIT_DISTANCE;
+    const keepText = outcome === 'DISCARDED' || heavilyEdited;
 
     await this.prisma.aiDraftOutcome
       .create({
@@ -425,6 +440,16 @@ export class ComposeService {
           editDistance,
           timeToSendMs: sentByHuman
             ? Date.now() - draft.createdAt.getTime()
+            : undefined,
+          discardReason,
+          senderDomain: metadata.senderDomain,
+          category: metadata.category,
+          heldBy: metadata.heldBy,
+          draftText: keepText
+            ? metadata.draftText.slice(0, OUTCOME_TEXT_LENGTH)
+            : undefined,
+          sentText: heavilyEdited
+            ? (draft.bodyText ?? '').slice(0, OUTCOME_TEXT_LENGTH)
             : undefined,
         },
       })
@@ -492,7 +517,10 @@ export class ComposeService {
   async deleteDraft(
     userId: string,
     draftMessageId: string,
-    options: { recordOutcome?: boolean } = {},
+    options: {
+      recordOutcome?: boolean;
+      discardReason?: AiDraftDiscardReason;
+    } = {},
   ): Promise<void> {
     const draft = await this.getOwnedDraft(userId, draftMessageId);
     await this.cancelScheduleOrThrow(draft);
@@ -510,6 +538,7 @@ export class ComposeService {
         draft.thread.folder.account.id,
         draft,
         'DISCARDED',
+        options.discardReason,
       );
     }
   }

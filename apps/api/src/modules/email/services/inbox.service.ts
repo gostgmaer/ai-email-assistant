@@ -593,6 +593,21 @@ export class InboxService {
             author: { select: { id: true, email: true, displayName: true } },
           },
         },
+        // The thread view's meeting card; a dismissed request has no card.
+        tasks: {
+          where: { type: 'MEETING_REQUEST', status: { not: 'DISMISSED' } },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            description: true,
+            status: true,
+            meetingProposal: true,
+            proposedAt: true,
+            pickedSlotIndex: true,
+            calendarEventUrl: true,
+          },
+        },
       },
     });
 

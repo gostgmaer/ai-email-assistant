@@ -404,6 +404,14 @@ export class EmailAccountService {
       this.prisma.emailCredential.deleteMany({ where: { accountId } }),
       // Learned from the account's mail, so it goes with it.
       this.prisma.writingStyleProfile.deleteMany({ where: { accountId } }),
+      this.prisma.emailChunk.deleteMany({ where: { accountId } }),
+      this.prisma.improvementSuggestion.deleteMany({ where: { accountId } }),
+      this.prisma.threadMetrics.deleteMany({ where: { accountId } }),
+      this.prisma.insightsSnapshot.deleteMany({ where: { accountId } }),
+      this.prisma.aiDraftOutcome.updateMany({
+        where: { accountId },
+        data: { draftText: null, sentText: null },
+      }),
     ]);
   }
 

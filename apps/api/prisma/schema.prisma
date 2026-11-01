@@ -348,6 +348,9 @@ model EmailAccount {
   ruleExecutions RuleExecution[]
 
   writingStyleProfile WritingStyleProfile?
+  improvementSuggestions ImprovementSuggestion[]
+  threadMetrics          ThreadMetrics[]
+  insightsSnapshot       InsightsSnapshot?
 
   @@unique([provider, email])
   @@index([userId])
@@ -818,6 +821,8 @@ model EmailThread {
   assignedToUserId String?
   assignedTo       User?   @relation("ThreadAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
 
+  metrics ThreadMetrics?
+
   // Re-summarized (overwritten, not appended) each time the automated AI
   // pipeline processes a new message on a thread with 2+ messages — a
   // single fresh message has nothing to summarize. Null until then.
@@ -1229,10 +1234,109 @@ model AiDraftOutcome {
   editDistance Float?
   timeToSendMs Int?
 
+  // DISCARDED only, when the reviewer gave one.
+  discardReason AiDraftDiscardReason?
+  // What it answered, for spotting patterns by sender domain and category.
+  senderDomain  String?
+  category      String?
+  // The safety checks that held it back from auto-sending, when an
+  // AUTO_REPLY rule wanted it sent (see AiProcessingProcessor).
+  heldBy        String[] @default([])
+  // Kept only for discarded and heavily edited drafts, for the weekly
+  // analysis: cleared after 90 days and when the account is disconnected.
+  draftText     String?
+  sentText      String?
+
   createdAt DateTime @default(now())
 
   @@index([accountId, createdAt])
   @@index([agentId, createdAt])
+}
+
+enum AiDraftDiscardReason {
+  WRONG_FACTS
+  WRONG_TONE
+  SHOULD_NOT_REPLY
+  TOO_LONG
+  OTHER
+}
+
+enum ImprovementSuggestionKind {
+  // Add `change` to an agent's instructions.
+  AGENT_INSTRUCTION
+  // A rule holding replies to one sender domain for review.
+  HOLD_DOMAIN
+  // A rule holding replies to one message category for review.
+  HOLD_CATEGORY
+}
+
+enum ImprovementSuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/**
+ * A thread's first response time, worked out nightly for /insights
+ * (docs/ai-features-implementation-plan.md, Phase 7).
+ */
+model ThreadMetrics {
+  threadId String      @id
+  thread   EmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  firstInboundAt DateTime
+  // Null until someone has answered.
+  firstResponseAt DateTime?
+  responseMs      BigInt?
+
+  computedAt DateTime
+
+  @@index([accountId, firstInboundAt])
+}
+
+/**
+ * What /insights shows for one account, stored so the page reads one row
+ * instead of adding up a mailbox. See InsightsData in insights.service.ts.
+ */
+model InsightsSnapshot {
+  accountId String       @id
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  data       Json
+  computedAt DateTime
+}
+
+/**
+ * A change the weekly analysis of AI draft outcomes proposes
+ * (docs/ai-features-implementation-plan.md, Phase 6). Nothing here applies
+ * by itself: approving one is what changes the agent or adds the rule.
+ */
+model ImprovementSuggestion {
+  id String @id @default(uuid())
+
+  accountId String
+  account   EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  kind   ImprovementSuggestionKind
+  // The group it came from: the agent's id, the domain or the category.
+  target String
+  // What approving does, shown as is: the instruction text or the rule name.
+  change String
+  rationale String
+
+  // { reviewed, discarded, heavilyEdited, reasons, examples }
+  evidence Json
+
+  status      ImprovementSuggestionStatus @default(PENDING)
+  decidedAt   DateTime?
+  decidedById String?
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId, status, createdAt])
 }
 
 enum TaskStatus {
@@ -1280,9 +1384,20 @@ model Task {
   // out once.
   remindedAt DateTime?
 
+  // MEETING_REQUEST only, set by "Propose times": { title, slots: [{ start,
+  // end }], otherTimezone, calendarAccountId, attendeeEmail }.
+  meetingProposal Json?
+  proposedAt      DateTime?
+  // The other person's reply accepted this slot (0-based). Only ever
+  // pre-fills the "Create event" card; the event needs a click.
+  pickedSlotIndex Int?
+  // Replies up to here were already read for a pick.
+  pickCheckedAt   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([type, status, proposedAt])
   @@index([userId, status])
   @@index([type, status, dueDate])
   @@index([emailMessageId])

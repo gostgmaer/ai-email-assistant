@@ -2,6 +2,10 @@ from fastapi import APIRouter
 
 from app.capabilities.answer.schemas import AnswerRequest, AnswerResponse
 from app.capabilities.classify.schemas import ClassifyRequest, ClassifyResponse
+from app.capabilities.improvement_suggestions.schemas import (
+    ImprovementSuggestionsRequest,
+    ImprovementSuggestionsResponse,
+)
 from app.capabilities.commitments.schemas import (
     CommitmentsRequest,
     CommitmentsResponse,
@@ -149,3 +153,16 @@ async def build_style_profile(
     removed."""
 
     return await email_ai_service.style_profile(request)
+
+
+@router.post(
+    "/improvement-suggestions",
+    response_model=ImprovementSuggestionsResponse,
+)
+async def improvement_suggestions(
+    request: ImprovementSuggestionsRequest,
+) -> ImprovementSuggestionsResponse:
+    """Proposed changes from patterns in rejected AI drafts. Suggestions
+    only: apps/api applies one when a human approves it."""
+
+    return await email_ai_service.improvement_suggestions(request)

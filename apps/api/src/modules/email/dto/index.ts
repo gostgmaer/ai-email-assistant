@@ -1,6 +1,7 @@
 export * from './assign-thread.dto';
 export * from './compose-email.dto';
 export * from './create-note.dto';
+export * from './delete-draft.dto';
 export * from './follow-up.dto';
 export * from './list-threads.dto';
 export * from './reply-email.dto';

@@ -29,6 +29,8 @@ const FOLLOW_UP_SCAN_INTERVAL_MS = 60 * 60 * 1000;
 const TRIAGE_SCAN_INTERVAL_MS = 5 * 60 * 1000;
 const COMMITMENT_SCAN_INTERVAL_MS = 5 * 60 * 1000;
 const WRITING_STYLE_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const IMPROVEMENT_ANALYSIS_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+const INSIGHTS_REFRESH_CRON = '30 1 * * *';
 // New mail is searchable in "Ask your inbox" within about a minute.
 const SEARCH_INDEX_SCAN_INTERVAL_MS = 60 * 1000;
 
@@ -300,6 +302,33 @@ export class QueueService {
       'commitment-scan',
       { every: COMMITMENT_SCAN_INTERVAL_MS },
       { name: AutomationJobs.CommitmentScan, data: {} },
+    );
+  }
+
+  /** Idempotent: registers the meeting pick scan. */
+  async scheduleMeetingPickScan(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'meeting-pick-scan',
+      { every: COMMITMENT_SCAN_INTERVAL_MS },
+      { name: AutomationJobs.MeetingPickScan, data: {} },
+    );
+  }
+
+  /** Idempotent: registers the weekly look at rejected AI drafts. */
+  async scheduleImprovementAnalysis(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'improvement-analysis',
+      { every: IMPROVEMENT_ANALYSIS_INTERVAL_MS },
+      { name: AutomationJobs.ImprovementAnalysis, data: {} },
+    );
+  }
+
+  /** Idempotent: registers the nightly insights refresh. */
+  async scheduleInsightsRefresh(): Promise<void> {
+    await this.automationQueue.upsertJobScheduler(
+      'insights-refresh',
+      { pattern: INSIGHTS_REFRESH_CRON },
+      { name: AutomationJobs.InsightsRefresh, data: {} },
     );
   }
 

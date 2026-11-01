@@ -5,6 +5,8 @@ import type {
   AutomationLogEntry,
   AutomationMetrics,
   EmailAccount,
+  ImprovementSuggestion,
+  InsightsView,
   WritingStyle,
   WritingStyleView,
 } from "../api/types";
@@ -100,6 +102,46 @@ export async function getAutomationMetrics(
 ): Promise<AutomationMetrics> {
   return apiFetch<AutomationMetrics>(
     `/analytics/automation?accountId=${encodeURIComponent(accountId)}&days=${days}`,
+  );
+}
+
+export async function listSuggestions(
+  accountId: string,
+): Promise<ImprovementSuggestion[]> {
+  return apiFetch(`/email-accounts/${accountId}/suggestions`);
+}
+
+export async function analyzeSuggestions(
+  accountId: string,
+): Promise<{ created: number }> {
+  return apiFetch(`/email-accounts/${accountId}/suggestions/analyze`, {
+    method: "POST",
+  });
+}
+
+export async function decideSuggestion(
+  accountId: string,
+  id: string,
+  decision: "approve" | "reject",
+): Promise<ImprovementSuggestion> {
+  return apiFetch(`/email-accounts/${accountId}/suggestions/${id}/${decision}`, {
+    method: "POST",
+  });
+}
+
+export async function getInsights(
+  accountId: string,
+): Promise<InsightsView> {
+  const { insights } = await apiFetch<{ insights: InsightsView | null }>(
+    `/insights?accountId=${encodeURIComponent(accountId)}`,
+  );
+  return insights ?? { computedAt: null, data: null };
+}
+
+export async function refreshInsights(accountId: string): Promise<InsightsView> {
+  return apiFetch(
+    `/insights/refresh?accountId=${encodeURIComponent(accountId)}`,
+    { method: "POST" },
   );
 }
 

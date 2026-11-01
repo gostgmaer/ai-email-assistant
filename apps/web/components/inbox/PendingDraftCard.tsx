@@ -2,16 +2,25 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useState } from "react";
 
 import { SparklesIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
-import type { PendingDraftReply } from "@/lib/api/types";
+import type { DraftDiscardReason, PendingDraftReply } from "@/lib/api/types";
 import {
   cancelScheduledSend,
   deleteDraft,
   sendDraft,
 } from "@/lib/services/email.service";
 import { formatDateTime } from "@/lib/utils/format";
+
+const DISCARD_REASONS: { value: DraftDiscardReason; label: string }[] = [
+  { value: "WRONG_FACTS", label: "Wrong facts" },
+  { value: "WRONG_TONE", label: "Wrong tone" },
+  { value: "SHOULD_NOT_REPLY", label: "Shouldn't reply" },
+  { value: "TOO_LONG", label: "Too long" },
+  { value: "OTHER", label: "Other" },
+];
 
 /**
  * An AI-generated reply held for review, shown directly under the message
@@ -38,9 +47,10 @@ export function PendingDraftCard({
   });
 
   const discardMutation = useMutation({
-    mutationFn: () => deleteDraft(draft.id),
+    mutationFn: (reason?: DraftDiscardReason) => deleteDraft(draft.id, reason),
     onSuccess: refresh,
   });
+  const [askingReason, setAskingReason] = useState(false);
 
   const cancelSendMutation = useMutation({
     mutationFn: () => cancelScheduledSend(draft.id),
@@ -142,13 +152,45 @@ export function PendingDraftCard({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => discardMutation.mutate()}
-          loading={discardMutation.isPending}
-          disabled={sendMutation.isPending}
+          onClick={() => setAskingReason(true)}
+          disabled={sendMutation.isPending || askingReason}
         >
           Discard
         </Button>
       </div>
+
+      {askingReason && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-zinc-600">
+          <span>Why? It helps the AI improve.</span>
+          {DISCARD_REASONS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              disabled={discardMutation.isPending}
+              onClick={() => discardMutation.mutate(value)}
+              className="rounded-full border border-zinc-300 bg-white px-2 py-0.5 font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {label}
+            </button>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            loading={discardMutation.isPending}
+            onClick={() => discardMutation.mutate(undefined)}
+          >
+            Just discard
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={discardMutation.isPending}
+            onClick={() => setAskingReason(false)}
+          >
+            Keep it
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
