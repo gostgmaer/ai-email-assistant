@@ -126,7 +126,13 @@ describe('ApprovalChainService', () => {
       configService,
     );
 
-    return { service, prisma, notificationService, composeService };
+    return {
+      service,
+      prisma,
+      notificationService,
+      composeService,
+      emailAccountService,
+    };
   }
 
   describe('create', () => {
@@ -275,6 +281,29 @@ describe('ApprovalChainService', () => {
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
+    it('rejects a decision from the step approver once they are no longer a member of the account', async () => {
+      const { service, prisma, composeService, emailAccountService } =
+        buildDeps();
+      prisma.approvalChain.findUnique.mockResolvedValue(
+        chain('PENDING', [step(0, 'u1', 'PENDING')]),
+      );
+      emailAccountService.getAccessibleAccountOrThrow.mockRejectedValue(
+        new ForbiddenException('You do not have access to this account'),
+      );
+
+      for (const decide of [
+        () => service.approve('u1', chainId),
+        () => service.reject('u1', chainId),
+      ]) {
+        await expect(decide()).rejects.toBeInstanceOf(ForbiddenException);
+      }
+      expect(
+        emailAccountService.getAccessibleAccountOrThrow,
+      ).toHaveBeenCalledWith('u1', accountId);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(composeService.sendDraft).not.toHaveBeenCalled();
+    });
+
     it('rejects acting on an already-resolved chain', async () => {
       const { service, prisma } = buildDeps();
       prisma.approvalChain.findUnique.mockResolvedValue(
@@ -327,7 +356,7 @@ describe('ApprovalChainService', () => {
   });
 
   describe('listPendingForUser', () => {
-    it('queries chains where the user has a currently-pending step and the draft still exists', async () => {
+    it('queries chains where the user has a currently-pending step, the draft still exists, and the user is still a member of the account', async () => {
       const { service, prisma } = buildDeps();
       prisma.approvalChain.findMany.mockResolvedValue([]);
 
@@ -339,6 +368,7 @@ describe('ApprovalChainService', () => {
             status: 'PENDING',
             draftMessageId: { not: null },
             steps: { some: { approverUserId: 'u1', status: 'PENDING' } },
+            account: { members: { some: { userId: 'u1' } } },
           },
         }),
       );

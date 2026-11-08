@@ -177,8 +177,11 @@ export default function ThreadPage() {
   );
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-zinc-50">
-      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-zinc-200 bg-white px-4 py-3">
+    // Below sm the whole thread scrolls as one column (header stays pinned):
+    // pinning the meeting card and reply box left almost no room for the
+    // messages on a phone. From sm up only the message list scrolls.
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto bg-zinc-50 sm:overflow-hidden">
+      <div className="sticky top-0 z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-zinc-200 bg-white px-4 py-3 sm:static">
         <Link
           href="/inbox"
           aria-label="Back to inbox"
@@ -361,7 +364,7 @@ export default function ThreadPage() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="flex-1 space-y-3 p-4 sm:min-h-0 sm:overflow-y-auto">
         {thread.messages.map((message) => {
           const senderLabel = participantListLabel(message.from);
           return (

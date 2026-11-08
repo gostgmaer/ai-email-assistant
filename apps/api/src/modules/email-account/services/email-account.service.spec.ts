@@ -161,3 +161,87 @@ describe('EmailAccountService — default automation seeding', () => {
     expect(prisma.workflowRule.create).not.toHaveBeenCalled();
   });
 });
+
+describe('EmailAccountService — removeMember', () => {
+  const accountId = 'acct-1';
+
+  function buildDeps(removedCount = 1) {
+    const tx = {
+      accountMember: {
+        deleteMany: jest.fn().mockResolvedValue({ count: removedCount }),
+      },
+      emailThread: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      approvalChain: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const prisma = {
+      tx,
+      emailAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: accountId,
+          userId: 'owner-1',
+          deletedAt: null,
+        }),
+      },
+      $transaction: jest.fn((fn: (client: typeof tx) => Promise<unknown>) =>
+        fn(tx),
+      ),
+    };
+    const service = new EmailAccountService(
+      prisma as never,
+      {} as EncryptionService,
+      {} as ConfigService,
+      {} as QueueService,
+    );
+    return { service, prisma };
+  }
+
+  it('removes the membership, unassigns their threads, and cancels approval chains still waiting on them', async () => {
+    const { service, prisma } = buildDeps();
+
+    await service.removeMember('owner-1', accountId, 'member-1');
+
+    expect(prisma.tx.accountMember.deleteMany).toHaveBeenCalledWith({
+      where: { accountId, userId: 'member-1' },
+    });
+    expect(prisma.tx.emailThread.updateMany).toHaveBeenCalledWith({
+      where: { accountId, assignedToUserId: 'member-1' },
+      data: { assignedToUserId: null },
+    });
+    expect(prisma.tx.approvalChain.updateMany).toHaveBeenCalledWith({
+      where: {
+        accountId,
+        status: 'PENDING',
+        steps: {
+          some: {
+            approverUserId: 'member-1',
+            status: { in: ['PENDING', 'WAITING'] },
+          },
+        },
+      },
+      data: { status: 'CANCELLED' },
+    });
+  });
+
+  it('changes nothing else when the user was not a member', async () => {
+    const { service, prisma } = buildDeps(0);
+
+    await service.removeMember('owner-1', accountId, 'stranger');
+
+    expect(prisma.tx.emailThread.updateMany).not.toHaveBeenCalled();
+    expect(prisma.tx.approvalChain.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('refuses to remove the owner, and refuses non-owners', async () => {
+    const { service, prisma } = buildDeps();
+
+    await expect(
+      service.removeMember('owner-1', accountId, 'owner-1'),
+    ).rejects.toThrow('cannot be removed');
+    await expect(
+      service.removeMember('member-2', accountId, 'member-1'),
+    ).rejects.toThrow('do not own');
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+});

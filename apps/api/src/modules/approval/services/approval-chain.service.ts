@@ -157,13 +157,16 @@ export class ApprovalChainService {
   }
 
   /** Chains where it's currently this user's turn to act, across every
-   * account they're a member of — the approver's "queue". */
+   * account they're a member of — the approver's "queue". The membership
+   * filter matters: a step names its approver by user id, so without it a
+   * member removed from the account would keep seeing its drafts here. */
   async listPendingForUser(userId: string) {
     return this.prisma.approvalChain.findMany({
       where: {
         status: 'PENDING',
         draftMessageId: { not: null },
         steps: { some: { approverUserId: userId, status: 'PENDING' } },
+        account: { members: { some: { userId } } },
       },
       include: CHAIN_INCLUDE,
       orderBy: { createdAt: 'asc' },
@@ -224,6 +227,14 @@ export class ApprovalChainService {
         "It isn't your turn to decide on this approval chain",
       );
     }
+
+    // Being named on the step isn't enough: the approver must still be a
+    // member of the account, or someone removed from it could still send
+    // its draft by approving the final step.
+    await this.emailAccountService.getAccessibleAccountOrThrow(
+      userId,
+      chain.accountId,
+    );
 
     const nextStep =
       decision === 'APPROVED'

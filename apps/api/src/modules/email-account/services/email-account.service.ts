@@ -487,8 +487,36 @@ export class EmailAccountService {
       );
     }
 
-    await this.prisma.accountMember.deleteMany({
-      where: { accountId, userId: targetUserId },
+    // Everything that names the removed user on this account goes in the
+    // same transaction as the membership itself, so nothing is left
+    // pointing at someone who can no longer open the account.
+    await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.accountMember.deleteMany({
+        where: { accountId, userId: targetUserId },
+      });
+      if (count === 0) return;
+
+      await tx.emailThread.updateMany({
+        where: { accountId, assignedToUserId: targetUserId },
+        data: { assignedToUserId: null },
+      });
+
+      // A chain still waiting on them could never finish, and a PENDING
+      // chain blocks sending the draft by hand. Cancelling hands the draft
+      // back to a person, as deleting the draft does (ComposeService).
+      await tx.approvalChain.updateMany({
+        where: {
+          accountId,
+          status: 'PENDING',
+          steps: {
+            some: {
+              approverUserId: targetUserId,
+              status: { in: ['PENDING', 'WAITING'] },
+            },
+          },
+        },
+        data: { status: 'CANCELLED' },
+      });
     });
   }
 
