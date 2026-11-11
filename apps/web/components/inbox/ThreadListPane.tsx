@@ -84,6 +84,11 @@ export function ThreadListPane() {
   // The active thread, if any — highlighted in the list and used to keep
   // the reading pane's selection visible while switching folders.
   const activeThreadId = pathname.match(/^\/inbox\/([^/]+)/)?.[1];
+  // Carried onto thread links so opening an email keeps the folder, group,
+  // search and page the list is showing. "followUp" belongs to the thread.
+  const listParams = new URLSearchParams(searchParams.toString());
+  listParams.delete("followUp");
+  const listQuery = listParams.toString();
 
   function updateParams(patch: Record<string, string | undefined>) {
     const next = new URLSearchParams(searchParams.toString());
@@ -309,6 +314,7 @@ export function ThreadListPane() {
                 key={thread.id}
                 thread={thread}
                 active={thread.id === activeThreadId}
+                listQuery={listQuery}
                 showAccountBadge={!accountId && (accounts?.length ?? 0) > 1}
               />
             ))}

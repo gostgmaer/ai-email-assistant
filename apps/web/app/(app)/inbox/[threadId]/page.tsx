@@ -50,8 +50,13 @@ const MessageBody = dynamic(
 export default function ThreadPage() {
   const { threadId } = useParams<{ threadId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   // Set by the Waiting view's "Draft follow-up" link.
-  const autoDraftFollowUp = useSearchParams().get("followUp") === "1";
+  const autoDraftFollowUp = searchParams.get("followUp") === "1";
+  // Back to the list with the folder/group/search it was showing.
+  const listParams = new URLSearchParams(searchParams.toString());
+  listParams.delete("followUp");
+  const inboxHref = listParams.size ? `/inbox?${listParams.toString()}` : "/inbox";
   const queryClient = useQueryClient();
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -114,7 +119,7 @@ export default function ThreadPage() {
     mutationFn: (until: string) => snoozeThread(threadId, until),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["threads"] });
-      router.push("/inbox");
+      router.push(inboxHref);
     },
   });
 
@@ -183,7 +188,7 @@ export default function ThreadPage() {
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto bg-zinc-50 sm:overflow-hidden">
       <div className="sticky top-0 z-10 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-zinc-200 bg-white px-4 py-3 sm:static">
         <Link
-          href="/inbox"
+          href={inboxHref}
           aria-label="Back to inbox"
           className="-ml-1 rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 lg:hidden"
         >

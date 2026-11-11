@@ -14,17 +14,24 @@ export function ThreadRow({
   thread,
   active = false,
   showAccountBadge = false,
+  listQuery = "",
 }: {
   thread: EmailThreadSummary;
   active?: boolean;
   /** Only meaningful in the unified "all accounts" view — redundant noise
    * once the list is already filtered to a single account. */
   showAccountBadge?: boolean;
+  /** The list's current query string, kept on the thread link so the
+   * list stays on the same folder/group/search after opening a thread. */
+  listQuery?: string;
 }) {
   const latest = thread.messages[0];
   const unread = latest ? !latest.isRead : false;
   const isDraft = thread.folder.type === "DRAFTS";
-  const href = isDraft && latest ? `/compose?draftId=${latest.id}` : `/inbox/${thread.id}`;
+  const href =
+    isDraft && latest
+      ? `/compose?draftId=${latest.id}`
+      : `/inbox/${thread.id}${listQuery ? `?${listQuery}` : ""}`;
   // Drafts have no "from" (the user hasn't sent it yet) — show who it's
   // going to instead, same as Gmail's draft rows.
   const participants = isDraft ? latest?.to : latest?.from;
