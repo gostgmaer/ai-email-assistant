@@ -56,6 +56,7 @@ Some buttons only appear for the mailbox's **owner** (the person who connected i
 **What happens:**
 - The mailbox disappears from the app for **everyone** who shared it, and the app stops reading and sending its email.
 - The app's permission to use the mailbox is deleted, along with its writing style, its **Ask** search data, its suggestions and its insights.
+- AI replies still waiting for [approval](#approval-chains) are cancelled, since they can no longer be sent.
 - **Your real mailbox is not touched.** All your email is still in Gmail, Outlook or wherever it lives.
 - If you connect the same mailbox again later, its rules, agents and members come back. Its writing style needs building again.
 

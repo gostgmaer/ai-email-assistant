@@ -71,10 +71,15 @@ From then on, sign in with the new address. Your password stays the same.
 **Where:** the red **Danger zone** section at the bottom of the page.
 
 **Before you delete:**
-1. **Disconnect your mailboxes** in [Settings → Accounts](/help/07-settings-accounts#disconnecting-a-mailbox), so the app stops reading and replying to them. If teammates share one of your mailboxes, tell them first: disconnecting removes it for them too.
-2. **Disconnect your calendars** in [Settings → Calendars](/help/08-settings-calendars#disconnecting).
-3. **Save anything you need**, such as documents you uploaded. You won't be able to sign in afterwards.
+- **Tell your teammates** if they share a mailbox you own. Deleting your account disconnects it, which removes it for them too.
+- **Save anything you need**, such as documents you uploaded. You won't be able to sign in afterwards.
 
 **How:** click **Delete account**, then confirm *"Delete your account? This cannot be undone."*
 
-**What happens:** you're signed out on every device and can't sign in again. There's no way to undo this from inside the app, so treat it as permanent. Your real mailboxes and calendars are not deleted: they stay with Google, Microsoft or your email provider.
+**What happens, all at once:**
+- **Every mailbox you own is disconnected**, exactly as if you'd clicked [Disconnect](/help/07-settings-accounts#disconnecting-a-mailbox) on each one. The app stops reading and replying to them, including any automatic replies, and teammates lose access to them.
+- **You leave every mailbox others shared with you.** Emails assigned to you there become **Unassigned**, and approvals waiting on you are cancelled, as when an owner [removes someone](/help/15-working-as-a-team#removing-someone-owner).
+- **Your calendars are disconnected.**
+- **You're signed out on every device** and can't sign in again.
+
+There's no way to undo this from inside the app, so treat it as permanent. Your real mailboxes and calendars are not deleted: they stay with Google, Microsoft or your email provider.
