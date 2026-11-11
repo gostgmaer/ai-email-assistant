@@ -63,5 +63,5 @@ Ask a question in everyday language and get a short answer taken from your own e
 
 | Use | When |
 |---|---|
-| **Search** (press **Enter** in the search box) | You want to **find an email** by a word in its subject or the first lines shown in the list |
+| **Search** (press **Enter** in the search box) | You want to **find an email** by words in it, its subject or its sender |
 | **Ask** (click **Ask AI**) | You want an **answer**: a date, an amount, a decision, an address, even if you don't know which email it's in |

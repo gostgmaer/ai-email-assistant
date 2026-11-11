@@ -59,7 +59,11 @@ describe('TokenService', () => {
         deviceLabel: 'Test Device',
       });
 
-      expect(nestJwtService.signAsync).toHaveBeenCalledWith(payload);
+      // The access token is stamped with its session's id (JwtStrategy).
+      expect(nestJwtService.signAsync).toHaveBeenCalledWith({
+        ...payload,
+        sid: 'rt-1',
+      });
       expect(result.accessToken).toBe('signed.access.token');
       expect(typeof result.refreshToken).toBe('string');
       // randomBytes(48) hex-encoded is 96 hex characters.
@@ -99,7 +103,11 @@ describe('TokenService', () => {
         userId: 'user-1',
         expiresAt: new Date(Date.now() + 60_000),
         revokedAt: null as Date | null,
-        user: { id: 'user-1', email: 'user@example.com' },
+        user: {
+          id: 'user-1',
+          email: 'user@example.com',
+          deletedAt: null as Date | null,
+        },
         ...overrides,
       };
     }
@@ -135,6 +143,24 @@ describe('TokenService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
+    it('rejects the refresh token of a deleted user', async () => {
+      const { service, prisma } = buildDeps();
+      prisma.refreshToken.findUnique.mockResolvedValue(
+        buildRecord({
+          user: {
+            id: 'user-1',
+            email: 'user@example.com',
+            deletedAt: new Date(),
+          },
+        }),
+      );
+
+      await expect(
+        service.rotateRefreshToken('deleted-user-token'),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(prisma.refreshToken.create).not.toHaveBeenCalled();
+    });
+
     it('looks the token up by its sha256 hash', async () => {
       const { service, prisma } = buildDeps();
       prisma.refreshToken.findUnique.mockResolvedValue(buildRecord());
@@ -165,6 +191,7 @@ describe('TokenService', () => {
       expect(nestJwtService.signAsync).toHaveBeenCalledWith({
         sub: 'user-1',
         email: 'user@example.com',
+        sid: 'rt-2',
       });
       expect(prisma.refreshToken.create).toHaveBeenCalledWith(
         expect.objectContaining({

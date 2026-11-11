@@ -22,10 +22,11 @@ All your email in one place, from every mailbox you've connected. The AI sorts i
 **Priority:** the **Any priority** dropdown shows only **Urgent**, **High**, **Medium** or **Low** emails, as judged by the AI.
 
 **Search:** type a word into **Search email…** at the top of the page and press **Enter**.
-- It looks in each conversation's **subject** and the **first lines** shown in the list, ignoring capital letters. It doesn't search senders' names or the full text of emails.
+- It finds conversations where your words appear in the **subject**, the **sender's name or address**, or the **text of any email** in them. Capital letters don't matter, so `priya`, `Priya` and `harbor.example.net` all work.
+- It looks for your words exactly as typed, next to each other: `invoice 1042` finds "invoice 1042" but not "1042 invoice".
 - Results start in **Inbox**. To search **Sent**, **Archive** or another folder, click its tab after searching. The search stays applied.
 - To clear the search, empty the box and press **Enter**.
-- **Can't find it?** Use **Ask AI** next to the box instead. It searches the full text of your email by meaning, for example *"the email from Priya about the redesign"*. See [Ask your inbox](/help/12-ask-your-inbox).
+- **Can't find it?** Try fewer words, or one unusual word. Or use **Ask AI** next to the box, which searches by meaning, so *"the email about moving office"* can find one that says "relocation". See [Ask your inbox](/help/12-ask-your-inbox).
 
 **Example:** click **Drafts** to see every draft waiting to be checked or finished, from all your mailboxes.
 

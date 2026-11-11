@@ -25,7 +25,7 @@ You can have both: someone who signed up with Google can also set a password her
 3. Click **Update password**.
 4. A green *"Password updated."* message appears. If your current password was wrong, you'll see a red error and nothing changes.
 
-**What happens:** for safety, changing your password signs you out on **every** device, including this one. With the standard settings, this happens within 15 minutes. Sign in again with the new password.
+**What happens:** for safety, changing your password signs you out on **every** device, including this one, straight away. Sign in again with the new password.
 
 **Example:** you signed up with **Continue with Google** and never set a password. Leave **Current password** empty, type a new one and click **Update password**. From then on, you need the current password to change it.
 
@@ -50,7 +50,7 @@ Resetting your password also signs you out on every other device. If the link ha
 
 **Example:** you see a sign-in from a device you don't recognise. Click **Revoke** on it straight away, then change your password above.
 
-**What happens:** that device is signed out and has to sign in again with your password. With the standard settings, it can keep working for up to 15 minutes before it's locked out, so change your password straight away if you think someone else has it.
+**What happens:** that device is signed out straight away: the next thing it tries to do sends it back to the sign-in page. If you think someone else knows your password, change it too, or they can simply sign in again.
 
 ## Good habits
 

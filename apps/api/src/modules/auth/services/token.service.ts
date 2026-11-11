@@ -27,16 +27,25 @@ export class TokenService {
     private readonly prisma: PrismaService,
   ) {}
 
+  /**
+   * The access token carries its session's id (`sid`, the refresh-token
+   * row), and JwtStrategy checks that row on every request — so signing a
+   * device out, "Sign out everywhere", a password change or deleting the
+   * account takes effect on the very next request, not when the access
+   * token would have expired.
+   */
   async issueTokenPair(
     payload: JwtPayload,
     device?: DeviceMetadata,
   ): Promise<TokenPair> {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.nestJwtService.signAsync(payload),
-      this.createRefreshToken(payload.sub, device),
-    ]);
+    const session = await this.createRefreshToken(payload.sub, device);
+    const accessToken = await this.nestJwtService.signAsync({
+      sub: payload.sub,
+      email: payload.email,
+      sid: session.id,
+    });
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken: session.token };
   }
 
   /**
@@ -47,8 +56,15 @@ export class TokenService {
    * useless — unlike the access token that used to ride in that URL.
    */
   async issueConnectTicket(payload: JwtPayload): Promise<string> {
+    // Bound to the same session as the access token it was asked with, so
+    // signing that session out also voids a ticket that's still in flight.
     return this.nestJwtService.signAsync(
-      { sub: payload.sub, email: payload.email, purpose: 'connect' },
+      {
+        sub: payload.sub,
+        email: payload.email,
+        sid: payload.sid,
+        purpose: 'connect',
+      },
       { expiresIn: '60s' },
     );
   }
@@ -64,7 +80,12 @@ export class TokenService {
       include: { user: true },
     });
 
-    if (!record || record.revokedAt || record.expiresAt < new Date()) {
+    if (
+      !record ||
+      record.revokedAt ||
+      record.expiresAt < new Date() ||
+      record.user.deletedAt
+    ) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -136,7 +157,7 @@ export class TokenService {
   private async createRefreshToken(
     userId: string,
     device?: DeviceMetadata,
-  ): Promise<string> {
+  ): Promise<{ id: string; token: string }> {
     const token = randomBytes(48).toString('hex');
     const tokenHash = this.hashToken(token);
 
@@ -144,7 +165,7 @@ export class TokenService {
       'JWT_REFRESH_EXPIRES_IN',
     ) as ms.StringValue;
 
-    await this.prisma.refreshToken.create({
+    const session = await this.prisma.refreshToken.create({
       data: {
         userId,
         tokenHash,
@@ -155,7 +176,7 @@ export class TokenService {
       },
     });
 
-    return token;
+    return { id: session.id, token };
   }
 
   private hashToken(token: string): string {

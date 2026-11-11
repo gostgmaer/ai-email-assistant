@@ -24,7 +24,7 @@ Go to **Settings → Accounts** and look at the label next to the mailbox's addr
 - **syncing:** it's working right now. **synced** means everything is fine.
 
 **I can't find an email with Search.**
-Search only looks at subjects and the first lines of each conversation, not senders or the full text. Try **Ask AI** instead: *"the email from Dana about invoice 1042"*.
+Search looks for your words exactly as typed, next to each other, in the subject, the sender and the email text. Try fewer words, or one unusual word such as a name or a number. If you don't remember the exact words, use **Ask AI** instead: *"the email from Dana about the invoice"*.
 
 ## The AI
 

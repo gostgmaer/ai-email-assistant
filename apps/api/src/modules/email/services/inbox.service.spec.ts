@@ -12,6 +12,7 @@ describe('InboxService', () => {
         fields: { lastMessageAt: 'lastMessageAt-field' },
       },
       $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
+      $queryRaw: jest.fn().mockResolvedValue([]),
       emailMessage: {
         findUnique: jest.fn(),
         update: jest.fn(),
@@ -192,6 +193,67 @@ describe('InboxService', () => {
       expect(prisma.emailThread.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: { followUpAt: null } }),
       );
+    });
+  });
+
+  describe('listThreads search', () => {
+    const searchOf = (prisma: ReturnType<typeof buildDeps>['prisma']) =>
+      (
+        prisma.emailThread.findMany.mock.calls[0] as [
+          { where: { AND: { OR?: unknown[] }[] } },
+        ]
+      )[0].where.AND[0].OR;
+    const sqlValues = (prisma: ReturnType<typeof buildDeps>['prisma']) =>
+      (prisma.$queryRaw.mock.calls[0] as unknown[]).slice(1);
+
+    it('also matches threads by sender or message text, scoped to the user', async () => {
+      const { service, prisma } = buildDeps();
+      prisma.$queryRaw.mockResolvedValue([
+        { threadId: 'thread-7' },
+        { threadId: 'thread-9' },
+      ]);
+
+      await service.listThreads('user-1', { q: ' Priya ' });
+
+      expect(searchOf(prisma)).toEqual([
+        { subject: { contains: 'Priya', mode: 'insensitive' } },
+        { snippet: { contains: 'Priya', mode: 'insensitive' } },
+        { id: { in: ['thread-7', 'thread-9'] } },
+      ]);
+      expect(sqlValues(prisma)).toEqual(
+        expect.arrayContaining(['user-1', '%Priya%']),
+      );
+    });
+
+    it('treats %, _ and \\ in the search as literal text, not wildcards', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.listThreads('user-1', { q: '50%_off\\' });
+
+      expect(sqlValues(prisma)).toContain('%50\\%\\_off\\\\%');
+      expect(searchOf(prisma)).toEqual([
+        { subject: { contains: '50\\%\\_off\\\\', mode: 'insensitive' } },
+        { snippet: { contains: '50\\%\\_off\\\\', mode: 'insensitive' } },
+      ]);
+    });
+
+    it('falls back to subject and preview when no message matches', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.listThreads('user-1', { q: 'invoice' });
+
+      expect(searchOf(prisma)).toEqual([
+        { subject: { contains: 'invoice', mode: 'insensitive' } },
+        { snippet: { contains: 'invoice', mode: 'insensitive' } },
+      ]);
+    });
+
+    it('runs no message search without a search term', async () => {
+      const { service, prisma } = buildDeps();
+
+      await service.listThreads('user-1', { q: '   ' });
+
+      expect(prisma.$queryRaw).not.toHaveBeenCalled();
     });
   });
 

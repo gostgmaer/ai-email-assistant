@@ -42,7 +42,7 @@ Not sure? Leave automatic replies off. Drafts alone already save most of the tim
 
 - **Use a strong, unique password**, of at least 8 characters, that you don't use anywhere else. Change it under **Settings → Security**.
 - **Sign out on shared or public computers**: click your picture at the top right, then **Sign out**.
-- **Check your devices now and then** under **Settings → Security → Active sessions**. If you see one you don't recognise, click **Revoke** on it, then change your password. With the standard settings, that device can stay signed in for up to 15 minutes before it's locked out.
+- **Check your devices now and then** under **Settings → Security → Active sessions**. If you see one you don't recognise, click **Revoke** on it, which signs it out straight away, then change your password.
 - **Lost a phone or laptop?** Click **Sign out everywhere**, then sign in again on your own device and change your password.
 - **Don't put passwords, card numbers or ID numbers in emails**, and don't ask the AI to write them.
 

@@ -22,6 +22,16 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // request.
 const CLEANUP_BATCH = 100;
 
+// Most threads a search can match by sender or message text (newest first).
+// Subject/preview matches aren't capped.
+const SEARCH_MESSAGE_MATCH_LIMIT = 500;
+
+/** Searches are literal text: %, _ and \ must not act as LIKE wildcards
+ * (Postgres's default LIKE escape character is the backslash). */
+function escapeLike(text: string): string {
+  return text.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 @Injectable()
 export class InboxService {
   private readonly logger = new Logger(InboxService.name);
@@ -45,11 +55,21 @@ export class InboxService {
     // one of them.
     const conditions: Prisma.EmailThreadWhereInput[] = [];
 
-    if (query.q) {
+    const q = query.q?.trim();
+    if (q) {
+      const viaMessages = await this.threadIdsMatchingMessages(
+        userId,
+        q,
+        query.accountId,
+      );
+      // Prisma's `contains` builds a LIKE without escaping, so a search for
+      // "%" or "_" would otherwise match every thread.
+      const literal = escapeLike(q);
       conditions.push({
         OR: [
-          { subject: { contains: query.q, mode: 'insensitive' } },
-          { snippet: { contains: query.q, mode: 'insensitive' } },
+          { subject: { contains: literal, mode: 'insensitive' } },
+          { snippet: { contains: literal, mode: 'insensitive' } },
+          ...(viaMessages.length > 0 ? [{ id: { in: viaMessages } }] : []),
         ],
       });
     }
@@ -135,6 +155,36 @@ export class InboxService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Threads where any message's sender (name or address) or text contains
+   * the search, ignoring case — what people actually search by, and what
+   * subject/snippet alone missed. Raw SQL because `from` is JSON, which
+   * Prisma can't match case-insensitively. Scoped to accounts the user is a
+   * member of (the caller's own `where` re-applies every other filter), and
+   * capped to the newest SEARCH_MESSAGE_MATCH_LIMIT threads so one very
+   * common word can't make the query unbounded.
+   */
+  private async threadIdsMatchingMessages(
+    userId: string,
+    q: string,
+    accountId?: string,
+  ): Promise<string[]> {
+    const pattern = `%${escapeLike(q)}%`;
+    const rows = await this.prisma.$queryRaw<{ threadId: string }[]>`
+      SELECT m."threadId"
+      FROM "EmailMessage" m
+      JOIN "EmailThread" t ON t."id" = m."threadId"
+      JOIN "AccountMember" am
+        ON am."accountId" = t."accountId" AND am."userId" = ${userId}
+      WHERE (${accountId ?? null}::text IS NULL OR t."accountId" = ${accountId ?? null})
+        AND (m."from"::text ILIKE ${pattern} OR m."bodyText" ILIKE ${pattern})
+      GROUP BY m."threadId"
+      ORDER BY MAX(m."receivedAt") DESC
+      LIMIT ${SEARCH_MESSAGE_MATCH_LIMIT}
+    `;
+    return rows.map((row) => row.threadId);
   }
 
   /**

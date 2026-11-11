@@ -45,7 +45,8 @@ export class ListThreadsDto {
   folderType?: (typeof FOLDER_TYPES)[number];
 
   @ApiPropertyOptional({
-    description: 'Free-text search across subject/snippet/body',
+    description:
+      'Free-text search, ignoring case, across subject, preview, sender name/address and message text',
   })
   @IsOptional()
   @IsString()

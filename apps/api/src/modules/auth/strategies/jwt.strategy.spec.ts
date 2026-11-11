@@ -15,10 +15,25 @@ describe('JwtStrategy', () => {
     } as unknown as ConfigService;
   }
 
+  const liveSession = {
+    userId: 'user-1',
+    revokedAt: null as Date | null,
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    user: { deletedAt: null as Date | null },
+  };
+
+  function build(session: typeof liveSession | null = liveSession) {
+    const prisma = {
+      refreshToken: { findUnique: jest.fn().mockResolvedValue(session) },
+    };
+    const strategy = new JwtStrategy(buildConfigService(), prisma as never);
+    return { strategy, prisma };
+  }
+
   it('reads the signing secret from JWT_SECRET at construction', () => {
     const configService = buildConfigService('test-secret');
 
-    new JwtStrategy(configService);
+    new JwtStrategy(configService, {} as never);
 
     expect(configService.getOrThrow).toHaveBeenCalledWith('JWT_SECRET');
   });
@@ -28,12 +43,16 @@ describe('JwtStrategy', () => {
       new Error('JWT_SECRET is not defined'),
     );
 
-    expect(() => new JwtStrategy(configService)).toThrow(
+    expect(() => new JwtStrategy(configService, {} as never)).toThrow(
       'JWT_SECRET is not defined',
     );
   });
 
-  const user: JwtPayload = { sub: 'user-1', email: 'user@example.com' };
+  const user: JwtPayload = {
+    sub: 'user-1',
+    email: 'user@example.com',
+    sid: 'session-1',
+  };
   const ticket: JwtPayload = { ...user, purpose: 'connect' };
   const viaHeader = (path = '/inbox') =>
     ({
@@ -44,18 +63,21 @@ describe('JwtStrategy', () => {
   const viaUrl = (path: string) =>
     ({ path, headers: {}, query: { ticket: 'x' } }) as unknown as Request;
 
-  it('accepts an access token from the Authorization header', () => {
-    const strategy = new JwtStrategy(buildConfigService());
+  it('accepts an access token from the Authorization header while its session is live', async () => {
+    const { strategy, prisma } = build();
 
-    expect(strategy.validate(viaHeader(), user)).toEqual(user);
+    await expect(strategy.validate(viaHeader(), user)).resolves.toEqual(user);
+    expect(prisma.refreshToken.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'session-1' } }),
+    );
   });
 
-  it('accepts a connect ticket from the URL of a connect route', () => {
-    const strategy = new JwtStrategy(buildConfigService());
+  it('accepts a connect ticket from the URL of a connect route', async () => {
+    const { strategy } = build();
 
-    expect(
+    await expect(
       strategy.validate(viaUrl('/email-accounts/connect/google'), ticket),
-    ).toEqual(user);
+    ).resolves.toEqual(user);
   });
 
   it.each([
@@ -66,11 +88,40 @@ describe('JwtStrategy', () => {
     ],
     ['a ticket on a non-connect route', viaUrl('/email/threads'), ticket],
     ['a ticket used as a bearer token', viaHeader(), ticket],
-  ])('refuses %s', (_label, req, payload) => {
-    const strategy = new JwtStrategy(buildConfigService());
+  ])('refuses %s', async (_label, req, payload) => {
+    const { strategy } = build();
 
-    expect(() => strategy.validate(req, payload)).toThrow(
+    await expect(strategy.validate(req, payload)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it.each([
+    ['its session was signed out', { ...liveSession, revokedAt: new Date() }],
+    [
+      'its session has expired',
+      { ...liveSession, expiresAt: new Date(Date.now() - 1000) },
+    ],
+    [
+      'its user was deleted',
+      { ...liveSession, user: { deletedAt: new Date() } },
+    ],
+    ['its session belongs to someone else', { ...liveSession, userId: 'x' }],
+    ['its session no longer exists', null],
+  ])('refuses a token once %s', async (_label, session) => {
+    const { strategy } = build(session);
+
+    await expect(strategy.validate(viaHeader(), user)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('refuses a token that carries no session at all', async () => {
+    const { strategy, prisma } = build();
+
+    await expect(
+      strategy.validate(viaHeader(), { sub: 'user-1', email: 'u@x.com' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.refreshToken.findUnique).not.toHaveBeenCalled();
   });
 });
