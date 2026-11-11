@@ -4,14 +4,14 @@
 
 ## What it is
 
-Two automatically-populated lists, pulled from your mail by AI — you never manually create these, only act on them:
+Two lists the app fills in for you from your email. You don't add things to them yourself; you just act on what's there.
 
 - **Tasks** — action items and meeting requests the AI noticed inside your mail, and promises you made in mail you sent.
 - **Waiting** — threads where *you* sent the last message and haven't heard back yet.
 
 ## Where to find it
 
-**Tasks** and **Waiting** in the left sidebar.
+**Tasks** and **Waiting**, in the menu on the left.
 
 ---
 
@@ -19,21 +19,31 @@ Two automatically-populated lists, pulled from your mail by AI — you never man
 
 ![The Tasks page with a You promised task, an Action item and a Meeting request](/help-images/tasks.png)
 
-**Sub-filters:** **Pending** (default) / **Done** / **Dismissed** / **All**. Tasks with a due date come first, soonest due; the rest are newest first.
+**Tabs:** **Pending** (shown first), **Done**, **Dismissed** and **All**. Tasks with a due date come first, soonest first; the rest are newest first.
+
+**The four kinds of task:**
+
+| Label | Where it comes from | Example |
+|---|---|---|
+| **Action item** | Someone asked you to do something in an email | *"Update Brightpath's address on future contracts"* |
+| **Meeting request** | Someone asked to meet or talk | *"Call on Tuesday afternoon about the redesign"* |
+| **You promised** | You promised something in an email **you** sent | *"Send Dana the corrected invoice"*, due Friday |
+| **Follow-up** | Nobody answered an email you sent with a reminder set | *"No reply yet: Contract for sign-off"* |
 
 Each task shows:
-- A type pill — **Meeting request**, **Action item**, **Follow-up** or **You promised**.
-- The time it was extracted, and the due date if it has one. An open task past its due date shows **Overdue since** in red.
-- A one-line description written by the AI (e.g. *"Interview on Monday, August 10, 2026, at 3:00 PM"*).
-- **View source email** — jumps to the exact thread it came from.
-- **Done** / **Dismiss** buttons (and **Reopen** once a task is Done or Dismissed).
-- For **Meeting request** tasks only: a **Suggest a time** button.
+- Its label, and when it was found. If it has a due date, that's shown too, and an open task past its due date shows **Overdue since** in red.
+- A one-line description written by the AI, such as *"Interview on Monday, August 10, 2026, at 3:00 PM"*.
+- **View source email**, which opens the email it came from. Always check the email if the details matter: the AI can misread dates.
+- **Done** and **Dismiss** buttons, or **Reopen** once a task is done or dismissed.
+- On **Meeting request** tasks only, a **Suggest a time** button.
+
+> **A good daily habit:** open **Tasks** each morning, click **Done** on what you've finished and **Dismiss** on anything that isn't really a task. A short list is a useful list.
 
 ### Marking a task Done or Dismissed
 
 **How:** click **Done** (you handled it) or **Dismiss** (not relevant / don't need to act). The task moves out of the **Pending** list into the corresponding tab.
 
-**What happens:** `Task.status` updates to `DONE` or `DISMISSED`; `Done` also stamps `completedAt`. Both are reversible — open the **Done** or **Dismissed** tab and click **Reopen** to send it back to Pending.
+**What happens:** the task moves to the **Done** or **Dismissed** tab. Changed your mind? Open that tab and click **Reopen** to put it back in **Pending**. Nothing is sent to anyone either way.
 
 ### You promised (commitments)
 
@@ -58,7 +68,9 @@ To offer the other person a choice of times instead, use [Propose times](/help/0
 
 **Example:** a task *"Interview on Monday, August 10, 2026, at 3:00 PM"* → Suggest a time proposes `Interview`, `08/10/2026 09:00 PM – 09:30 PM` (your local timezone) → Confirm & schedule creates the event on the connected Google/Outlook calendar and the task now shows a **"View scheduled meeting →"** link instead of the Suggest-a-time button.
 
-**What happens on Confirm & schedule:** a real event is created via the connected calendar provider's API. If you checked "Invite attendee," a real calendar invitation email is sent to that address — this is the one part of this flow that is not silently reversible (the invitee gets notified), so double-check the checkbox before confirming.
+**What happens on Confirm & schedule:** a real event is added to your Google or Outlook calendar. If you ticked **Invite attendee**, that person also gets a calendar invitation by email. You can delete the event from your calendar afterwards, but they'll already have been notified, so check the box and the address before confirming.
+
+> **Tip:** the AI's suggested time is only a suggestion. Always check the date, the time and the title in the review panel before you confirm.
 
 ---
 
@@ -70,7 +82,9 @@ To offer the other person a choice of times instead, use [Propose times](/help/0
 
 Each row shows: how long it's been waiting, who it's waiting on, the subject (click to open the thread), and — if relevant — a pending meeting request or a **You promised: …** line.
 
-**Example:** *"26 days waiting — Re: Agentic AI Development Training with LangGraph learning program"* tells you at a glance which outreach has gone cold and might need a nudge.
+**Example:** *"26 days waiting — Re: Proposal for the spring campaign"* tells you at a glance which conversation has gone quiet and might need a nudge.
+
+> **Tip:** look at **7+ days** once a week. A short, friendly follow-up often gets the answer you're waiting for, and **Draft follow-up** writes one for you to check.
 
 **What you can do on a row:**
 - **Draft follow-up** opens the thread and has the AI write a short nudge in the reply box. Nothing is sent until you click **Send**.

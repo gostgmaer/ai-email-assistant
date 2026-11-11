@@ -245,3 +245,48 @@ describe('EmailAccountService — removeMember', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });
+
+describe('EmailAccountService — disconnect', () => {
+  it('cancels approval chains still waiting on the mailbox, since their drafts can no longer be sent', async () => {
+    const prisma = {
+      emailAccount: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'acct-1',
+          userId: 'owner-1',
+          deletedAt: null,
+        }),
+        update: jest.fn(),
+      },
+      emailCredential: { deleteMany: jest.fn() },
+      writingStyleProfile: { deleteMany: jest.fn() },
+      emailChunk: { deleteMany: jest.fn() },
+      improvementSuggestion: { deleteMany: jest.fn() },
+      threadMetrics: { deleteMany: jest.fn() },
+      insightsSnapshot: { deleteMany: jest.fn() },
+      aiDraftOutcome: { updateMany: jest.fn() },
+      approvalChain: { updateMany: jest.fn() },
+      $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
+    };
+    const service = new EmailAccountService(
+      prisma as never,
+      {} as EncryptionService,
+      {} as ConfigService,
+      {} as QueueService,
+    );
+
+    await service.disconnect('owner-1', 'acct-1');
+
+    expect(prisma.emailAccount.update).toHaveBeenCalledWith({
+      where: { id: 'acct-1' },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() matcher
+      data: { deletedAt: expect.any(Date), syncEnabled: false },
+    });
+    expect(prisma.emailCredential.deleteMany).toHaveBeenCalledWith({
+      where: { accountId: 'acct-1' },
+    });
+    expect(prisma.approvalChain.updateMany).toHaveBeenCalledWith({
+      where: { accountId: 'acct-1', status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    });
+  });
+});

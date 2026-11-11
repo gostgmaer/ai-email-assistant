@@ -10,7 +10,7 @@ When AI drafts keep getting discarded or heavily rewritten, the app works out wh
 
 ## Where to find it
 
-**Suggestions** in the left sidebar. If you have more than one account, choose it at the top of the page.
+**Suggestions**, in the menu on the left. If you have more than one account, choose it at the top of the page.
 
 The app checks once a week. The account's owner can click **Check now** to check straight away.
 

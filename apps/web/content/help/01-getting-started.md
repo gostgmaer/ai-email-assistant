@@ -1,58 +1,93 @@
 ← [Back to index](/help)
 
-# Getting started — connecting an inbox
+# Getting started: connecting a mailbox
 
 ## What it is
 
-The first thing every user does: connect a real mailbox so the app has mail to work with. You can connect Gmail, Outlook, or any generic IMAP/SMTP account (Yahoo, a company mail server, etc.). You can connect more than one account; the first one you connect becomes **Primary** automatically.
+Before the app can help, it needs your email. You connect a mailbox once, and the app keeps a copy of your email up to date from then on. You can connect Gmail, Outlook (including Microsoft 365 work accounts), or almost any other email service. You can connect several. The first one becomes your **Primary** mailbox, used by default when you write a new email.
+
+> **Is it safe?** For Gmail and Outlook you sign in on Google's or Microsoft's own page, so this app never sees your password. You can remove the app's access at any time by disconnecting the mailbox.
 
 ## Where to find it
 
-**Settings → Accounts** (left sidebar). This is also where you land by default after first login if you have no accounts connected yet.
+**Settings → Accounts**, in the menu on the left. On a phone, tap **☰** at the top left first.
 
-## How to use it
+## How to connect
 
-### Option A — Gmail or Outlook (OAuth, recommended)
+### Gmail or Outlook (recommended)
 
-1. Click **Connect Gmail** or **Connect Outlook** near the top of the page.
-2. You're redirected to Google's/Microsoft's real sign-in and consent screen.
-3. Approve the requested permissions (read/send mail, and calendar if you also want scheduling).
-4. You're redirected back to `/settings/email-accounts?connected=<email>` and see a green confirmation banner: *"Connected `you@example.com` — the initial sync is running in the background."*
-5. The account appears in the list. A background sync starts pulling your existing mail into the unified inbox — this can take a few minutes for a large mailbox.
+1. Click **Connect Gmail** or **Connect Outlook**.
+2. Google's or Microsoft's sign-in page opens. Sign in as usual.
+3. You're asked to allow the app to read and send your email, and to use your calendar if you want meeting scheduling. Click **Allow**.
+4. You come back to the app with a green message: *"Connected you@example.com — the initial sync is running in the background."*
+5. The mailbox appears in the list. Your existing email starts arriving in the Inbox. This can take a few minutes for a large mailbox, and you can keep using the app meanwhile.
 
-### Option B — Any IMAP/SMTP mailbox
+### Any other email service
 
-1. Click **Connect IMAP**. A form expands with two columns of fields.
-2. Fill in:
-   - **Email address** — the mailbox address itself.
-   - **Display name** *(optional)* — how it's labeled in the UI.
-   - **Username** — usually the same as the email, but some providers use a separate login name.
-   - **Password** — the mailbox password, or an app-specific password if the provider requires one (Gmail/Yahoo with 2FA do).
-   - **IMAP host** / **IMAP port** *(defaults to 993)* — e.g. `imap.example.com`.
-   - **SMTP host** / **SMTP port** *(defaults to 465)* — e.g. `smtp.example.com`.
-   - IMAP/SMTP "secure" (TLS) checkboxes default to on — leave them on unless your provider specifically requires plaintext.
-3. Click **Connect**. On success the form closes and the account appears in the list.
+Use this for Yahoo, a company mail server, or any other service.
+
+> **Before you start:** you need your email service's "IMAP" and "SMTP" settings: a server name and a number for each. Search your provider's help pages for "IMAP settings", or ask your IT team. Many providers also require an **app password** instead of your normal one, especially if you use two-step sign-in. Their help pages explain how to create one.
+
+1. Click **Connect IMAP**. A form opens.
+2. Fill it in:
+   - **Email address**: the address you want to connect.
+   - **Display name** *(optional)*: how it's labelled in the app.
+   - **Username**: usually the same as your email address.
+   - **Password**: your email password, or the app password your provider gave you.
+   - **IMAP host** and **port**: for reading email, for example `imap.example.com` and `993`.
+   - **SMTP host** and **port**: for sending email, for example `smtp.example.com` and `465`.
+   - Leave the **secure** boxes ticked unless your provider says otherwise.
+3. Click **Connect**. If the details are right, the form closes and the mailbox appears in the list. If not, you'll see an error: check each field against your provider's instructions.
 
 ### Example
 
-Connecting a company mailbox on a self-hosted mail server:
+Connecting a company mailbox:
 
-| Field | Example value |
+| Field | Example |
 |---|---|
 | Email address | `ops@yourcompany.com` |
 | Username | `ops@yourcompany.com` |
-| Password | `••••••••` (an app password, not your SSO password) |
+| Password | `••••••••` (an app password from your IT team) |
 | IMAP host / port | `mail.yourcompany.com` / `993` |
 | SMTP host / port | `mail.yourcompany.com` / `465` |
 
-## What happens
+## What happens next
 
-- A new `EmailAccount` row is created, owned by your user.
-- A background sync job starts pulling recent mail into the unified Inbox.
-- The account gets sensible defaults: sync filters mostly off, no Policy phrases, auto-schedule meetings off, no workflow rules except a starter "auto-reply to everything" rule.
-- If it's your first account, it's marked **Primary**.
+- Your recent email starts arriving in the Inbox, sorted into **Needs reply**, **FYI** and other groups.
+- From now on, when a new email arrives that needs an answer, the AI writes a draft reply and leaves it under the email for you to check. **Nothing is sent automatically.** The mailbox comes with one starter automatic-reply rule, and it's switched off.
+- Email that was already in your mailbox doesn't get automatic drafts. Open it and click **AI Reply** whenever you want one.
+- Newsletters and marketing mail are left out, unless you turn on [Keep newsletters](/help/07-settings-accounts#keep-newsletters).
+- After that, new email arrives about every 5 minutes. **Sync now** on the mailbox fetches it immediately.
+
+## Checking your mailbox is working
+
+On **Settings → Accounts**, each mailbox shows a label next to its address, and when it last synced:
+
+| Label | What it means | What to do |
+|---|---|---|
+| **synced** | Everything is working | Nothing |
+| **syncing** | It's fetching email right now | Wait a moment |
+| **error** | Fetching failed several times. The reason is shown under the address | Usually nothing: the app keeps retrying. If it doesn't clear in a few hours, click **Sync now** |
+| **reconnect needed** | The app's permission to read the mailbox stopped working, for example after you changed your password | Click **Reconnect** and sign in again. For other email services, disconnect it and connect it again with the current password |
+
+The mailbox's owner also gets a notification when something goes wrong; see [Notifications](/help/06-notifications#every-kind-of-notification).
+
+## Connecting more than one mailbox
+
+Repeat the steps above for each one. Every mailbox:
+- shows in the same Inbox, so you see all your email in one list
+- has its own settings, rules and team members
+- can be the one you send from: pick it in **From** when you write a new email
+
+To change which mailbox is chosen by default, click **Make primary** on it.
+
+## Next steps
+
+1. Set your name, job title and timezone in [Settings → Profile](/help/09-settings-profile), so AI replies are signed correctly.
+2. Connect your calendar in [Settings → Calendars](/help/08-settings-calendars) if you want help with meeting times.
+3. Read [Safe use guidelines](/help/16-safe-use-guidelines) before you turn on any automatic replies.
 
 ## Related
 
-- To change what gets synced at all, see [Settings → Accounts → Sync filters](/help/07-settings-accounts#sync-filters).
-- To control what the AI does with incoming mail, see [Workflow rules](/help/07-settings-accounts#workflow-rules).
+- [Sync filters](/help/07-settings-accounts#sync-filters): keep some kinds of automatic email out of the app.
+- [Questions and problems](/help/17-faq-troubleshooting#email-isnt-showing-up): if your email doesn't appear.

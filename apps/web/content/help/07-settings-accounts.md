@@ -2,24 +2,38 @@
 
 # Settings → Accounts
 
-This is the control center for every connected mailbox. Each connected account is its own card with its own toolbar of buttons — everything below (sync filters, Policy, Members, Contacts, Workflow rules, AI Agents) is configured **per account**, not globally.
+This is where you manage each connected mailbox: who can use it, what email comes in, and what the AI is allowed to do with it. Each mailbox has its own card with its own buttons, and its own settings. Changing one mailbox never changes another.
 
-For how to connect an account in the first place, see [Getting started](/help/01-getting-started).
+To connect a mailbox in the first place, see [Getting started](/help/01-getting-started).
+
+> **Most of this page is for the mailbox's owner.** If you're a member of a shared mailbox, you'll only see some of these buttons; see [Who can do what](/help/15-working-as-a-team#who-can-do-what).
 
 ## Where to find it
 
-**Settings → Accounts** in the left sidebar (`/settings/email-accounts`).
+**Settings → Accounts**, in the menu on the left.
 
-## The account card toolbar
+## New here? Start simple
 
-Each connected account shows a row of buttons. Some are always visible; some only show for the account **owner** (the person who connected it):
+You don't need to set up anything on this page to start using the app. The defaults are safe: the AI writes drafts, and nothing is sent without you. When you're ready, these are the most useful settings, in order:
+
+1. **Writing style** → **Build from sent mail**, so AI drafts sound like you. ([details](#writing-style))
+2. **Sync filters**, to keep one-time codes, shipping updates and similar automatic mail out of your Inbox. ([details](#sync-filters))
+3. **Members**, if colleagues work on this mailbox with you. ([details](#shared-inbox-members))
+4. **Policy**, to list words that must never go out in an automatic reply, before you ever turn one on. ([details](#policy))
+
+Workflow rules, Agents, Integrations and Approval Chains are **advanced**. Leave them until you're comfortable, and read [Safe use guidelines](/help/16-safe-use-guidelines#turning-on-automatic-replies-owners) before turning on any automatic replies.
+
+## The buttons on a mailbox card
+
+Some buttons only appear for the mailbox's **owner** (the person who connected it):
 
 | Button | Who sees it | What it does |
 |---|---|---|
-| Sync now | everyone | Triggers an immediate sync instead of waiting for the next scheduled one |
-| Pause sync / Resume sync | everyone | Temporarily stops pulling new mail into the app (mail still exists in the real mailbox, just not reflected here) |
-| Members | everyone | Opens the [Shared Inbox members](#shared-inbox-members) panel |
-| Contacts | everyone | Opens the [CRM contacts](#crm-contacts) panel |
+| Sync now | everyone | Fetches new email now, instead of waiting for the next automatic check (about every 5 minutes) |
+| Members | everyone | Shows who shares this mailbox. The owner can invite or remove people. [Details](#shared-inbox-members) |
+| Contacts | everyone | Your contact list for this mailbox. [Details](#crm-contacts) |
+| Writing style | everyone | How the AI writes to sound like you. Only the owner can change it. [Details](#writing-style) |
+| Pause sync / Resume sync | owner only | Stops or restarts fetching new email. Your real mailbox is unaffected |
 | Workflows | owner only | Opens [Workflow rules](#workflow-rules) |
 | Automation | owner only | Opens [Automation settings](#automation-settings) — auto-send limits, undo window, quiet hours, business hours, signature |
 | Activity | owner only | Opens [Activity](#activity) — the automation log and AI draft quality |
@@ -28,14 +42,30 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 | Sync filters (N) | owner only | Opens [Sync filters](#sync-filters) — N = how many are currently active |
 | Policy (N) | owner only | Opens [Policy](#policy) — N = how many prohibited phrases are set |
 | Auto-schedule meetings (on/off) | owner only | Toggles automatic calendar scheduling — see [Tasks → Suggest a time](/help/04-tasks-and-followups#suggest-a-time-ai-meeting-scheduling) |
-| Make primary | owner only | Marks this as your default "From" account in Compose |
-| Disconnect | owner only | Removes the account entirely (with a confirmation prompt) |
+| Make primary | owner only | Makes this the mailbox chosen by default when you write a new email |
+| Disconnect | owner only | Removes the mailbox from the app, after asking you to confirm. [Details](#disconnecting-a-mailbox) |
+
+---
+
+## Disconnecting a mailbox
+
+**What it is:** removes a mailbox from the app completely. Only its owner can do this.
+
+**How:** click **Disconnect** on the mailbox's card and confirm.
+
+**What happens:**
+- The mailbox disappears from the app for **everyone** who shared it, and the app stops reading and sending its email.
+- The app's permission to use the mailbox is deleted, along with its writing style, its **Ask** search data, its suggestions and its insights.
+- **Your real mailbox is not touched.** All your email is still in Gmail, Outlook or wherever it lives.
+- If you connect the same mailbox again later, its rules, agents and members come back. Its writing style needs building again.
+
+> If you only want to stop new email arriving for a while, use **Pause sync** instead.
 
 ---
 
 ## Sync filters
 
-**What it is:** lets you exclude entire categories of automated mail from ever reaching your inbox or the AI pipeline — so promotional blasts, OTP codes, etc. don't clutter your inbox or waste AI processing.
+**What it is:** lets you exclude entire categories of automated mail from ever reaching your inbox or the AI, so promotional blasts, OTP codes, etc. don't clutter your inbox or waste AI processing.
 
 **How to use it:**
 1. Click **Sync filters (N)** on the account card.
@@ -88,7 +118,7 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 
 ## Policy
 
-**What it is:** a hard safety rail — a list of phrases that, if present in an AI-drafted reply, block it from auto-sending and hold it as a draft for human review instead. Empty by default; nothing is pre-populated, because every account's policy is different.
+**What it is:** a safety net. It's a list of words and phrases that must never go out in an **automatic** reply. If an AI reply contains one, it isn't sent; it waits as a draft for a person to check. The list starts empty, because every business is different. It doesn't affect emails you send yourself.
 
 **How to use it:**
 1. Click **Policy (N)** on the account card.
@@ -98,7 +128,9 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 
 **Example:** setting the policy to `refund, cancel my subscription, legal` means any AI-drafted reply that mentions a refund, a cancellation, or anything legal-sounding gets held as a draft instead of auto-sent — so a human reviews anything sensitive before it goes out, even if a [Workflow rule](#workflow-rules) is otherwise set to auto-send.
 
-**What happens:** the check is case-insensitive substring matching against the drafted reply text, evaluated every time before an auto-send decision is made.
+**What happens:** before any automatic reply is sent, the app looks for each phrase anywhere in the reply. Capital letters don't matter, and a phrase also matches inside a longer word: `refund` also catches *refunds* and *refunded*. If one is found, the reply waits as a draft for a person to check.
+
+> **Tip:** set this up **before** you turn on any automatic replies. Good starting phrases: `refund, discount, price, contract, legal, cancel, guarantee`.
 
 ---
 
@@ -108,13 +140,15 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 
 **How to use it:**
 1. Click **Members** on the account card.
-2. If you're the owner: type an existing user's sign-up email into the **"teammate@example.com"** box and click **Invite** — the app finds the matching existing user and grants them access. (You can't invite someone who hasn't signed up yet.)
+2. If you're the owner: type your colleague's email address into the **teammate@example.com** box and click **Invite**. They must have **signed up for the app first** with that address; otherwise you'll see *"No user with that email has an account here yet"*. They aren't emailed about it, so let them know yourself.
 3. Everyone with access sees the member list: name/email and role (**Owner** or member).
 4. The owner can remove a member with a **Remove** button next to their name.
 
 **Example:** inviting `teammate@yourcompany.com` to the `support@yourcompany.com` account lets them see every thread, reply, leave [Notes](/help/02-inbox#notes-internal-team-only), and be an option in the [thread-assignment dropdown](/help/02-inbox#assigning-a-thread-shared-inbox-only) — without giving them your Gmail password.
 
-**What happens:** once there are 2+ members, threads on this account gain an **assignee** dropdown in the Inbox thread view, and this account becomes selectable as an "Assign to teammate" target in [Workflow rules](#workflow-rules).
+**What happens:** once two or more people share the mailbox, each email gets a dropdown to [assign](/help/02-inbox#assigning-a-thread-shared-inbox-only) it to someone, and rules can assign or notify a teammate.
+
+**When you remove someone:** they lose access straight away. Emails assigned to them become **Unassigned**, and any AI reply waiting for their approval is cancelled and goes back to Drafts for you to check and send. See [Working as a team](/help/15-working-as-a-team#removing-someone-owner).
 
 ---
 
@@ -144,19 +178,23 @@ Each connected account shows a row of buttons. Some are always visible; some onl
 2. Click **Connect Slack**, **Connect Teams**, or **Connect HubSpot**.
 3. You're redirected to that provider's own consent screen — sign in and approve access.
 4. You're redirected back here, and the connection now appears in the list with the workspace/tenant/portal's name.
-5. To remove a connection, click **Disconnect** next to it — any Workflow rule action that referenced it will simply fail silently (best-effort) until you reconnect or edit the rule.
+5. To remove a connection, click **Disconnect** next to it. Rules that post to it will fail until you reconnect it or change the rule; the failures show in [Activity](#activity).
 
 **Example:** connecting **Slack** for a `support@yourcompany.com` account lets a Workflow rule post "🚨 New urgent support request" to a `#support` channel the moment a matching email arrives — without anyone needing to check the inbox directly.
 
-**What happens:** the connection itself does nothing on its own — it only becomes active once referenced by a Workflow rule action (**Post to Slack channel**, **Post to Teams channel**, or **Sync sender to HubSpot**, see below). Access tokens are stored encrypted; Teams and HubSpot tokens are refreshed automatically as they expire, Slack's do not expire.
+**What happens:** connecting does nothing by itself. It's only used when a rule has a **Post to Slack channel**, **Post to Teams channel** or **Sync sender to HubSpot** action (see below), or when you choose Slack for [notifications](/help/06-notifications#choosing-where-notifications-go). The connection is stored securely and stays connected until you disconnect it.
 
 ---
 
 ## Workflow rules
 
-**What it is:** the automation engine — the rules that decide, for every new message on this account, what happens to it: label, file or forward it, create a task, notify someone, call a webhook, and how the AI reply goes out (auto-send, hold for review, or multi-person sign-off).
+**Advanced.** Rules are optional. Without any, the app already sorts your email and writes drafts for you to check.
 
-**How rules run:** in order, top to bottom, after AI classification of the message.
+**What it is:** instructions of the form *"when an email like this arrives, do that"*. For example: *when the subject contains "invoice", add the label Invoices and create a task*. A rule can label, file or forward an email, create a task, assign or notify a teammate, and decide how the AI's reply goes out: sent automatically, held for you to check, or signed off by several people first.
+
+> **Always click Test rule before saving.** It shows which recent emails the rule would have matched, without doing anything, so you can see whether it catches the right ones.
+
+**How rules run:** in order, top to bottom, after the AI has sorted the message (its category, priority and so on).
 
 - **Every rule that matches runs its actions**, so you can combine rules — for example "label all invoices" *and* "auto-reply to VIPs".
 - A rule with a **Stop (skip lower rules)** action ends the list: rules below it are not checked for that message.
@@ -184,21 +222,21 @@ Every new account starts with one **starter rule**, *"Auto-reply — all message
    | Sender is a known contact | A CRM contact, or someone this account has emailed before |
    | Received in business hours | Inside the business hours set under [Automation](#automation-settings) |
 
-   Operators for text fields: **is**, **is not**, **contains**, **doesn't contain**, **starts with**, **ends with**, **is one of** / **is none of** (a comma-separated list), and **matches regex**. Yes/no fields just take **yes** or **no**.
+   For text, choose how to compare: **is**, **is not**, **contains**, **doesn't contain**, **starts with**, **ends with**, or **is one of** / **is none of** (a list separated by commas). **contains** is the one you'll use most. **matches regex** is for technical users who know regular expressions. Yes/no fields just take **yes** or **no**.
 5. A rule with no conditions is refused unless you tick **Match every message** — the form then warns you that the rule runs on every new message.
 6. Add one or more **actions** ("Then do this"):
    - **Auto-send the AI reply** — optionally with an [AI Agent persona](#ai-agents-personas), **Calendar-aware replies** (on by default), **Reply all**, and **Auto-send document answers to new senders**.
-   - **Hold as draft (no auto-reply)** · **Require multi-step approval** — see [Approval Chains](#true-multi-step-approval-chains).
+   - **Hold as draft (no auto-reply)** · **Require multi-step approval** — see [Approval Chains](#approval-chains).
    - **Assign to teammate** · **Notify teammate** · **Post to Slack channel** · **Post to Teams channel** · **Sync sender to HubSpot**.
    - **Forward to address** — forwards the message, with its attachments up to 3 MB, and an optional note on top.
    - **Add label** — a Gmail label, an Outlook category or an IMAP keyword, created if needed.
    - **Move to folder** · **Archive** · **Mark as read** — change the message in your real mailbox.
    - **Snooze thread** — for a number of hours.
    - **Create a task** — a follow-up task for you, with an optional description and due date.
-   - **Call a webhook** — posts a short summary of the message (no body) to an HTTPS address. A signing secret is generated when you save; it appears on the rule so your receiver can verify the `X-Signature` header. Private or internal addresses are refused.
+   - **Call a webhook** *(for technical teams)*: sends a short notice about the email, without its text, to another system's web address. A signing secret appears on the rule after saving, so that system can check the notice really came from this app (the `X-Signature` header). Private or internal addresses are refused.
    - **Delay the auto-reply** — waits that many minutes before an auto-reply sends (it can be cancelled meanwhile).
    - **Stop (skip lower rules)**.
-7. Click **Test rule** before saving: it shows which of your last 50 classified messages the rule would match. **Nothing is run** — no labels, no replies, no notifications.
+7. Click **Test rule** before saving: it shows which of your last 50 sorted emails the rule would match. **Nothing is run** — no labels, no replies, no notifications.
 8. Click **Save rule**. A saved rule starts **Enabled**; click the badge to switch it off.
 
 **Testing a saved rule:** the **Test** button on a rule card runs the same check for that rule.
@@ -261,9 +299,9 @@ Times are in your timezone, set under [Profile](/help/09-settings-profile).
 
 ---
 
-## True multi-step Approval Chains
+## Approval Chains
 
-**What it is:** gates a drafted reply behind sign-off from one or more specific people, in order, before it's allowed to send — for anything sensitive enough that one person's judgment (or the AI's own confidence score) isn't enough on its own.
+**Advanced.** **What it is:** makes an AI reply wait until one or more named people approve it, one after another, before it can be sent. Use it for anything sensitive, such as pricing, refunds or legal questions, where one person's judgement isn't enough.
 
 **How to set it up:**
 1. In a Workflow rule's action list, choose **Require multi-step approval**.
@@ -271,24 +309,30 @@ Times are in your timezone, set under [Profile](/help/09-settings-profile).
 3. Use the **↑ / ↓** arrows to reorder, or **✕** to remove someone.
 4. Save the rule as usual.
 
-**How approving works:** whenever it's your turn, the drafted reply shows up on your **Approvals** page (left sidebar) — see [Approvals](/help/11-approvals) for the full walkthrough. Approving your step passes it to the next approver; approving the *final* step sends the reply immediately, with no further action needed. Rejecting stops the chain entirely and returns the draft to Drafts for editing — it is **not** a permanent lock, the draft can still be sent manually once reworked.
+**How approving works:** whenever it's your turn, the drafted reply shows up on your **Approvals** page (in the menu on the left) — see [Approvals](/help/11-approvals) for the full walkthrough. Approving your step passes it to the next approver; approving the *final* step sends the reply immediately, with no further action needed. Rejecting stops the chain entirely and returns the draft to Drafts for editing — it is **not** a permanent lock, the draft can still be sent manually once reworked.
 
 **Example:** a rule matching `Category equals Sales` with **Require multi-step approval** set to `[Sales Manager, VP of Sales]` means every AI-drafted sales reply needs both people to sign off, in that order, before it goes out — the VP never even sees it unless the Sales Manager already approved.
 
-**What happens:** this always wins over **Auto-send the AI reply** if both are on the same rule — a chain can never be silently skipped. **Pending chains expire** after 72 hours by default, and the current approver gets a reminder halfway. While a chain is pending, the draft cannot be sent manually from the Compose/Drafts screen either; the **Send** button stays disabled with an explanation until every step approves.
+**What happens:**
+- An approval always wins over **Auto-send the AI reply** on the same rule, so it can never be skipped by accident.
+- While it's waiting, nobody can send the draft by hand either. The **Send** button stays switched off, with an explanation.
+- **Time limit:** a waiting approval expires after 72 hours unless the rule sets another limit. The current approver gets a reminder halfway. Once it has expired, the draft can be checked and sent by hand.
+- **Approvers must be members** of the mailbox. If an approver is removed from the mailbox, any approval waiting on them is cancelled and the draft goes back to Drafts.
 
 ---
 
 ## AI Agents (personas)
 
-**What it is:** named, reusable system prompts — a persona's prompt **fully replaces** the default reply prompt when used (not appended to it). Attach one to a Workflow rule's "Auto-send the AI reply" action to give that rule a distinct voice/behavior.
+**Advanced.** **What it is:** an agent is a named set of instructions that tells the AI how to reply in a particular role, for example "Customer Support: friendly, step by step, never promise refunds". A rule can then tell the AI to reply as that agent. The agent's instructions **replace** the AI's normal ones completely, so write everything it needs to know.
+
+> **Easiest way to start:** use one of the ready-made agents below and edit it, rather than writing instructions from scratch.
 
 **How to use it:**
 1. Click **Agents** on the account card.
 2. Click **+ Add agent**.
 3. Optionally click a **template** to start from a pre-written prompt: **Personal Assistant**, **Customer Support Agent**, **Sales Agent**, **HR Agent**, **Finance Agent**, **Executive Assistant**.
 4. Give it a **name** (e.g. "Support Tier 1").
-5. Write (or edit the template's) **system prompt** — the complete instructions for how this persona should reply.
+5. Write the **instructions** (or edit the template's): everything this agent should know about how to reply. Plain sentences work best, for example *"Keep replies under 120 words. Never promise refunds; say the billing team will review it."*
 6. Click **Create agent**.
 7. To edit later: click **Edit** on an existing persona. To remove: click **Delete**.
 8. Each persona has an **Enabled** toggle — disabling it without deleting it stops it from being usable in Workflow rules while keeping its prompt saved.

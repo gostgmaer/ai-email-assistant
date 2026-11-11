@@ -1,30 +1,46 @@
-# AI Email Assistant — Help & Usability Guide
+# Help
 
-This is a plain-language guide to every feature and setting in the app: what it's for, exactly where to find it, what to click, and what happens as a result. Each page uses the same format:
+Everything you need to use the AI Email Assistant, in plain language. Each page explains what a feature is for, where to find it, what to click, an example, and exactly what happens, including whether anything is sent.
 
-- **What it is** — the feature in one or two sentences.
-- **Where to find it** — the exact navigation path.
-- **How to use it** — numbered click-by-click steps.
-- **Example** — a concrete worked example with sample input/output.
-- **What happens** — the real effect (what gets saved, sent, or changed, and where).
+> **New here? Read [Start here](/help/00-start-here) first.** It takes five minutes and walks you through your first day.
 
-## Contents
+## Getting started
 
-1. [Getting started — connecting an inbox](/help/01-getting-started)
-2. [Inbox](/help/02-inbox) — reading mail, Needs reply and FYI groups, unsubscribe, proposing meeting times, attachments, AI replies, notes, snooze, Cancel send
-3. [Compose](/help/03-compose) — writing new mail, attachments, reminders, drafts, AI rewrite
-4. [Tasks & Waiting](/help/04-tasks-and-followups) — auto-extracted action items, promises you made, meeting scheduling, follow-up reminders
-5. [Documents](/help/05-documents) — upload, search, RAG grounding
-6. [Notifications](/help/06-notifications) — in app, email and Slack; daily digest time
-7. [Settings → Accounts](/help/07-settings-accounts) — the biggest page: sync filters, Policy, auto-schedule meetings, Shared Inbox members, CRM contacts, Integrations (Slack/Teams/HubSpot), Workflow rules (with Test rule), Writing style, Keep newsletters, Automation settings (auto-send limits, undo window, quiet hours, signature), Activity, Calendar-aware replies, Approval Chains, AI Agents and ready-made agents
-8. [Settings → Calendars](/help/08-settings-calendars)
-9. [Settings → Profile](/help/09-settings-profile) — name, job title, company, timezone, notifications
-10. [Settings → Security](/help/10-settings-security)
-11. [Approvals](/help/11-approvals) — your queue of drafts waiting on your sign-off
-12. [Ask your inbox](/help/12-ask-your-inbox) — questions answered from your own email, with sources
-13. [Suggestions](/help/13-suggestions) — fixes the AI proposes after its drafts get rejected, which you approve
-14. [Insights](/help/14-insights) — response times, open work and what the AI did
+- [Start here](/help/00-start-here): what the app does, your first 15 minutes, and finding your way around on a computer or a phone
+- [Connecting a mailbox](/help/01-getting-started): Gmail, Outlook or any other email service
+- [Safe use guidelines](/help/16-safe-use-guidelines): **read before you rely on the AI**: checking drafts, automatic replies, protecting your account
 
-## The mental model in one paragraph
+## Everyday email
 
-You connect one or more mailboxes (Gmail, Outlook, or any IMAP account) under **Settings → Accounts**. Every account has its own **Sync filters** (what gets ignored), **Policy** (phrases that block an auto-send), **Workflow rules** (what the AI should do with each incoming message), optional **Integrations** (Slack, Teams, HubSpot — for a rule to post to or sync with), and optionally its own **AI Agent personas** (named system prompts a rule can use instead of the default). Incoming mail is classified, matched against your rules, and either auto-replied (optionally calendar-aware for scheduling requests), held as a draft, routed through a multi-person **Approval Chain**, assigned to a teammate, posted to Slack/Teams, synced to HubSpot, or just left alone — depending on what you've configured. Everything the AI does (auto-sends, extracted tasks, document grounding, approval decisions) is visible and reversible from the **Inbox**, **Tasks**, and **Approvals** pages.
+- [Inbox](/help/02-inbox): reading, AI drafts and replies, summaries, notes, snoozing, meeting times, unsubscribing
+- [Compose](/help/03-compose): writing a new email, attachments, reminders and drafts
+- [Ask your inbox](/help/12-ask-your-inbox): ask a question, get an answer from your own email
+- [Tasks & Waiting](/help/04-tasks-and-followups): to-dos the AI found, promises you made, and emails nobody has answered
+- [Notifications](/help/06-notifications): the bell, email and Slack alerts, the daily digest
+
+## Working with a team
+
+- [Working as a team](/help/15-working-as-a-team): sharing a mailbox, **who can do what**, assigning, notes, removing someone
+- [Approvals](/help/11-approvals): signing off AI replies before they're sent
+
+## Making the AI better
+
+- [Documents](/help/05-documents): give the AI your price lists and policies so it gets facts right
+- [Suggestions](/help/13-suggestions): fixes the app proposes when its drafts keep being rejected
+- [Insights](/help/14-insights): how fast emails get answered and what the AI did
+
+## Settings
+
+- [Accounts](/help/07-settings-accounts): your mailboxes: members, sync filters, blocked phrases, writing style, and advanced rules, agents and integrations
+- [Calendars](/help/08-settings-calendars): connect a calendar for meeting times
+- [Profile](/help/09-settings-profile): your name, job title, timezone, email address and notifications
+- [Security](/help/10-settings-security): your password and signed-in devices
+
+## When you're stuck
+
+- [Questions and problems](/help/17-faq-troubleshooting): missing email, AI drafts, buttons you can't find, signing in
+- [Glossary](/help/18-glossary): what the words on screen mean
+
+## How it works, in one paragraph
+
+You connect your mailbox, and the app copies your email in about every 5 minutes. The AI sorts each new email (**Needs reply**, **FYI** and so on), and for emails that need an answer it writes a draft reply for you to check. **Nothing is sent until you click Send**, unless the mailbox's owner has deliberately turned on automatic replies with a rule. Everything the AI does is visible: drafts sit under the email they answer, tasks appear on **Tasks**, and every automatic action is listed under **Settings → Accounts → Activity**.

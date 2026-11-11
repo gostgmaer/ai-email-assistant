@@ -412,6 +412,12 @@ export class EmailAccountService {
         where: { accountId },
         data: { draftText: null, sentText: null },
       }),
+      // With the credentials gone these drafts can never be sent, so a
+      // chain still waiting would sit in its approvers' queues for nothing.
+      this.prisma.approvalChain.updateMany({
+        where: { accountId, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      }),
     ]);
   }
 

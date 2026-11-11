@@ -4,48 +4,77 @@
 
 ## What it is
 
-Your personal details — display name, job title, company, timezone — plus your email address, notification preferences, and account deletion.
+Your personal details (name, job title, company and timezone), plus your sign-in email address, your notification choices, and deleting your account.
+
+> **Fill this in on your first day.** The AI signs replies with these details, and your timezone decides when reminders, digests and meeting times happen.
 
 ## Where to find it
 
-**Settings → Profile** in the left sidebar (`/settings/profile`).
+**Settings → Profile**, in the menu on the left. On a phone, tap **☰** at the top left first.
 
-## Changing your display name
+## Your name
 
-**How:** type into the **Display name** field under the **Name** section, click **Save**. A "Saved" confirmation appears next to the button.
+**How:** type it in **Display name** under **Name**, then click **Save**. **Saved** appears next to the button.
 
-**Example:** changing it from blank to `Kishor Sarkar` updates how your name appears throughout the app (e.g. as the sender name on outgoing mail where applicable).
+**What it's used for:**
+- AI replies are signed with it.
+- Teammates see it on shared mailboxes: in the member list, on notes you write, and in the assign dropdown.
+- The round picture at the top right shows its first letter.
+
+**Example:** set it to `Alex Morgan`, and AI drafts end with *"Best regards, Alex"* instead of a guess.
 
 ## Job title, company and timezone
 
-**How:** fill in **Job title** and **Company**, and set **Timezone** — type an IANA name such as `Europe/Berlin`, or click **Use this device's**. Click **Save**.
+**How:** fill in **Job title** and **Company**. For **Timezone**, click **Use this device's**, the easiest way, or type a place name such as `Europe/Berlin`, `America/New_York` or `Asia/Kolkata`. Then click **Save**.
 
-**What happens:** AI replies are written as you, using your name, job title and company. Your timezone decides when quiet hours and business hours apply on your mailboxes ([Automation settings](/help/07-settings-accounts#automation-settings)), when your daily digest arrives, when [promises you made](/help/04-tasks-and-followups#you-promised-commitments) fall due, and which hours [Propose times](/help/02-inbox#meeting-requests-propose-times) offers. An unknown timezone is refused with a message. Clearing a field and saving removes it.
+**Job title and company:** the AI uses these to write as you, for example *"Alex Morgan, Account Manager, Northwind Studio"*, and to sound right for your role. Each field can be up to 120 characters. To remove one, clear it and click **Save**.
+
+**Timezone** decides:
+
+| What | How your timezone affects it |
+|---|---|
+| Meeting times | [Propose times](/help/02-inbox#meeting-requests-propose-times) offers 9:00–17:00 **your** time |
+| Daily digest | Arrives at the hour you chose, **your** time |
+| Promises you made | *"By Friday"* means 17:00 on Friday, **your** time |
+| Quiet and business hours | On your mailboxes' [Automation settings](/help/07-settings-accounts#automation-settings) |
+
+If the timezone is wrong, all of these are off by the difference. A name the app doesn't recognise is refused with a message: use a *Region/City* name like the examples above, or click **Use this device's**.
+
+> **Travelling?** Your timezone doesn't change on its own. Update it if you'll be away long enough for it to matter.
 
 ## Notifications
 
-The **Notifications** section chooses which events reach you in the app, by email or in Slack, and the hour of your daily digest — see [Notifications](/help/06-notifications#choosing-where-notifications-go).
+The **Notifications** section chooses which events reach you, and where: in the app, by email or in Slack. It also sets the hour of your daily digest. See [Notifications](/help/06-notifications#choosing-where-notifications-go) for every option.
 
 ## Verifying your email
 
-If your email isn't verified yet, an amber banner appears under **Email**: *"Your email isn't verified yet"* with a **Resend verification** link. Click it to get a new verification email; the button changes to "Sent" once triggered.
+If your email address isn't verified yet, an amber box under **Email** says *"Your email isn't verified yet"*, with a **Resend verification** link. Click it, then open the email you receive and click its link within **24 hours**. The button shows **Sent** once the email is on its way. Check your spam folder if it doesn't arrive within a few minutes.
 
 ## Changing your email address
 
+This changes the address you sign in with. It doesn't change any connected mailbox.
+
 **How to use it:**
 1. Click **Change email**.
-2. Enter the **new email** address.
-3. Enter your **current password** (if you have one set — see [Security](/help/10-settings-security)).
+2. Type the **new email** address.
+3. Type your **current password**, if you have one (see [Security](/help/10-settings-security)).
 4. Click **Send confirmation**.
-5. You'll see: *"Check the new address for a confirmation link."*
-6. Open that link (from the new inbox) — it hits `/settings/profile?confirmEmailToken=...` automatically, and once processed shows *"Your email address has been updated."*
+5. You'll see *"Check the new address for a confirmation link."*
+6. Open the new address's inbox and click the link within **1 hour**. The app opens and shows *"Your email address has been updated."*
 
-**What happens:** your login email doesn't actually change until you click the confirmation link sent to the *new* address — this prevents someone from hijacking your account by mistyping an email they don't control.
+**What happens:** nothing changes until you click the link sent to the **new** address. This stops anyone switching your account to an address they can't actually receive email at. If the link has expired, start again from step 1.
+
+From then on, sign in with the new address. Your password stays the same.
 
 ## Deleting your account (danger zone)
 
-**Where:** the red **Danger zone** section at the bottom.
+**Where:** the red **Danger zone** section at the bottom of the page.
 
-**How:** click **Delete account**, confirm the browser prompt (*"Delete your account? This cannot be undone."*).
+**Before you delete:**
+1. **Disconnect your mailboxes** in [Settings → Accounts](/help/07-settings-accounts#disconnecting-a-mailbox), so the app stops reading and replying to them. If teammates share one of your mailboxes, tell them first: disconnecting removes it for them too.
+2. **Disconnect your calendars** in [Settings → Calendars](/help/08-settings-calendars#disconnecting).
+3. **Save anything you need**, such as documents you uploaded. You won't be able to sign in afterwards.
 
-**What happens:** this disconnects every connected mailbox and calendar, signs you out on every device, and cannot be undone. There is no recovery step in the app — treat this as genuinely permanent.
+**How:** click **Delete account**, then confirm *"Delete your account? This cannot be undone."*
+
+**What happens:** you're signed out on every device and can't sign in again. There's no way to undo this from inside the app, so treat it as permanent. Your real mailboxes and calendars are not deleted: they stay with Google, Microsoft or your email provider.

@@ -13,6 +13,8 @@ import { VerificationTokenType } from '../../../generated/prisma/enums';
 import { isValidTimeZone } from '../../../common/utils/local-time.util';
 import { PasswordService } from '../../auth/services/password.service';
 import { VerificationTokenService } from '../../auth/services/verification-token.service';
+import { CalendarAccountService } from '../../calendar/services/calendar-account.service';
+import { EmailAccountService } from '../../email-account/services/email-account.service';
 import { ChangeEmailDto, ChangePasswordDto, UpdateProfileDto } from '../dto';
 
 @Injectable()
@@ -23,6 +25,8 @@ export class UsersService {
     private readonly verificationTokenService: VerificationTokenService,
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
+    private readonly emailAccountService: EmailAccountService,
+    private readonly calendarAccountService: CalendarAccountService,
   ) {}
 
   async findById(id: string): Promise<UserModel> {
@@ -136,7 +140,50 @@ export class UsersService {
     });
   }
 
+  /**
+   * Deleting an account must also stop everything acting on the user's
+   * behalf — otherwise their mailboxes keep syncing with the stored
+   * credentials, their rules (auto-replies included) keep running, and
+   * their teammates keep access. Each step reuses the path the matching
+   * Settings button takes, so the cleanup is identical to doing it by hand.
+   * The user row is marked deleted last: if a step fails, the account still
+   * exists and deleting again picks up where this left off (every step is
+   * idempotent — a disconnected account is no longer listed).
+   */
   async softDelete(id: string): Promise<void> {
+    const [ownedMailboxes, sharedWithMe, calendars] = await Promise.all([
+      this.prisma.emailAccount.findMany({
+        where: { userId: id, deletedAt: null },
+        select: { id: true },
+      }),
+      this.prisma.accountMember.findMany({
+        where: {
+          userId: id,
+          role: 'MEMBER',
+          account: { deletedAt: null },
+        },
+        select: { accountId: true, account: { select: { userId: true } } },
+      }),
+      this.prisma.calendarAccount.findMany({
+        where: { userId: id, deletedAt: null },
+        select: { id: true },
+      }),
+    ]);
+
+    for (const mailbox of ownedMailboxes) {
+      await this.emailAccountService.disconnect(id, mailbox.id);
+    }
+    for (const membership of sharedWithMe) {
+      await this.emailAccountService.removeMember(
+        membership.account.userId,
+        membership.accountId,
+        id,
+      );
+    }
+    for (const calendar of calendars) {
+      await this.calendarAccountService.disconnect(id, calendar.id);
+    }
+
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id },

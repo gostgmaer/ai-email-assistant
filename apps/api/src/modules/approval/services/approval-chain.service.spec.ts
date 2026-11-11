@@ -368,7 +368,7 @@ describe('ApprovalChainService', () => {
             status: 'PENDING',
             draftMessageId: { not: null },
             steps: { some: { approverUserId: 'u1', status: 'PENDING' } },
-            account: { members: { some: { userId: 'u1' } } },
+            account: { deletedAt: null, members: { some: { userId: 'u1' } } },
           },
         }),
       );

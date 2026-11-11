@@ -4,48 +4,58 @@
 
 ## What it is
 
-A knowledge base the AI can pull facts from when drafting replies ("grounding" / RAG — Retrieval-Augmented Generation), so replies can accurately reference your product docs, pricing sheets, policies, contracts, etc., instead of the AI guessing.
+Files the AI can use for facts when it writes replies: your price list, refund policy, product guide, opening hours and so on. Without them the AI only knows what's in the email conversation, so it may guess. With them, it can answer *"What's your refund policy?"* correctly.
+
+A reply that used one of your documents shows a **Grounded in your documents** label in the [Inbox](/help/02-inbox).
+
+> **Only upload what you'd be happy for a customer to read.** The AI may quote any part of a document in a reply to anyone who emails you. Don't upload salaries, personal records, passwords or confidential contracts. See [Safe use guidelines](/help/16-safe-use-guidelines#what-to-share-with-the-ai).
 
 ## Where to find it
 
-**Documents** in the left sidebar.
+**Documents**, in the menu on the left.
 
 ---
 
 ## Uploading a document
 
-**Supported types:** PDF, DOCX, TXT, Markdown, HTML, CSV, XLSX, JSON, XML, EML, MSG.
+**File types you can upload:** PDF, Word (DOCX), plain text (TXT), Markdown, HTML, CSV, Excel (XLSX), JSON, XML, and saved emails (EML, MSG).
 
 **How to use it:**
-1. Click **Choose File** and pick a file from your computer.
+1. Click **Choose File** and pick the file from your computer.
 2. Click **Process document**.
-3. Processing happens in the background: the file is uploaded, text is extracted, split into chunks, and each chunk is embedded (turned into a vector) using the configured embedding model (`google/gemini-embedding-001` in this deployment).
-4. Once done, the file appears in the list below with its chunk count, file type, and embedding model.
+3. Wait while the app reads it. A small file takes a few seconds, a long one a minute or two. While it works, the document shows a status label such as *processing*.
+4. When it's ready, the status label goes away and the document shows how many **chunks** it was split into. A chunk is a short section of the file that the AI can look up on its own.
 
-**Example:** uploading `refund-policy.pdf` — once processed it shows `2 chunks · PDF · google/gemini-embedding-001 · <date>`. From then on, if a customer emails asking about refunds, an AI-drafted reply can cite this document and the reply will carry a **"Grounded in your documents"** badge in the [Inbox](/help/02-inbox).
+**Example:** you upload `refund-policy.pdf`. Once it's ready, a customer emails *"Can I get my money back after three weeks?"* The AI's draft reply quotes your actual 30-day policy, and shows the **Grounded in your documents** label.
 
-**Note:** uploading depends on a separate file-storage service being reachable. If uploads fail with an error, that background service may be down — this isn't something you fix from within this app.
+**If it fails:** the label turns red and says *failed*. Check the file opens normally on your computer and is one of the types above. If uploads keep failing, the upload service may be down: ask whoever runs the app.
 
-## Searching documents
+> **Tips for good documents:**
+> - Keep them **up to date**. If your prices change, delete the old file and upload the new one, or the AI will quote old prices.
+> - **Clear, plain text works best.** A scanned photo of a page can't be read; use the original file.
+> - **One topic per file** is easier for the AI to use well than one huge file covering everything.
 
-**Where:** the **Search** box above the document list.
+## Checking what the AI can find
+
+**Where:** the **Search** box on the Documents page.
 
 **How to use it:**
-1. Type a natural-language question into **"Ask something covered by your documents…"** — e.g. *"What's our refund window?"*
-2. Optionally narrow with **Filter by category** and/or **Filter by file type** (e.g. `pdf`).
+1. Type a question, such as *"How long do customers have to ask for a refund?"*
+2. *(optional)* Narrow it with **Filter by category** or **Filter by file type** (for example `pdf`).
 3. Click **Search**.
-4. Results show the most relevant chunks across all your documents, ranked by similarity (`distance` — lower is a closer match), each labeled with which file and chunk it came from.
+4. You see the sections of your documents that best match, closest match first, each with the file it came from.
 
-**Example:** searching *"what tables are in the CSV"* against a small `test.csv` returns the chunk:
-> `test.csv — chunk 1 — page 1 — | name | role | department | ...`
+**Why use it:** it shows you what the AI would find for that question. If the right section doesn't come up, the AI won't use it either, so add or improve a document.
+
+**Example:** searching *"refund"* shows the paragraph from `refund-policy.pdf` that explains the 30-day window.
 
 ## Deleting a document
 
-**How:** click the red **Delete** button next to any document in the list.
+**How:** click the red **Delete** button next to the document, and confirm.
 
-**What happens:** the document and all its chunks/embeddings are removed immediately. Any past AI reply that already cited it keeps its "Grounded in your documents" badge and text (history isn't rewritten), but the AI can no longer draw on that document for future replies.
+**What happens:** the AI stops using it straight away. Replies already sent aren't changed.
 
-## What happens overall
+## Good to know
 
-- Documents are scoped to your account — every connected mailbox's AI replies can draw on the same shared document set.
-- This is knowledge grounding only — uploading a document does not send anything to anyone by itself.
+- Your documents are shared across all your mailboxes. Every mailbox's AI replies can use them.
+- Uploading a document never sends anything to anyone by itself.

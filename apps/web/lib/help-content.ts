@@ -12,6 +12,7 @@ export interface HelpDoc {
 /** Whitelisted slugs only — the URL segment is user-controlled input, and
  * this reads from disk, so we never build a path from it directly. */
 export const HELP_SLUGS = [
+  "00-start-here",
   "01-getting-started",
   "02-inbox",
   "03-compose",
@@ -26,6 +27,10 @@ export const HELP_SLUGS = [
   "12-ask-your-inbox",
   "13-suggestions",
   "14-insights",
+  "15-working-as-a-team",
+  "16-safe-use-guidelines",
+  "17-faq-troubleshooting",
+  "18-glossary",
 ] as const;
 
 export type HelpSlug = (typeof HELP_SLUGS)[number];

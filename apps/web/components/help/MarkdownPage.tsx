@@ -21,7 +21,10 @@ const components: Components = {
 
 export function MarkdownPage({ content }: { content: string }) {
   return (
-    <article className="prose prose-zinc max-w-none w-full p-6 prose-headings:font-semibold prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-table:text-sm [&_h2]:scroll-mt-20 [&_h3]:scroll-mt-20">
+    // Blockquotes are tips and quoted example emails, not citations, so they
+    // drop the typography plugin's italics and quote marks; inline code
+    // (email addresses, sample values) drops its literal backticks.
+    <article className="prose prose-zinc max-w-none w-full p-6 prose-headings:font-semibold prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-table:text-sm prose-blockquote:not-italic prose-blockquote:font-normal prose-blockquote:border-indigo-300 prose-blockquote:bg-indigo-50/60 prose-blockquote:py-1 prose-blockquote:pr-3 prose-blockquote:rounded-r-md prose-code:font-medium prose-code:before:content-none prose-code:after:content-none [&_blockquote_p]:before:content-none [&_blockquote_p]:after:content-none [&_h2]:scroll-mt-20 [&_h3]:scroll-mt-20">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSlug]}

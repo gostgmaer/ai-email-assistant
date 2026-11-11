@@ -10,7 +10,7 @@ One page showing how an inbox is doing: how fast people get a first response, wh
 
 ## Where to find it
 
-**Insights** in the left sidebar. If you have more than one account, choose it at the top of the page. Any member of the account can see it.
+**Insights**, in the menu on the left. If you have more than one account, choose it at the top of the page. Any member of the account can see it.
 
 ## How to use it
 
@@ -39,6 +39,15 @@ Responses got faster this week, but 3 threads from this week still have no answe
 - **Response times** leave out newsletters and notifications, which don't expect a reply. An auto-sent AI reply counts as a response.
 - **Average edit:** 0% means sent as the AI wrote it; 100% means completely rewritten.
 - **Safety checks** cover the urgent-message check, personal data, your prohibited phrases, claims that something was done or attached, replies grounded in your documents, the AI's own review, and send limits.
+
+## Using it once a week
+
+A five-minute check, for example on Monday morning:
+
+1. **Is first response getting slower?** Compare **Last 7 days** with **The 7 days before**. If it's getting worse, look at who has the most open work.
+2. **Is anyone overloaded?** In **Open work per person**, a long **Need a reply** list for one person means it's time to reassign some emails. See [Working as a team](/help/15-working-as-a-team#dividing-the-work).
+3. **Are the AI's drafts good?** In **AI replies per week**, many **Held, then discarded**, or a high average edit, means the drafts often need rewriting. Check [Suggestions](/help/13-suggestions), add facts with [Documents](/help/05-documents), or build the [writing style](/help/07-settings-accounts#writing-style).
+4. **Is a safety check blocking a lot?** In **What held replies back**, one reason standing out, such as your blocked phrases, may mean a rule is set up too broadly.
 
 ## What happens
 

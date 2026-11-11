@@ -166,7 +166,7 @@ export class ApprovalChainService {
         status: 'PENDING',
         draftMessageId: { not: null },
         steps: { some: { approverUserId: userId, status: 'PENDING' } },
-        account: { members: { some: { userId } } },
+        account: { deletedAt: null, members: { some: { userId } } },
       },
       include: CHAIN_INCLUDE,
       orderBy: { createdAt: 'asc' },
